@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>web_robot</title>
+    <link rel="stylesheet" href="../css/materialize.min.css">
+    <style type="text/css">
+        body {
+            width: 250px;
+        }
+        
+        .collection {
+            margin: 0px;
+        }
+        
+        .contain {
+            height: 200px;
+            overflow: scroll;
+        }
+        
+        .cases_view {
+            overflow: scroll;
+        }
+        
+        .btn-flat {
+            border: solid 1px #cccccc;
+        }
+        
+        #process_view {
+            overflow: scroll;
+        }
+        
+        .row {
+            margin-bottom: 0px;
+        }
+        
+        .h5 {
+            font-size: 1.64rem;
+            line-height: 110%;
+            margin: 0.82rem 0 0.656rem 0;
+        }
+        
+        .header {
+            vertical-align: middle;
+        }
+        
+        .add_btn {
+            margin: 10px;
+        }
+        
+        .modal-overlay {
+            top: 0px;
+        }
+        
+        #new_process {
+            display: block;
+        }
+        
+        #tag_list {
+            max-height: 157px;
+            overflow: scroll;
+            margin: 0px;
+            margin-top: -20px;
+        }
+        
+        .collection-item {
+            padding: 3px !important;
+        }
+        
+        .sel_tag option {
+            height: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contain">
+        <div class="cases_view" id="case_view" style="display: block">
+            <!-- <div class="header">
+                        <span class="h5">用例：</span>
+                        <a href="#"><span class="h5">添加用例</span></a>
+                    </div> -->
+            <table class="bordered centered">
+                <thead>
+                    <tr>
+                        <th>事务名</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="cases">
+                </tbody>
+            </table>
+            <div class="add_btn">
+                <a class="waves-effect waves-teal btn-flat" href="#modal1">添加事务</a>
+            </div>
+
+            <div id="modal1" class="modal modal-fixed-footer">
+                <div class="modal-content">
+                    <div class="input-field">
+                        <input type="text" id="case_name_input">
+                        <label for="case_name_input">事务名</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="add_case">确认</a>
+                </div>
+            </div>
+        </div>
+        <div id="process_view" style="display: none;">
+            <!-- <div class="header">
+                        <span class="h5">流程：</span>
+                        <a href="#"><span class="h5">添加流程</span></a>
+                    </div> -->
+            <ul class="collection" id="process_list">
+            </ul>
+            <div class="add_btn">
+                <a class="waves-effect waves-teal btn-flat" href="#modal2" id="add_process">添加过程</a>
+                <a class="waves-effect waves-teal btn-flat" href="#modal2" id="case_back">返回主页</a>
+            </div>
+        </div>
+        <div id="new_process" style="display: none">
+            <div class="chose_tag">
+                <div class="input-field col s12" style="margin-top: 0px;">
+                    <select class="sel_tag">
+                        <option value="" disabled selected>选择标签</option>
+                    </select>
+                </div>
+            </div>
+            <div class="collection" id="tag_list">
+            </div>
+            <div class="chose_opera" style="display: none">
+                <div class="input-field col s12" id="select_opera" style="margin-top: 0px">
+                    <select id="sel_opera">
+                    </select>
+                </div>
+                <div class="input-field col s12" id="set_value" style="display: none">
+                    <input placeholder="设值" id="ssv" type="text">
+                </div>
+                <div class="input-field col s12">
+                    <input id="num_wait" type="number" class="wait" value="1">
+                    <label for="num_wait">等待时间</label>
+                </div>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="test_run">测试运行</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="process_add">添加</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="content ">
+        <div>
+            <button id="reload ">重连页面(刷新后操作)</button>
+        </div>
+        <div class="sel ">
+            <select name="tag_type " id="tag_type ">
+            <option value='选择标签类型' selected disabled>选择标签类型</option>
+        </select>
+        </div>
+        <div class="sel ">
+            <ul id="tagn ">
+            </ul>
+        </div>
+        <div class="opera ">
+            <select name="opera_select " id="opera_sel ">
+            <option value="opera_select " disabled selected>选择操作</option>
+            <option value="click ">click</option>
+            <option value="value ">set_value</option>
+            <option value="refresh ">refresh</option>
+        </select>
+        </div>
+        <div id="set_value " style="display: none ">
+            <input type="text " name="ssv " id="ssv ">
+        </div>
+        <div>
+            <input type="number " placeholder="执行间隔时间(秒) " id="wait_time " value="1 ">
+        </div>
+        <div>
+            <button id="test_run ">测试运行</button>
+            <button id="add_process ">添加到流程</button>
+            <button id="del_process ">删除最近流程</button>
+        </div>
+        <div>
+            <button id="run ">运行</button>
+        </div>
+        <div id="my_process ">
+            <ul id="process_list ">
+            </ul>
+        </div>
+    </div> -->
+    <script type="text/javascript " src="../js/jquery.min.js "></script>
+    <script type="text/javascript " src="../js/materialize.min.js "></script>
+    <script type="text/javascript " src="../js/popup.js "></script>
+</body>
+
+</html>

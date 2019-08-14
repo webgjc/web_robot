@@ -1,0 +1,29 @@
+{
+    "manifest_version": 2,
+    "name": "web_robot",
+    "version": "1.0",
+    "description": "网页自动化操作机器人",
+    "browser_action": {
+        "default_popup": "html/popup.html",
+        "default_icon": {
+            "128": "images/robot.png"
+        }
+    },
+    "background": {
+        "scripts": ["js/background.js"]
+    },
+    "icons": {
+        "128": "images/robot.png"
+    },
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["js/content_script.js"]
+    }],
+    "permissions": [
+        "storage",
+        "notifications",
+        "<all_urls>",
+        "tabs",
+        "contextMenus"
+    ]
+}

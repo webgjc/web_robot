@@ -235,6 +235,7 @@ function refresh_cases() {
                             <td> \
                                 <a href="#" class="run_case">运行</a> \
                                 <a href="#" class="del_case">删除</a> \
+                                <a href="#" class="lun_case">轮播</a> \
                             </td> \
                         </tr>';
                 cases = cases + tr;
@@ -457,6 +458,27 @@ $(document).ready(function() {
                     setTimeout(function() {
                         chrome.tabs.executeScript(tab_id, { code: jscode(my_robot[case_name][i]) });
                     }, process_wait)
+                }
+                setTimeout(function() {
+                    that.html(save_run)
+                }, process_wait)
+            })
+        })
+
+        $("#cases").on("click", ".lun_case", function() {
+            var case_name = $(this).parent().parent().attr("id")
+            var save_run = $(this).parent().html()
+            var that = $(this).parent()
+            that.html("运行中")
+            get_my_robot(my_robot => {
+                var process_wait = 0;
+                for (let n = 0; n < 100; n++) {
+                    for (let i = 0; i < my_robot[case_name].length; i++) {
+                        process_wait = process_wait + my_robot[case_name][i]["wait"] * 1000
+                        setTimeout(function() {
+                            chrome.tabs.executeScript(tab_id, { code: jscode(my_robot[case_name][i]) });
+                        }, process_wait)
+                    }
                 }
                 setTimeout(function() {
                     that.html(save_run)

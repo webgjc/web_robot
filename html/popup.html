@@ -93,8 +93,9 @@
                 <tbody id="cases">
                 </tbody>
             </table>
-            <div class="add_btn">
-                <a class="waves-effect waves-teal btn-flat" href="#modal1">添加事务</a>
+            <div>
+                <a class="waves-effect waves-teal btn-flat add_btn" href="#modal1">添加事务</a>
+                <a class="waves-effect waves-teal btn-flat" href="#model2">导入事务</a>
             </div>
 
             <div id="modal1" class="modal modal-fixed-footer">
@@ -106,6 +107,17 @@
                 </div>
                 <div class="modal-footer">
                     <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="add_case">确认</a>
+                </div>
+            </div>
+
+            <div id="model2" class="modal modal-fixed-footer">
+                <div class="modal-content">
+                    <div class="input-field">
+                        <input type="text" id="inport_case_input" placeholder="导入事务">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="inport_case">确认</a>
                 </div>
             </div>
         </div>
@@ -125,8 +137,13 @@
             <div class="chose_tag">
                 <div class="input-field col s12" style="margin-top: 0px;">
                     <select class="sel_tag">
-                        <option value="" disabled selected>选择标签</option>
+                        <option value="" disabled selected>选择标签/选择器</option>
                     </select>
+                </div>
+            </div>
+            <div class="chose_class_id" style="display: none;">
+                <div class="input-field col s12" style="margin-top: 0px;">
+                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" />
                 </div>
             </div>
             <div class="collection" id="tag_list">
@@ -141,7 +158,7 @@
                 </div>
                 <div class="input-field col s12">
                     <input id="num_wait" type="number" class="wait" value="1">
-                    <label for="num_wait">等待时间</label>
+                    <label for="num_wait">执行前等待时间</label>
                 </div>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="test_run">测试运行</a>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="process_add">添加</a>
@@ -189,9 +206,10 @@
             </ul>
         </div>
     </div> -->
-    <script type="text/javascript " src="../js/jquery.min.js "></script>
-    <script type="text/javascript " src="../js/materialize.min.js "></script>
-    <script type="text/javascript " src="../js/popup.js "></script>
+    <script type="text/javascript" src="../js/jquery.min.js "></script>
+    <script type="text/javascript" src="../js/clipboard.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js "></script>
+    <script type="text/javascript" src="../js/popup.js "></script>
 </body>
 
 </html>

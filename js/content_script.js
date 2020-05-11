@@ -54,7 +54,36 @@ chrome.runtime.onConnect.addListener(function(port) {
                     type: msg.type,
                     num: nums
                 });
-            } else if (msg.type == "select_tag") {
+            } else if (msg.type == "search_class_id") {
+                let nums = Array();
+                if(msg.content.startsWith(".")) {
+                    let content = msg.content.substring(1);
+                    for (let i = 0; i < document.getElementsByClassName(content).length; i++) {
+                        if (document.getElementsByClassName(content)[i].offsetHeight > 0) {
+                            nums.push(i)
+                        }
+                    }
+                }
+                if(msg.content.startsWith("#")) {
+                    let content = msg.content.substring(1);
+                    if(document.getElementById(content) != null){
+                        nums.push(0);
+                    }
+                }
+                port.postMessage({
+                    type: msg.type,
+                    num: nums
+                });
+            } else if (msg.type == "select_class_id") {
+                let dom;
+                if(msg.content.startsWith(".")) {
+                    dom = document.getElementsByClassName(msg.content.substring(1))[msg.n];
+                }
+                if(msg.content.startsWith("#")) {
+                    dom = document.getElementById(msg.content.substring(1));
+                }
+                robot_make_select_canvass(dom);
+            }else if (msg.type == "select_tag") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];
                 robot_make_select_canvass(dom);
             } else if (msg.type == "click_tag") {

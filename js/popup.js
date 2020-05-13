@@ -1,17 +1,18 @@
+// 获取数据存储
 function get_my_robot(callback) {
     chrome.storage.local.get(["my_robot"], function(res) {
         if (callback) callback(res.my_robot)
     })
 }
 
-
+// 设置数据存储
 function set_my_robot(new_robot, callback) {
     chrome.storage.local.set({ "my_robot": new_robot }, function() {
         if (callback) callback()
     })
 }
 
-
+// 连接
 function connect(callback) {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         var port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
@@ -19,7 +20,7 @@ function connect(callback) {
     })
 }
 
-
+// 当前tab执行
 function exectab(callback) {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         callback(tabs[0].id)
@@ -27,29 +28,40 @@ function exectab(callback) {
 }
 
 
+// 拼接要执行的js代码
 function jscode(process) {
-    let exec_code;
+    let exec_code = "(function(){ \n";
     if(process["tag"].startsWith(".")) {
-        exec_code = 'var robot_node = document.getElementsByClassName("' + process["tag"].substring(1) + '")[' + process["n"] + '];'
+        exec_code += 'var robot_node = document.getElementsByClassName("' + process["tag"].substring(1) + '")[' + process["n"] + '];'
     }else if(process["tag"].startsWith("#")) {
-        exec_code = 'var robot_node = document.getElementById("' + process["tag"].substring(1) + '")[' + process["n"] + '];'
+        exec_code += 'var robot_node = document.getElementById("' + process["tag"].substring(1) + '");'
     }else{
-        exec_code = 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
+        exec_code += 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
     }
     if (process["opera"] == "click") {
-        exec_code = exec_code + "robot_node.click();"
+        exec_code += "robot_node.click();"
     } else if (process["opera"] == "value") {
-        exec_code = exec_code + "robot_node.value=\"" + process["value"] + "\";";
+        /**
+         * 为react兼容
+         */
+        exec_code += "let lastValue = robot_node.value;"
+        exec_code += "robot_node.value=\"" + process["value"] + "\";";
+        exec_code += "let event = new Event('input', { bubbles: true });";
+        exec_code += "event.simulated = true;";
+        exec_code += "let tracker = robot_node._valueTracker;";
+        exec_code += "if (tracker) { tracker.setValue(lastValue); }\n";
+        exec_code += "robot_node.dispatchEvent(event);";
     } else if (process["opera"] == "refresh") {
-        exec_code = exec_code + "window.location.reload();";
+        exec_code += "window.location.reload();";
     } else if (process["opera"] == "pagejump") {
-        exec_code = exec_code + "window.location.href=\"" + process["value"] + "\";";
+        exec_code += "window.location.href=\"" + process["value"] + "\";";
     }
-    console.log(exec_code);
+    exec_code += "\n})();";
+    console.log(exec_code)
     return exec_code;
 }
 
-
+// 根据存储数据更新主页
 function refresh_cases() {
     get_my_robot(my_robot => {
         if (my_robot == undefined) {
@@ -79,6 +91,8 @@ function refresh_cases() {
     new ClipboardJS('.export_case');
 }
 
+
+// 更新单个事务的流程
 function refresh_process(case_name) {
     get_my_robot(my_robot => {
         var data = my_robot[case_name];
@@ -111,9 +125,12 @@ function refresh_process(case_name) {
     })
 }
 
+// 主要
 $(document).ready(function() {
 
+    // 筛选器
     var tag_types = ["class/id选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+    // 操作
     var operas = ["click", "value", "refresh", "pagejump"];
     var case_name = "";
     var init_select = 1;
@@ -122,6 +139,7 @@ $(document).ready(function() {
 
     $('.modal').modal();
 
+    // 点击事务进入流程页
     $("#cases").on("click", ".case_name", function() {
         $("#case_view").hide();
         $("#process_view").show();
@@ -129,6 +147,7 @@ $(document).ready(function() {
         refresh_process(case_name);
     })
 
+    // 点击删除事务
     $("#cases").on("click", ".del_case", function() {
         var case_name = $(this).parent().parent().attr("id")
         get_my_robot(my_robot => {
@@ -137,6 +156,7 @@ $(document).ready(function() {
         })
     })
 
+    // 点击删除一个事件
     $("#process_list").on("click", "#process_del", function() {
         var processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
         get_my_robot(my_robot => {
@@ -147,6 +167,7 @@ $(document).ready(function() {
         })
     })
 
+    // 添加事务
     $("#add_case").click(function() {
         var new_case_name = $("#case_name_input").val();
         get_my_robot(my_robot => {
@@ -159,6 +180,7 @@ $(document).ready(function() {
         });
     });
 
+    // 导入事务
     $("#inport_case").click(function() {
         try{
             let case_content = JSON.parse($("#inport_case_input").val());
@@ -176,11 +198,13 @@ $(document).ready(function() {
         }
     })
 
+    // 返回测试
     $("#case_back").click(function() {
         $("#case_view").show();
         $("#process_view").hide();
     })
 
+    // 添加流程
     $("#add_process").click(function() {
         $("body").css("width", "150px");
         $("#process_view").hide();
@@ -205,6 +229,7 @@ $(document).ready(function() {
         }
     });
 
+    // 筛选html标签
     $(".sel_tag").change(function() {
         var selected_tag = $(this).val();
         if(selected_tag == "class/id选择器") {
@@ -239,6 +264,7 @@ $(document).ready(function() {
         })
     })
 
+    // 筛选class和id
     $(".select_class_id").change(function() {
         var select_class_id = $(this).val();
         connect(port => {
@@ -266,6 +292,7 @@ $(document).ready(function() {
         })
     })
 
+    // 选择一个筛选后的元素
     $("#tag_list").on("click", ".tag_spec", function(e) {
         $("body").css("width", "250px");
         $("#tag_list").css("margin-top", "0px");
@@ -275,6 +302,7 @@ $(document).ready(function() {
         $(".chose_class_id").hide();
     })
 
+    // 返回到筛选器
     $("#tag_list").on("click", "#hasseled", function(e) {
         $(".chose_tag").show();
         $(".chose_opera").hide();
@@ -290,8 +318,10 @@ $(document).ready(function() {
         }
     })
 
+    // 连接当前页面
     exectab(tab_id => {
 
+        // 添加流程
         $("#process_add").click(function() {
             let data = $("#seldn").attr("data").split("&");
             process_data = {
@@ -309,7 +339,8 @@ $(document).ready(function() {
                 $("#process_view").show();
             })
         })
-
+        
+        // 添加过程测试运行
         $("#test_run").click(function() {
             let data = $("#seldn").attr("data").split("&");
             process_data = {
@@ -321,6 +352,7 @@ $(document).ready(function() {
             chrome.tabs.executeScript(tab_id, { code: jscode(process_data) });
         })
 
+        // 流程页测试运行
         $("#process_list").on("click", "#process_test_run", function() {
             var processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
             get_my_robot(my_robot => {
@@ -328,6 +360,7 @@ $(document).ready(function() {
             })
         })
 
+        // 运行事务，调用background
         $("#cases").on("click", ".run_case", function() {
             var case_name = $(this).parent().parent().attr("id");
             var save_run = $(this).parent().html();
@@ -346,6 +379,7 @@ $(document).ready(function() {
             })
         })
 
+        // 轮播事务
         $("#cases").on("click", ".lun_case", function() {
             var case_name = $(this).parent().parent().attr("id");
             var save_run = $(this).parent().html();
@@ -367,6 +401,7 @@ $(document).ready(function() {
             })
         })
 
+        // 导入事务
         $("#cases").on("click", ".export_case", function() {
             $(this).html("导出成功");
             var that = $(this);

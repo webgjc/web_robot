@@ -1,6 +1,10 @@
 # web_robot
 自动化网页操作
 
+## 详细说明
+请见博客
+[使用教程](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)
+
 ## 已有功能
 1. 管理多个事务，每个事务有多个过程，每个过程对应一种操作   
 2. 新增操作中方便的页面元素筛选器，css/id筛选器

@@ -21,9 +21,7 @@
     }],
     "permissions": [
         "storage",
-        "notifications",
         "<all_urls>",
-        "tabs",
-        "contextMenus"
+        "tabs"
     ]
 }

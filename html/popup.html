@@ -17,7 +17,7 @@
         }
         
         .contain {
-            height: 200px;
+            height: 200px;;
             overflow: scroll;
         }
         
@@ -104,6 +104,12 @@
                         <input type="text" id="case_name_input">
                         <label for="case_name_input">事务名</label>
                     </div>
+                    <div class="input-field">
+                        <select class="select_case_type">
+                            <option value="process" selected>流程事务</option>
+                            <option value="sourcecode">源码事务</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="add_case">确认</a>
@@ -122,10 +128,6 @@
             </div>
         </div>
         <div id="process_view" style="display: none;">
-            <!-- <div class="header">
-                        <span class="h5">流程：</span>
-                        <a href="#"><span class="h5">添加流程</span></a>
-                    </div> -->
             <ul class="collection" id="process_list">
             </ul>
             <div class="add_btn">
@@ -163,6 +165,14 @@
                 <a class="waves-effect waves-teal btn-flat" href="#" id="test_run">测试运行</a>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="process_add">添加</a>
             </div>
+        </div>
+        <div id="sourcecode_view" style="display: none;">
+            <div class="input-field col s12">
+                <textarea id="jssourcecode" class="materialize-textarea"></textarea>
+                <label for="jssourcecode">原生js代码</label>
+            </div>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="edit_source">修改代码</a>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="source_back">返回主页</a>
         </div>
     </div>
 

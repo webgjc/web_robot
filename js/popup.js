@@ -57,7 +57,6 @@ function jscode(process) {
         exec_code += "window.location.href=\"" + process["value"] + "\";";
     }
     exec_code += "\n})();";
-    console.log(exec_code)
     return exec_code;
 }
 
@@ -76,7 +75,6 @@ function refresh_cases() {
         } else {
             var cases = "";
             for (let i in my_robot) {
-                console.log(my_robot[i]);
                 let tr = '<tr id=' + i + '> \
                             <td> \
                                 <a href="#" class="case_name">' + i + '</a> \
@@ -143,7 +141,7 @@ $(document).ready(function() {
     refresh_cases();
 
     $('.modal').modal();
-    $(".select_case_type").material_select();
+    $("#select_case_type").material_select();
 
     // 点击事务进入流程页
     $("#cases").on("click", ".case_name", function() {
@@ -193,7 +191,7 @@ $(document).ready(function() {
             }
             my_robot[new_case_name] = {
                 "case_name": new_case_name,
-                "case_type": $(".select_case_type").val(),
+                "case_type": $("#select_case_type").val(),
                 "case_process": [],
                 "case_sourcecode": ""
             };

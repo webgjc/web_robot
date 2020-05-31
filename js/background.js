@@ -52,3 +52,35 @@ function execute(the_case, tab_id) {
 //         }
 //     }
 // }
+function simexecute(case_process) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        var port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
+        var event;
+        var process_wait = 0;
+        port.onMessage.addListener(function(msg) {
+            if (msg.type = "get_position") {
+                let postdata = {
+                    x: msg.x,
+                    y: msg.y,
+                    opera: event["opera"],
+                    value: event["value"]
+                };
+                fetch("http://localhost:12580/", {
+                    method: "POST",
+                    body: JSON.stringify(postdata)
+                });
+            }
+        })
+        for(let i in case_process) {
+            process_wait = process_wait + case_process[i]["wait"] * 1000;
+            setTimeout(function() {
+                event = case_process[i];
+                port.postMessage({
+                    type: "get_position",
+                    tag: event["tag"],
+                    n: event["n"],
+                });
+            }, process_wait);
+        }
+    })
+}

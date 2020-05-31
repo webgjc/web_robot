@@ -5,6 +5,27 @@ function get_my_robot(callback) {
     })
 }
 
+/**
+数据存储格式 
+storage key: my_robot
+{
+    事务名: {
+        case_name(事务名): "case",
+        case_process(事务流程): [
+            {
+                n(选择器第n个): 0,
+                opera(操作): "click",
+                tag(标签/class/id): "html",
+                value(设值): "",
+                wait(前置等待时间): 1,
+            }
+        ],
+        case_sourcecode(源码事务的js源码): "",
+        case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)"
+    },
+}
+*/
+
 // 设置数据存储
 function set_my_robot(new_robot, callback) {
     chrome.storage.local.set({ "my_robot": new_robot }, function() {
@@ -81,6 +102,7 @@ function refresh_cases() {
                             </td> \
                             <td> \
                                 <a href="#" class="run_case">运行</a> \
+                                <a href="#" class="sim_run">受控运行</a>\
                                 <a href="#" class="del_case">删除</a> \
                                 <a href="#" class="lun_case">轮播</a> \
                                 <a href="#" class="export_case">导出</a> \
@@ -163,7 +185,7 @@ $(document).ready(function() {
 
     // 点击删除事务
     $("#cases").on("click", ".del_case", function() {
-        var case_name = $(this).parent().parent().attr("id")
+        var case_name = $(this).parent().parent().attr("id");
         get_my_robot(my_robot => {
             delete(my_robot[case_name]);
             set_my_robot(my_robot, refresh_cases);
@@ -179,7 +201,7 @@ $(document).ready(function() {
                 refresh_process(case_name);
             })
         })
-    })
+    });
 
     // 添加事务
     $("#add_case").click(function() {
@@ -214,18 +236,18 @@ $(document).ready(function() {
         }catch{
             alert("添加失败");
         }
-    })
+    });
 
     // 返回主页
     $("#case_back").click(function() {
         $("#case_view").show();
         $("#process_view").hide();
-    })
+    });
 
     $("#source_back").click(function() {
         $("#case_view").show();
         $("#sourcecode_view").hide();
-    })
+    });
 
     // 添加流程
     $("#add_process").click(function() {
@@ -302,9 +324,6 @@ $(document).ready(function() {
                         let value = select_class_id + "&" + msg.num[i];
                         options = options + "<a href='#' class='collection-item tag_spec'>" + value + "</a>";
                     }
-                    // if(msg.num.length > 0) {
-                    //     options += "<a href='#' class='collection-item tag_spec'>" + select_class_id + "&ALL" + "</a>"
-                    // }
                     $("#tag_list").html(options);
                     $(".tag_spec").mouseover(function(e) {
                         port.postMessage({
@@ -390,6 +409,15 @@ $(document).ready(function() {
             that.html("导出");
         }, 1000);
     })
+
+    $("#cases").on("click", ".sim_run", function() {
+        var case_name = $(this).parent().parent().attr("id");
+        get_my_robot(my_robot => {
+            var bg = chrome.extension.getBackgroundPage();
+            bg.simexecute(my_robot[case_name]["case_process"]);
+            window.close();
+        })
+    });
 
     // 连接当前页面
     exectab(tab_id => {

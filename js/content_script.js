@@ -86,10 +86,20 @@ chrome.runtime.onConnect.addListener(function(port) {
             }else if (msg.type == "select_tag") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];
                 robot_make_select_canvass(dom);
-            } else if (msg.type == "click_tag") {
-                let dom = document.getElementsByTagName(msg.tag)[msg.n];
-                console.log(dom);
-                dom.click();
+            } else if (msg.type == "get_position") {
+                let posidom;
+                if(msg.tag.startsWith(".")) {
+                    posidom = document.getElementsByClassName(msg.tag.substring(1))[msg.n];
+                } else if(msg.tag.startsWith("#")) {
+                    posidom = document.getElementById(msg.tag.substring(1));
+                } else {
+                    posidom = document.getElementsByTagName(msg.tag)[msg.n];
+                }
+                port.postMessage({
+                    type: msg.type,
+                    x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
+                    y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.screen.height - window.screen.availHeight)
+                })
             } else if (msg.type == "set_value") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];
                 dom.value = msg.value;

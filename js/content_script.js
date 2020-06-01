@@ -98,7 +98,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                 port.postMessage({
                     type: msg.type,
                     x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
-                    y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.screen.height - window.screen.availHeight)
+                    y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
                 })
             } else if (msg.type == "set_value") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];

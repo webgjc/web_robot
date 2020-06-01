@@ -12,7 +12,7 @@ def web_simulation():
     data = json.loads(request.get_data(as_text=True))
     print(data)
     client.run(data)
-    return {"code": 200}
+    return "success"
 
 
 if __name__ == "__main__":

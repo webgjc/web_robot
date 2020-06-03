@@ -137,10 +137,19 @@ function refresh_process(case_name) {
                             </div> \
                             <div class="row "> \
                                 <a href="# "> \
-                                    <div class="col s6" id="process_test_run" >test</div> \
+                                    <div class="col s2" id="process_test_run" >test</div> \
+                                </a> \
+                                <a href="#"> \
+                                    <div class="col s2" id="process_edit">编辑</div> \
+                                </a> \
+                                <a href="#"> \
+                                    <div class="col s2" id="process_move">上移</div> \
+                                </a> \
+                                <a href="#"> \
+                                    <div class="col s2" id="process_copy">复制</div> \
                                 </a> \
                                 <a href="# "> \
-                                    <div class="col s6 " id="process_del">删除</div> \
+                                    <div class="col s2" id="process_del">删除</div> \
                                 </a> \
                             </div> \
                         </li> ';
@@ -148,6 +157,21 @@ function refresh_process(case_name) {
         }
         $("#process_list").html(process_li);
     })
+}
+
+function init_process_opera(tag_types, operas) {
+    let tag_type_content = "<option value='选择标签类型' selected disabled>选择标签类型</option>";
+    for (let i = 0; i < tag_types.length; i++) {
+        tag_type_content = tag_type_content + "<option value=" + tag_types[i] + ">" + tag_types[i] + "</option>";
+    }
+    $(".sel_tag").html(tag_type_content);
+
+    let sel_opera_content = "<option value='选择操作' selected disabled>选择操作</option>";
+    for (let i = 0; i < operas.length; i++) {
+        sel_opera_content = sel_opera_content + "<option value=" + operas[i] + ">" + operas[i] + "</option>";
+    }
+    $("#sel_opera").html(sel_opera_content);
+    $("select").material_select();
 }
 
 // 主要
@@ -158,6 +182,7 @@ $(document).ready(function() {
     // 操作
     var operas = ["click", "value", "refresh", "pagejump"];
     var case_name = "";
+    var edit_prcess_n = -1;
     var init_select = 1;
 
     refresh_cases();
@@ -186,10 +211,12 @@ $(document).ready(function() {
     // 点击删除事务
     $("#cases").on("click", ".del_case", function() {
         var case_name = $(this).parent().parent().attr("id");
-        get_my_robot(my_robot => {
-            delete(my_robot[case_name]);
-            set_my_robot(my_robot, refresh_cases);
-        })
+        if(confirm(`确认删除 ${case_name}`)) {
+            get_my_robot(my_robot => {
+                delete(my_robot[case_name]);
+                set_my_robot(my_robot, refresh_cases);
+            })
+        }
     })
 
     // 点击删除一个事件
@@ -258,18 +285,7 @@ $(document).ready(function() {
         $(".chose_opera").hide();
         $("#tag_list").css("margin-top", "-20px");
         if (init_select == 1) {
-            let tag_type_content = "<option value='选择标签类型' selected disabled>选择标签类型</option>";
-            for (let i = 0; i < tag_types.length; i++) {
-                tag_type_content = tag_type_content + "<option value=" + tag_types[i] + ">" + tag_types[i] + "</option>";
-            }
-            $(".sel_tag").html(tag_type_content);
-
-            let sel_opera_content = "<option value='选择操作' selected disabled>选择操作</option>";
-            for (let i = 0; i < operas.length; i++) {
-                sel_opera_content = sel_opera_content + "<option value=" + operas[i] + ">" + operas[i] + "</option>";
-            }
-            $("#sel_opera").html(sel_opera_content);
-            $("select").material_select();
+            init_process_opera(tag_types, operas);
             init_select = 0;
         }
     });
@@ -363,10 +379,10 @@ $(document).ready(function() {
         }
     })
 
-    // 添加流程
+    // 添加 / 保存 流程
     $("#process_add").click(function() {
         let data = $("#seldn").attr("data").split("&");
-        process_data = {
+        let process_data = {
             "tag": data[0],
             "n": data[1],
             "opera": $("#sel_opera").val(),
@@ -374,7 +390,13 @@ $(document).ready(function() {
             "wait": $("#num_wait").val()
         };
         get_my_robot(my_robot => {
-            my_robot[case_name]["case_process"].push(process_data);
+            if($(this).text() === "保存") {
+                my_robot[case_name]["case_process"][edit_prcess_n] = process_data;
+                $(this).text("添加");
+                edit_prcess_n = -1;
+            }else{
+                my_robot[case_name]["case_process"].push(process_data);
+            }
             set_my_robot(my_robot);
             refresh_process(case_name);
             $("#new_process").hide();
@@ -436,9 +458,60 @@ $(document).ready(function() {
 
         // 流程页测试运行
         $("#process_list").on("click", "#process_test_run", function() {
-            var processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
+            let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
             get_my_robot(my_robot => {
                 chrome.tabs.executeScript(tab_id, { code: jscode(my_robot[case_name]["case_process"][processs_n]) });
+            })
+        })
+
+        // 编辑单个流程事件
+        $("#process_list").on("click", "#process_edit", function() {
+            let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
+            edit_prcess_n = processs_n;
+            $("#process_view").hide();
+            $("#new_process").show();
+            $(".chose_opera").show();
+            $(".chose_tag").hide();
+            $(".chose_opera").show();
+            $(".chose_class_id").hide();
+            if (init_select == 1) {
+                init_process_opera(tag_types, operas);
+                init_select = 0;
+            }
+            $("#tag_list").css("margin-top", "0px");
+            get_my_robot(my_robot => {
+                let the_process =  my_robot[case_name]["case_process"][processs_n];
+                let select_tag = `${the_process.tag}&${the_process.n}`;
+                $("#sel_opera").val(the_process.opera);
+                $("#sel_opera option").attr("selected", false);
+                $(`#sel_opera option[value='${the_process.opera}']`).attr("selected", true);
+                $("select").material_select();
+                $("#num_wait").val(the_process.wait);
+                $("#process_add").text("保存");
+                $("#tag_list").html(`<div id='seldn' class='collection-item' data=${select_tag}><a href='#' id='hasseled'>已选: ${select_tag}</a></div>`);
+            })
+        })
+
+        $("#process_list").on("click", "#process_move", function() {
+            let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
+            get_my_robot(my_robot => {
+                if(processs_n > 0) {
+                    let tmp = my_robot[case_name]["case_process"][processs_n-1];
+                    my_robot[case_name]["case_process"][processs_n-1] = my_robot[case_name]["case_process"][processs_n];
+                    my_robot[case_name]["case_process"][processs_n] = tmp;
+                }
+                set_my_robot(my_robot);
+                refresh_process(case_name);
+            })
+        })
+
+        $("#process_list").on("click", "#process_copy", function() {
+            let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
+            get_my_robot(my_robot => {
+                let tmp = my_robot[case_name]["case_process"][processs_n];
+                my_robot[case_name]["case_process"].splice(processs_n, 0, tmp);
+                set_my_robot(my_robot);
+                refresh_process(case_name);
             })
         })
 

@@ -39,6 +39,10 @@ v1.2
 1. 新增事务受控运行模式，运行于background中
 2. 新增本地web服务，用于鼠标键盘模拟流程的受控执行
 
+v1.2.1
+1. 删除事务新增校验
+2. 实现流程中事件的复制，移动，编辑
+
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)
 3. [官方轮子](https://developer.chrome.com/extensions)

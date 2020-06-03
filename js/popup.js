@@ -482,6 +482,12 @@ $(document).ready(function() {
             get_my_robot(my_robot => {
                 let the_process =  my_robot[case_name]["case_process"][processs_n];
                 let select_tag = `${the_process.tag}&${the_process.n}`;
+                if(the_process.value) {
+                    $("#set_value").show();
+                    $("#ssv").val(the_process.value);
+                }else{
+                    $("#set_value").hide();
+                }
                 $("#sel_opera").val(the_process.opera);
                 $("#sel_opera option").attr("selected", false);
                 $(`#sel_opera option[value='${the_process.opera}']`).attr("selected", true);

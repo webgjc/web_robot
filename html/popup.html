@@ -108,6 +108,7 @@
                         <select id="select_case_type">
                             <option value="process" selected>流程事务</option>
                             <option value="sourcecode">源码事务</option>
+                            <option value="control">受控事务</option>
                         </select>
                     </div>
                 </div>
@@ -172,7 +173,15 @@
                 <label for="jssourcecode">原生js代码</label>
             </div>
             <a class="waves-effect waves-teal btn-flat" href="#" id="edit_source">修改代码</a>
-            <a class="waves-effect waves-teal btn-flat" href="#" id="source_back">返回主页</a>
+            <a class="waves-effect waves-teal btn-flat source_back" href="#">返回主页</a>
+        </div>
+        <div id="control_view" style="display: none;">
+            <div class="input-field col s12">
+                <input id="control_url" type="text">
+                <label for="control_url">受控地址</label>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="edit_control_url">修改地址</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="record_opera">录制操作</a>
+            </div>
         </div>
     </div>
 

@@ -21,6 +21,7 @@ storage key: my_robot
             }
         ],
         case_sourcecode(源码事务的js源码): "",
+        control_url(受控地址): "",
         case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)"
     },
 }
@@ -194,15 +195,20 @@ $(document).ready(function() {
     $("#cases").on("click", ".case_name", function() {
         case_name = $(this).text();
         get_my_robot(my_robot => {
-            if(my_robot[case_name]["case_type"] == "process") {
+            if(my_robot[case_name]["case_type"] === "process") {
                 $("#case_view").hide();
                 $("#process_view").show();
                 refresh_process(case_name);
-            }else{
+            }else if(my_robot[case_name]["case_type"] === "sourcecode"){
                 $("#case_view").hide();
                 $("#jssourcecode").val(my_robot[case_name]["case_sourcecode"]);
-                $('#jssourcecode').trigger('autoresize');
+                $("#jssourcecode").trigger('autoresize');
                 $("#sourcecode_view").show();
+                Materialize.updateTextFields();
+            }else{
+                $("#case_view").hide();
+                $("#control_url").val(my_robot[case_name]["control_url"]);
+                $("#control_view").show();
                 Materialize.updateTextFields();
             }
         })
@@ -242,7 +248,8 @@ $(document).ready(function() {
                 "case_name": new_case_name,
                 "case_type": $("#select_case_type").val(),
                 "case_process": [],
-                "case_sourcecode": ""
+                "case_sourcecode": "",
+                "control_url": ""
             };
             set_my_robot(my_robot, refresh_cases);
         });
@@ -271,9 +278,10 @@ $(document).ready(function() {
         $("#process_view").hide();
     });
 
-    $("#source_back").click(function() {
+    $(".source_back").click(function() {
         $("#case_view").show();
         $("#sourcecode_view").hide();
+        $("#control_view").hide();
     });
 
     // 添加流程
@@ -433,13 +441,35 @@ $(document).ready(function() {
     })
 
     $("#cases").on("click", ".sim_run", function() {
-        var case_name = $(this).parent().parent().attr("id");
+        let case_name = $(this).parent().parent().attr("id");
         get_my_robot(my_robot => {
             var bg = chrome.extension.getBackgroundPage();
             bg.simexecute(my_robot[case_name]["case_process"]);
             window.close();
         })
     });
+
+    $("#edit_control_url").click(function() {
+        get_my_robot(my_robot => {
+            my_robot[case_name]["control_url"] = $("#control_url").val();
+            set_my_robot(my_robot);
+            $("#case_view").show();
+            $("#control_view").hide();
+        })
+    })
+
+    $("#record_opera").click(function() {
+        if(confirm("确认开始录制？按ESC结束录制")){
+            get_my_robot(my_robot => {  
+                my_robot[case_name]["control_url"] = $("#control_url").val();
+                set_my_robot(my_robot);
+                fetch("http://127.0.0.1:12580/record/?case_name=" + case_name).then(function(){
+                    chrome.tabs.create({url: $("#control_url").val()});   
+                    window.close();
+                })
+            })
+        }
+    })
 
     // 连接当前页面
     exectab(tab_id => {
@@ -538,11 +568,16 @@ $(document).ready(function() {
                     setTimeout(function() {
                         that.html(save_run);
                     }, process_wait)
-                }else{
+                }else if(my_robot[case_name]["case_type"] === "sourcecode"){
                     chrome.tabs.executeScript(tab_id, {code: source_jscode(my_robot[case_name]["case_sourcecode"])})
                     setTimeout(function() {
                         that.html(save_run);
                     }, 1000)
+                }else{
+                    fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(respose => {
+                        chrome.tabs.create({url: my_robot[case_name]["control_url"]});     
+                        window.close();
+                    })
                 }
             })
         })

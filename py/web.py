@@ -6,6 +6,7 @@ from clientexec import WebClientExec
 
 
 app = Flask(__name__)
+PYTHON_ENV = "./venv/bin/python"
 
 
 @app.route("/", methods=["POST"])
@@ -19,14 +20,14 @@ def web_simulation():
 @app.route("/record/", methods=["GET"])
 def controller_listen():
     case_name = request.args.get('case_name')
-    os.system("./venv/bin/python py/controller.py record " + case_name + " 2>&1 &")
+    os.system(PYTHON_ENV + " py/controller.py record " + case_name + " 2>&1 &")
     return "success"
 
 
 @app.route("/recover/", methods=["GET"])
 def controller_recover():
     case_name = request.args.get('case_name')
-    os.system("./venv/bin/python py/controller.py recover " + case_name + " 2>&1 &")
+    os.system(PYTHON_ENV + " py/controller.py recover " + case_name + " 2>&1 &")
     return "success"
 
 

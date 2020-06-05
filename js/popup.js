@@ -101,14 +101,18 @@ function refresh_cases() {
                             <td> \
                                 <a href="#" class="case_name">' + i + '</a> \
                             </td> \
-                            <td> \
-                                <a href="#" class="run_case">运行</a> \
-                                <a href="#" class="sim_run">受控运行</a>\
-                                <a href="#" class="del_case">删除</a> \
-                                <a href="#" class="lun_case">轮播</a> \
-                                <a href="#" class="export_case">导出</a> \
-                            </td> \
-                        </tr>';
+                            <td>';
+                if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "sourcecode") {
+                    tr += '<a href="#" class="run_case">运行</a> ';
+                }
+                if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "control") {
+                    tr += '<a href="#" class="sim_run">受控运行</a> ';
+                }                            
+                tr += '<a href="#" class="del_case">删除</a> ';
+                if(my_robot[i]["case_type"] === "process") {
+                    tr += '<a href="#" class="lun_case">轮播</a> ';
+                }
+                tr += '<a href="#" class="export_case">导出</a></td></tr>';
                 cases = cases + tr;
             }
             $("#cases").html(cases);
@@ -443,9 +447,16 @@ $(document).ready(function() {
     $("#cases").on("click", ".sim_run", function() {
         let case_name = $(this).parent().parent().attr("id");
         get_my_robot(my_robot => {
-            var bg = chrome.extension.getBackgroundPage();
-            bg.simexecute(my_robot[case_name]["case_process"]);
-            window.close();
+            if(my_robot[case_name]["case_type"] === "process") {
+                var bg = chrome.extension.getBackgroundPage();
+                bg.simexecute(my_robot[case_name]["case_process"]);
+                window.close();
+            }else {
+                fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(respose => {
+                    chrome.tabs.create({url: my_robot[case_name]["control_url"]});     
+                    window.close();
+                })
+            }
         })
     });
 
@@ -574,10 +585,7 @@ $(document).ready(function() {
                         that.html(save_run);
                     }, 1000)
                 }else{
-                    fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(respose => {
-                        chrome.tabs.create({url: my_robot[case_name]["control_url"]});     
-                        window.close();
-                    })
+                    return;
                 }
             })
         })

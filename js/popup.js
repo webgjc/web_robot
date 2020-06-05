@@ -112,7 +112,9 @@ function refresh_cases() {
                 if(my_robot[i]["case_type"] === "process") {
                     tr += '<a href="#" class="lun_case">轮播</a> ';
                 }
-                tr += '<a href="#" class="export_case">导出</a></td></tr>';
+                if(my_robot[i]["case_type"] != "control") {
+                    tr += '<a href="#" class="export_case">导出</a></td></tr>';
+                }
                 cases = cases + tr;
             }
             $("#cases").html(cases);

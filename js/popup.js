@@ -60,22 +60,23 @@ function jscode(process) {
     }else{
         exec_code += 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
     }
-    if (process["opera"] == "click") {
+    exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
+    if (process["opera"] === "click") {
         exec_code += "robot_node.click();"
-    } else if (process["opera"] == "value") {
+    } else if (process["opera"] === "value") {
         /**
          * 为react兼容
          */
-        exec_code += "let lastValue = robot_node.value;"
+        exec_code += "let lastValue = robot_node.value;";
         exec_code += "robot_node.value=\"" + process["value"] + "\";";
         exec_code += "let event = new Event('input', { bubbles: true });";
         exec_code += "event.simulated = true;";
         exec_code += "let tracker = robot_node._valueTracker;";
         exec_code += "if (tracker) { tracker.setValue(lastValue); }\n";
         exec_code += "robot_node.dispatchEvent(event);";
-    } else if (process["opera"] == "refresh") {
+    } else if (process["opera"] === "refresh") {
         exec_code += "window.location.reload();";
-    } else if (process["opera"] == "pagejump") {
+    } else if (process["opera"] === "pagejump") {
         exec_code += "window.location.href=\"" + process["value"] + "\";";
     }
     exec_code += "\n})();";
@@ -92,7 +93,7 @@ function source_jscode(sourcecode) {
 // 根据存储数据更新主页
 function refresh_cases() {
     get_my_robot(my_robot => {
-        if (my_robot == undefined) {
+        if (my_robot === undefined) {
             set_my_robot({})
         } else {
             var cases = "";
@@ -112,7 +113,7 @@ function refresh_cases() {
                 if(my_robot[i]["case_type"] === "process") {
                     tr += '<a href="#" class="lun_case">轮播</a> ';
                 }
-                if(my_robot[i]["case_type"] != "control") {
+                if(my_robot[i]["case_type"] !== "control") {
                     tr += '<a href="#" class="export_case">导出</a></td></tr>';
                 }
                 cases = cases + tr;

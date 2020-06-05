@@ -1,28 +1,8 @@
-var ROBOT_DATA = {
-    "url": window.location.href,
-    "inputs": get_robot_inputs()
-}
-
-
-function get_robot_inputs() {
-    let robot_inputs = document.getElementsByTagName("input");
-    let res_inputs = [];
-    for (let i = 0; i < robot_inputs.length; i++) {
-        if (robot_inputs[i].type == "text" || robot_inputs[i].type == "password" ||
-            robot_inputs[i].type == "number" || robot_inputs[i].type == "email") {
-            res_inputs.push({
-                "n": i,
-                "name": robot_inputs[i].name,
-                "placeholder": robot_inputs[i].placeholder,
-            });
-        }
-    }
-    return res_inputs
-}
-
-
 function robot_make_select_canvass(dom) {
     // window.scrollTo(0, parseInt(dom.offsetTop / window.screen.height) * window.screen.height);
+    if(dom.offsetTop < window.scrollY || dom.offsetTop > (window.scrollY + window.innerHeight)) {
+        scroll_position(dom);
+    }
     let canvas = document.createElement("div");
     canvas.id = "robot_select";
     canvas.style.backgroundColor = "red";
@@ -39,11 +19,15 @@ function robot_make_select_canvass(dom) {
     }, 1000)
 }
 
+function scroll_position(dom) {
+    window.scrollTo(dom.offsetLeft, dom.offsetTop - window.innerHeight / 2);
+}
+
 
 chrome.runtime.onConnect.addListener(function(port) {
-    if (port.name == "robot") {
+    if (port.name === "robot") {
         port.onMessage.addListener(function(msg) {
-            if (msg.type == "search_tag") {
+            if (msg.type === "search_tag") {
                 let nums = Array();
                 for (let i = 0; i < document.getElementsByTagName(msg.tag).length; i++) {
                     if (document.getElementsByTagName(msg.tag)[i].offsetHeight > 0) {
@@ -54,7 +38,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                     type: msg.type,
                     num: nums
                 });
-            } else if (msg.type == "search_class_id") {
+            } else if (msg.type === "search_class_id") {
                 let nums = Array();
                 if(msg.content.startsWith(".")) {
                     let content = msg.content.substring(1);
@@ -74,7 +58,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                     type: msg.type,
                     num: nums
                 });
-            } else if (msg.type == "select_class_id") {
+            } else if (msg.type === "select_class_id") {
                 let dom;
                 if(msg.content.startsWith(".")) {
                     dom = document.getElementsByClassName(msg.content.substring(1))[msg.n];
@@ -83,10 +67,10 @@ chrome.runtime.onConnect.addListener(function(port) {
                     dom = document.getElementById(msg.content.substring(1));
                 }
                 robot_make_select_canvass(dom);
-            }else if (msg.type == "select_tag") {
+            }else if (msg.type === "select_tag") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];
                 robot_make_select_canvass(dom);
-            } else if (msg.type == "get_position") {
+            } else if (msg.type === "get_position") {
                 let posidom;
                 if(msg.tag.startsWith(".")) {
                     posidom = document.getElementsByClassName(msg.tag.substring(1))[msg.n];
@@ -95,17 +79,15 @@ chrome.runtime.onConnect.addListener(function(port) {
                 } else {
                     posidom = document.getElementsByTagName(msg.tag)[msg.n];
                 }
+                scroll_position(posidom);
                 port.postMessage({
                     type: msg.type,
                     x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
                     y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
                 })
-            } else if (msg.type == "set_value") {
-                let dom = document.getElementsByTagName(msg.tag)[msg.n];
-                dom.value = msg.value;
             } else {
                 console.log("what are you doing!")
             }
         })
     }
-})
+});

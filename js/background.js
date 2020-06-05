@@ -8,9 +8,10 @@ function jscode(process) {
     }else{
         exec_code += 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
     }
-    if (process["opera"] == "click") {
+    exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
+    if (process["opera"] === "click") {
         exec_code += "robot_node.click();"
-    } else if (process["opera"] == "value") {
+    } else if (process["opera"] === "value") {
         /**
          * 为react兼容
          */
@@ -21,9 +22,9 @@ function jscode(process) {
         exec_code += "let tracker = robot_node._valueTracker;";
         exec_code += "if (tracker) { tracker.setValue(lastValue); }\n";
         exec_code += "robot_node.dispatchEvent(event);";
-    } else if (process["opera"] == "refresh") {
+    } else if (process["opera"] === "refresh") {
         exec_code += "window.location.reload();";
-    } else if (process["opera"] == "pagejump") {
+    } else if (process["opera"] === "pagejump") {
         exec_code += "window.location.href=\"" + process["value"] + "\";";
     }
     exec_code += "\n})();";
@@ -52,13 +53,14 @@ function execute(the_case, tab_id) {
 //         }
 //     }
 // }
+
 function simexecute(case_process) {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         var port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
         var event;
         var process_wait = 0;
         port.onMessage.addListener(function(msg) {
-            if (msg.type = "get_position") {
+            if (msg.type === "get_position") {
                 let postdata = {
                     x: msg.x,
                     y: msg.y,

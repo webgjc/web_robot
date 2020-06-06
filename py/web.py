@@ -9,7 +9,12 @@ app = Flask(__name__)
 PYTHON_ENV = "./venv/bin/python"
 
 
-@app.route("/", methods=["POST"])
+@app.route("/", methods=["GET"])
+def health():
+    return "success"
+
+
+@app.route("/webexec/", methods=["POST"])
 def web_simulation():
     client = WebClientExec()
     data = json.loads(request.get_data(as_text=True))

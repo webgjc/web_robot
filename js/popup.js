@@ -53,6 +53,15 @@ function exectab(callback) {
     })
 }
 
+// 连接测试本地客户端
+function connect_client(callback) {
+    fetch("http://127.0.0.1:12580").then(() => {
+        callback()
+    }).catch(() => {
+        alert("本地WEB客户端连接失败");
+    })
+}
+
 
 // 拼接要执行的js代码
 function jscode(process) {
@@ -85,6 +94,7 @@ function jscode(process) {
     return exec_code;
 }
 
+// 运行源码
 function source_jscode(sourcecode) {
     let exec_code = "(function(){ \n";
     exec_code += sourcecode;
@@ -125,7 +135,6 @@ function refresh_cases() {
             $("#cases").html(cases);
         }
     })
-    // new ClipboardJS('.export_case');
 }
 
 
@@ -171,6 +180,7 @@ function refresh_process(case_name) {
     })
 }
 
+// 加载标签和操作
 function init_process_opera(tag_types, operas) {
     let tag_type_content = "<option value='选择标签类型' selected disabled>选择标签类型</option>";
     for (let i = 0; i < tag_types.length; i++) {
@@ -185,6 +195,92 @@ function init_process_opera(tag_types, operas) {
     $("#sel_opera").html(sel_opera_content);
     $("select").material_select();
 }
+
+// 等待
+function sleep(s) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve,s * 1000);
+    })
+}
+
+// 运行流程事务
+async function exec_run(process, tab_id) {
+    for(let i = 0;i < process.length; i++) {
+        await sleep(process[i]["wait"]);
+        chrome.tabs.executeScript(tab_id, {code: jscode(process[i])});
+    }
+}
+
+// 轮播
+async function lun_run(process,  tab_id, that, save_run) {
+    for(let i = 0;i < 100; i++) {
+        await exec_run(process, tab_id);
+    }
+    that.html(save_run);
+}
+
+// 获取自定义参数
+function process_get_argv(process) {
+    keys = [];
+    for(let i = 0;i < process.length; i++) {
+        let value = process[i].value;
+        if(value.startsWith('${') && value.endsWith("}")) {
+            let tmp = value.slice(2, -1);
+            if(keys.indexOf(tmp) === -1) {
+                keys.push(tmp);
+            }
+        }
+    }
+    return keys;
+}
+
+// 设置自定义参数
+function process_set_argv(process, kv) {
+    for(let i = 0;i < process.length; i++) {
+        let value = process[i].value;
+        if(value.startsWith('${') && value.endsWith("}")) {
+            let tmp = value.slice(2, -1);
+            process[i].value = kv[tmp];
+        }
+    }
+    return process;
+}
+
+// 运行
+async function process_run(process, tab_id, that, save_run) {
+    that.html("运行中");
+    let bg = chrome.extension.getBackgroundPage();
+    await bg.exec_run(process, tab_id);
+    that.html(save_run);
+}
+
+
+// 运行前参数设置
+function process_argv(process, callback) {
+    let argvs = process_get_argv(process);
+    if(argvs.length > 0) {
+        let tmp = "";
+        for(let i in argvs) {
+            tmp += `<div class="input-field col s12">\n` +
+                `<input id="argv_${argvs[i]}" type="text" >\n` +
+                `<label for="argv_${argvs[i]}">${argvs[i]}</label>\n` +
+                '</div>';
+        }
+        $("#argv_input").html(tmp);
+        $("#model3").modal("open");
+        $("#argv_submit").click(function() {
+            let kv = {};
+            for(let i in argvs) {
+                kv[argvs[i]] = $("#argv_" + argvs[i]).val();
+            }
+            process_set_argv(process, kv);
+            callback(process);
+        })
+    }else {
+        callback(process);
+    }
+}
+
 
 // 主要
 $(document).ready(function() {
@@ -210,7 +306,7 @@ $(document).ready(function() {
                 refresh_process(case_name);
             }else if(my_robot[case_name]["case_type"] === "sourcecode"){
                 $("#case_view").hide();
-                $("#jssourcecode").val(my_robot[case_name]["case_sourcecode"]).tigger('autoresize');
+                $("#jssourcecode").val(my_robot[case_name]["case_sourcecode"]).trigger('autoresize');
                 $("#sourcecode_view").show();
                 Materialize.updateTextFields();
             }else{
@@ -221,7 +317,6 @@ $(document).ready(function() {
             }
         })
     })
-
     // 点击删除事务
     .on("click", ".del_case", function() {
         var case_name = $(this).parent().parent().attr("id");
@@ -255,14 +350,24 @@ $(document).ready(function() {
         let case_name = $(this).parent().parent().attr("id");
         get_my_robot(my_robot => {
             if(my_robot[case_name]["case_type"] === "process") {
-                let bg = chrome.extension.getBackgroundPage();
-                bg.simexecute(my_robot[case_name]["case_process"]);
-                window.close();
+                process_argv(my_robot[case_name]["case_process"], process => {
+                    connect_client(() => {
+                        let bg = chrome.extension.getBackgroundPage();
+                        bg.simexecute(process);
+                        window.close();
+                    });
+                });
             }else {
-                fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(() => {
-                    chrome.tabs.create({url: my_robot[case_name]["control_url"]});
-                    window.close();
-                })
+                if(!my_robot[case_name]["control_url"]) {
+                    alert("受控地址不能为空");
+                    return;
+                }
+                connect_client(() => {
+                    fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(() => {
+                        chrome.tabs.create({url: my_robot[case_name]["control_url"]});
+                        window.close();
+                    })
+                });
             }
         })
     });
@@ -333,6 +438,7 @@ $(document).ready(function() {
         $("#new_process").show();
         $(".chose_tag").show();
         $(".chose_opera").hide();
+        $(".tag_select").css("margin-top", "60px");
         $("#tag_list").css("margin-top", "-20px");
         if (init_select === 1) {
             init_process_opera(tag_types, operas);
@@ -403,6 +509,7 @@ $(document).ready(function() {
         })
     });
 
+    // 自由筛选器
     $(".query_selecter").change(function() {
         let selecter = $(this).val();
         connect(port => {
@@ -433,7 +540,8 @@ $(document).ready(function() {
     // 选择一个筛选后的元素
     $("#tag_list").on("click", ".tag_spec", function() {
         $("body").css("width", "250px");
-        $("#tag_list").css("margin-top", "20px")
+        $(".tag_select").css("margin-top", "0px");
+        $("#tag_list").css("margin-top", "0px")
             .html("<div id='seldn' class='collection-item' data=" + $(this).text() + "><a href='#' id='hasseled'>已选: " + $(this).text() + "</a></div>");
         $(".chose_tag").hide();
         $(".chose_opera").show();
@@ -444,7 +552,8 @@ $(document).ready(function() {
         $(".chose_tag").show();
         $(".chose_opera").hide();
         $("body").css("width", "150px");
-        $("#tag_list").css("margin-top", "0px");
+        $(".tag_select").css("margin-top", "60px");
+        $("#tag_list").css("margin-top", "-20px");
     });
 
     $("#sel_opera").change(function() {
@@ -480,6 +589,7 @@ $(document).ready(function() {
         })
     });
 
+    // 修改源码事务
     $("#edit_source").click(function() {
         get_my_robot(my_robot => {
             my_robot[case_name]["case_sourcecode"] = $("#jssourcecode").val();
@@ -489,6 +599,7 @@ $(document).ready(function() {
         })
     });
 
+    // 修改受控事务地址
     $("#edit_control_url").click(function() {
         get_my_robot(my_robot => {
             my_robot[case_name]["control_url"] = $("#control_url").val();
@@ -498,14 +609,17 @@ $(document).ready(function() {
         })
     });
 
+    // 受控事务录制事件
     $("#record_opera").click(function() {
         if(confirm("确认开始录制？按ESC结束录制")){
             get_my_robot(my_robot => {  
                 my_robot[case_name]["control_url"] = $("#control_url").val();
                 set_my_robot(my_robot);
-                fetch("http://127.0.0.1:12580/record/?case_name=" + case_name).then(function(){
-                    chrome.tabs.create({url: $("#control_url").val()});   
-                    window.close();
+                connect_client(() => {
+                    fetch("http://127.0.0.1:12580/record/?case_name=" + case_name).then(function(){
+                        chrome.tabs.create({url: $("#control_url").val()});
+                        window.close();
+                    })
                 })
             })
         }
@@ -546,7 +660,7 @@ $(document).ready(function() {
                 init_process_opera(tag_types, operas);
                 init_select = 0;
             }
-            $("#tag_list").css("margin-top", "20px");
+            $(".tag_select").css("margin-top", "0px");
             get_my_robot(my_robot => {
                 let the_process =  my_robot[case_name]["case_process"][processs_n];
                 let select_tag = `${the_process.tag}&${the_process.n}`;
@@ -594,19 +708,13 @@ $(document).ready(function() {
             var case_name = $(this).parent().parent().attr("id");
             var save_run = $(this).parent().html();
             var that = $(this).parent();
-            that.html("运行中");
             get_my_robot(my_robot => {
                 if(my_robot[case_name]["case_type"] === "process") {
-                    var bg = chrome.extension.getBackgroundPage();
-                    bg.execute(my_robot[case_name]["case_process"], tab_id);
-                    var process_wait = 0;
-                    for (let i = 0; i < my_robot[case_name]["case_process"].length; i++) {
-                        process_wait = process_wait + my_robot[case_name]["case_process"][i]["wait"] * 1000;
-                    }
-                    setTimeout(function() {
-                        that.html(save_run);
-                    }, process_wait)
+                    process_argv(my_robot[case_name]["case_process"], process => {
+                        process_run(process, tab_id, that, save_run);
+                    });
                 }else if(my_robot[case_name]["case_type"] === "sourcecode"){
+                    that.html("运行中");
                     chrome.tabs.executeScript(tab_id, {code: source_jscode(my_robot[case_name]["case_sourcecode"])});
                     setTimeout(function() {
                         that.html(save_run);
@@ -622,18 +730,9 @@ $(document).ready(function() {
             that.html("运行中");
             get_my_robot(my_robot => {
                 if(my_robot[case_name]["case_type"] === "process") {
-                    var process_wait = 0;
-                    for (let n = 0; n < 100; n++) {
-                        for (let i = 0; i < my_robot[case_name]["case_process"].length; i++) {
-                            process_wait = process_wait + my_robot[case_name]["case_process"][i]["wait"] * 1000;
-                            setTimeout(function() {
-                                chrome.tabs.executeScript(tab_id, { code: jscode(my_robot[case_name]["case_process"][i]) });
-                            }, process_wait);
-                        }
-                    }
-                    setTimeout(function() {
-                        that.html(save_run);
-                    }, process_wait);
+                    process_argv(my_robot[case_name]["case_process"], process => {
+                        lun_run(process, tab_id, that, save_run);
+                    });
                 }else{
                     that.html("源码模式不支持轮播");
                     setTimeout(function() {

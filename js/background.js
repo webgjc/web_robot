@@ -55,35 +55,54 @@ function execute(the_case, tab_id) {
 //     }
 // }
 
+
+// 等待
+function sleep(s) {
+    return new Promise(function(resolve, reject) {
+        setTimeout(resolve,s * 1000);
+    })
+}
+
+// 运行流程事务
+async function exec_run(process, tab_id) {
+    for(let i = 0;i < process.length; i++) {
+        await sleep(process[i].wait);
+        chrome.tabs.executeScript(tab_id, {code: jscode(process[i])});
+    }
+}
+
+// 受控运行流程事务
+async function con_run(process, tabs) {
+    let port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
+    let event;
+    let process_wait = 0;
+    port.onMessage.addListener(function(msg) {
+        if (msg.type === "get_position") {
+            let postdata = {
+                x: msg.x,
+                y: msg.y,
+                opera: event["opera"],
+                value: event["value"]
+            };
+            fetch("http://127.0.0.1:12580/webexec/", {
+                method: "POST",
+                body: JSON.stringify(postdata)
+            })
+        }
+    });
+    for(let i = 0; i < process.length; i++) {
+        await sleep(process[i].wait);
+        event = process[i];
+        port.postMessage({
+            type: "get_position",
+            tag: process[i].tag,
+            n: process[i].n,
+        });
+    }
+}
+
 function simexecute(case_process) {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        var port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
-        var event;
-        var process_wait = 0;
-        port.onMessage.addListener(function(msg) {
-            if (msg.type === "get_position") {
-                let postdata = {
-                    x: msg.x,
-                    y: msg.y,
-                    opera: event["opera"],
-                    value: event["value"]
-                };
-                fetch("http://localhost:12580/", {
-                    method: "POST",
-                    body: JSON.stringify(postdata)
-                });
-            }
-        });
-        for(let i in case_process) {
-            process_wait = process_wait + case_process[i]["wait"] * 1000;
-            setTimeout(function() {
-                event = case_process[i];
-                port.postMessage({
-                    type: "get_position",
-                    tag: event["tag"],
-                    n: event["n"],
-                });
-            }, process_wait);
-        }
+        con_run(case_process, tabs);
     })
 }

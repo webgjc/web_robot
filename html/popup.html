@@ -17,7 +17,7 @@
         }
         
         .contain {
-            height: 250px;;
+            height: 280px;
             overflow: scroll;
         }
         
@@ -61,9 +61,8 @@
         
         .tag_select {
             max-height: 200px;
-            overflow: scroll;
             margin: 0px;
-            margin-top: -20px;
+            margin-top: 60px;
         }
         
         .collection-item {
@@ -75,6 +74,14 @@
         }
         .pc {
             width: 19%;
+        }
+        .chose_tag {
+            position: fixed;
+            top: 0px;
+            z-index: 999;
+            background: white;
+            margin: 0px;
+            height: 40px;
         }
     </style>
 </head>
@@ -163,7 +170,7 @@
                     </select>
                 </div>
                 <div class="input-field col s12" id="set_value" style="display: none">
-                    <input placeholder="设值" id="ssv" type="text">
+                    <input placeholder="设值/${自定义参数}" id="ssv" type="text">
                 </div>
                 <div class="input-field col s12">
                     <input id="num_wait" type="number" class="wait" value="1">
@@ -189,48 +196,12 @@
                 <a class="waves-effect waves-teal btn-flat" href="#" id="record_opera">录制操作</a>
             </div>
         </div>
+        <div id="model3" class="modal">
+            <div id="argv_input" class="row">
+            </div>
+            <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit" style="width: 100%; text-align: center;">确认</a>
+        </div>
     </div>
-
-    <!-- <div class="content ">
-        <div>
-            <button id="reload ">重连页面(刷新后操作)</button>
-        </div>
-        <div class="sel ">
-            <select name="tag_type " id="tag_type ">
-            <option value='选择标签类型' selected disabled>选择标签类型</option>
-        </select>
-        </div>
-        <div class="sel ">
-            <ul id="tagn ">
-            </ul>
-        </div>
-        <div class="opera ">
-            <select name="opera_select " id="opera_sel ">
-            <option value="opera_select " disabled selected>选择操作</option>
-            <option value="click ">click</option>
-            <option value="value ">set_value</option>
-            <option value="refresh ">refresh</option>
-        </select>
-        </div>
-        <div id="set_value " style="display: none ">
-            <input type="text " name="ssv " id="ssv ">
-        </div>
-        <div>
-            <input type="number " placeholder="执行间隔时间(秒) " id="wait_time " value="1 ">
-        </div>
-        <div>
-            <button id="test_run ">测试运行</button>
-            <button id="add_process ">添加到流程</button>
-            <button id="del_process ">删除最近流程</button>
-        </div>
-        <div>
-            <button id="run ">运行</button>
-        </div>
-        <div id="my_process ">
-            <ul id="process_list ">
-            </ul>
-        </div>
-    </div> -->
     <script type="text/javascript" src="../js/jquery.min.js "></script>
     <script type="text/javascript" src="../js/clipboard.min.js"></script>
     <script type="text/javascript" src="../js/materialize.min.js "></script>

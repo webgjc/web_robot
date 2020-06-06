@@ -1,8 +1,5 @@
 function robot_make_select_canvass(dom) {
-    // window.scrollTo(0, parseInt(dom.offsetTop / window.screen.height) * window.screen.height);
-    if(dom.offsetTop < window.scrollY || dom.offsetTop > (window.scrollY + window.innerHeight)) {
-        scroll_position(dom);
-    }
+    scroll_position(dom);
     let canvas = document.createElement("div");
     canvas.id = "robot_select";
     canvas.style.backgroundColor = "red";
@@ -16,11 +13,26 @@ function robot_make_select_canvass(dom) {
     document.body.appendChild(canvas);
     setTimeout(function() {
         document.getElementById("robot_select").remove();
-    }, 1000)
+    }, 1000);
+}
+
+function getAbsPoint(dom) {
+    let x = dom.offsetLeft;
+    let y = dom.offsetTop;
+    while(dom.offsetParent) {
+        dom = dom.offsetParent;
+        x += dom.offsetLeft;
+        y += dom.offsetTop;
+    }
+    return {'x': x, 'y': y};
 }
 
 function scroll_position(dom) {
-    window.scrollTo(dom.offsetLeft, dom.offsetTop - window.innerHeight / 2);
+    let domposi = getAbsPoint(dom);
+    if(domposi.y < window.scrollY || domposi.y > (window.scrollY + window.innerHeight * 0.8) ||
+        domposi.x < window.scrollX || domposi.x > (window.scrollX + window.innerWidth * 0.8)) {
+        window.scrollTo(domposi.x - window.innerWidth / 2, domposi.y - window.innerHeight / 2);
+    }
 }
 
 
@@ -85,8 +97,23 @@ chrome.runtime.onConnect.addListener(function(port) {
                     x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
                     y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
                 })
+            } else if (msg.type === "search_query_selecter") {
+                let doms = document.querySelectorAll(msg.content);
+                let nums = Array();
+                for (let i = 0; i < doms.length; i++) {
+                    if (doms[i].offsetHeight > 0) {
+                        nums.push(i)
+                    }
+                }
+                port.postMessage({
+                    type: msg.type,
+                    num: nums
+                })
+            } else if (msg.type === "select_query_selecter") {
+                let dom = document.querySelectorAll(msg.content)[msg.n];
+                robot_make_select_canvass(dom);
             } else {
-                console.log("what are you doing!")
+                console.log("what are you doing!");
             }
         })
     }

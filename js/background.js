@@ -1,12 +1,13 @@
+var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+
+
 // 拼接执行的js
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if(process["tag"].startsWith(".")) {
-        exec_code += 'var robot_node = document.getElementsByClassName("' + process["tag"].substring(1) + '")[' + process["n"] + '];'
-    }else if(process["tag"].startsWith("#")) {
-        exec_code += 'var robot_node = document.getElementById("' + process["tag"].substring(1) + '");'
+    if(tag_types.indexOf(process.tag) === -1) {
+        exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`
     }else{
-        exec_code += 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
+        exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`
     }
     exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
     if (process["opera"] === "click") {
@@ -15,8 +16,8 @@ function jscode(process) {
         /**
          * 为react兼容
          */
-        exec_code += "let lastValue = robot_node.value;"
-        exec_code += "robot_node.value=\"" + process["value"] + "\";";
+        exec_code += "let lastValue = robot_node.value;";
+        exec_code += `robot_node.value='${process.value}';`;
         exec_code += "let event = new Event('input', { bubbles: true });";
         exec_code += "event.simulated = true;";
         exec_code += "let tracker = robot_node._valueTracker;";
@@ -25,7 +26,7 @@ function jscode(process) {
     } else if (process["opera"] === "refresh") {
         exec_code += "window.location.reload();";
     } else if (process["opera"] === "pagejump") {
-        exec_code += "window.location.href=\"" + process["value"] + "\";";
+        exec_code += `window.location.href='${process.value}';`;
     }
     exec_code += "\n})();";
     return exec_code;
@@ -72,7 +73,7 @@ function simexecute(case_process) {
                     body: JSON.stringify(postdata)
                 });
             }
-        })
+        });
         for(let i in case_process) {
             process_wait = process_wait + case_process[i]["wait"] * 1000;
             setTimeout(function() {

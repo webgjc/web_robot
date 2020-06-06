@@ -1,3 +1,7 @@
+
+
+const tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+
 // 获取数据存储
 function get_my_robot(callback) {
     chrome.storage.local.get(["my_robot"], function(res) {
@@ -53,12 +57,10 @@ function exectab(callback) {
 // 拼接要执行的js代码
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if(process["tag"].startsWith(".")) {
-        exec_code += 'var robot_node = document.getElementsByClassName("' + process["tag"].substring(1) + '")[' + process["n"] + '];'
-    }else if(process["tag"].startsWith("#")) {
-        exec_code += 'var robot_node = document.getElementById("' + process["tag"].substring(1) + '");'
+    if(tag_types.indexOf(process.tag) === -1) {
+        exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`
     }else{
-        exec_code += 'var robot_node = document.getElementsByTagName("' + process["tag"] + '")[' + process["n"] + '];'
+        exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`
     }
     exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
     if (process["opera"] === "click") {
@@ -68,7 +70,7 @@ function jscode(process) {
          * 为react兼容
          */
         exec_code += "let lastValue = robot_node.value;";
-        exec_code += "robot_node.value=\"" + process["value"] + "\";";
+        exec_code += `robot_node.value='${process.value}';`;
         exec_code += "let event = new Event('input', { bubbles: true });";
         exec_code += "event.simulated = true;";
         exec_code += "let tracker = robot_node._valueTracker;";
@@ -77,7 +79,7 @@ function jscode(process) {
     } else if (process["opera"] === "refresh") {
         exec_code += "window.location.reload();";
     } else if (process["opera"] === "pagejump") {
-        exec_code += "window.location.href=\"" + process["value"] + "\";";
+        exec_code += `window.location.href='${process.value}';`;
     }
     exec_code += "\n})();";
     return exec_code;
@@ -98,25 +100,27 @@ function refresh_cases() {
         } else {
             var cases = "";
             for (let i in my_robot) {
-                let tr = '<tr id=' + i + '> \
-                            <td> \
-                                <a href="#" class="case_name">' + i + '</a> \
-                            </td> \
-                            <td>';
-                if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "sourcecode") {
-                    tr += '<a href="#" class="run_case">运行</a> ';
+                if(my_robot.hasOwnProperty(i)) {
+                    let tr = '<tr id=' + i + '> \
+                                <td> \
+                                    <a href="#" class="case_name">' + i + '</a> \
+                                </td> \
+                                <td>';
+                    if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "sourcecode") {
+                        tr += '<a href="#" class="run_case">运行</a> ';
+                    }
+                    if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "control") {
+                        tr += '<a href="#" class="sim_run">受控运行</a> ';
+                    }
+                    tr += '<a href="#" class="del_case">删除</a> ';
+                    if(my_robot[i]["case_type"] === "process") {
+                        tr += '<a href="#" class="lun_case">轮播</a> ';
+                    }
+                    if(my_robot[i]["case_type"] !== "control") {
+                        tr += '<a href="#" class="export_case">导出</a></td></tr>';
+                    }
+                    cases = cases + tr;
                 }
-                if(my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "control") {
-                    tr += '<a href="#" class="sim_run">受控运行</a> ';
-                }                            
-                tr += '<a href="#" class="del_case">删除</a> ';
-                if(my_robot[i]["case_type"] === "process") {
-                    tr += '<a href="#" class="lun_case">轮播</a> ';
-                }
-                if(my_robot[i]["case_type"] !== "control") {
-                    tr += '<a href="#" class="export_case">导出</a></td></tr>';
-                }
-                cases = cases + tr;
             }
             $("#cases").html(cases);
         }
@@ -145,19 +149,19 @@ function refresh_process(case_name) {
                             </div> \
                             <div class="row "> \
                                 <a href="# "> \
-                                    <div class="col s2" id="process_test_run" >test</div> \
+                                    <div class="col pc" id="process_test_run" >test</div> \
                                 </a> \
                                 <a href="#"> \
-                                    <div class="col s2" id="process_edit">编辑</div> \
+                                    <div class="col pc" id="process_edit">编辑</div> \
                                 </a> \
                                 <a href="#"> \
-                                    <div class="col s2" id="process_move">上移</div> \
+                                    <div class="col pc" id="process_move">上移</div> \
                                 </a> \
                                 <a href="#"> \
-                                    <div class="col s2" id="process_copy">复制</div> \
+                                    <div class="col pc" id="process_copy">复制</div> \
                                 </a> \
                                 <a href="# "> \
-                                    <div class="col s2" id="process_del">删除</div> \
+                                    <div class="col pc" id="process_del">删除</div> \
                                 </a> \
                             </div> \
                         </li> ';
@@ -185,8 +189,6 @@ function init_process_opera(tag_types, operas) {
 // 主要
 $(document).ready(function() {
 
-    // 筛选器
-    var tag_types = ["class/id选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
     // 操作
     var operas = ["click", "value", "refresh", "pagejump"];
     var case_name = "";
@@ -208,8 +210,7 @@ $(document).ready(function() {
                 refresh_process(case_name);
             }else if(my_robot[case_name]["case_type"] === "sourcecode"){
                 $("#case_view").hide();
-                $("#jssourcecode").val(my_robot[case_name]["case_sourcecode"]);
-                $("#jssourcecode").trigger('autoresize');
+                $("#jssourcecode").val(my_robot[case_name]["case_sourcecode"]).tigger('autoresize');
                 $("#sourcecode_view").show();
                 Materialize.updateTextFields();
             }else{
@@ -222,7 +223,7 @@ $(document).ready(function() {
     })
 
     // 点击删除事务
-    $("#cases").on("click", ".del_case", function() {
+    .on("click", ".del_case", function() {
         var case_name = $(this).parent().parent().attr("id");
         if(confirm(`确认删除 ${case_name}`)) {
             get_my_robot(my_robot => {
@@ -231,6 +232,40 @@ $(document).ready(function() {
             })
         }
     })
+    // 导出事务
+    .on("mousedown", ".export_case", function() {
+        let case_name = $(this).parent().parent().attr("id");
+        $(this).html("导出成功");
+        let that = $(this);
+        let clipcontent = "";
+        get_my_robot(my_robot => {
+            clipcontent = JSON.stringify(my_robot[case_name]);
+            new ClipboardJS('.export_case', {
+                text: function() {
+                    return clipcontent;
+                }
+            });
+        });
+        setTimeout(function() {
+            that.html("导出");
+        }, 1000);
+    })
+    // 受控运行
+    .on("click", ".sim_run", function() {
+        let case_name = $(this).parent().parent().attr("id");
+        get_my_robot(my_robot => {
+            if(my_robot[case_name]["case_type"] === "process") {
+                let bg = chrome.extension.getBackgroundPage();
+                bg.simexecute(my_robot[case_name]["case_process"]);
+                window.close();
+            }else {
+                fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(() => {
+                    chrome.tabs.create({url: my_robot[case_name]["control_url"]});
+                    window.close();
+                })
+            }
+        })
+    });
 
     // 点击删除一个事件
     $("#process_list").on("click", "#process_del", function() {
@@ -299,7 +334,7 @@ $(document).ready(function() {
         $(".chose_tag").show();
         $(".chose_opera").hide();
         $("#tag_list").css("margin-top", "-20px");
-        if (init_select == 1) {
+        if (init_select === 1) {
             init_process_opera(tag_types, operas);
             init_select = 0;
         }
@@ -308,7 +343,7 @@ $(document).ready(function() {
     // 筛选html标签
     $(".sel_tag").change(function() {
         var selected_tag = $(this).val();
-        if(selected_tag == "class/id选择器") {
+        if(selected_tag === tag_types[0]) {
             $(".chose_class_id").show();
             $("#tag_list").html("");
             return;
@@ -321,14 +356,14 @@ $(document).ready(function() {
                 tag: selected_tag
             });
             port.onMessage.addListener(function(msg) {
-                if (msg.type = "search_tag") {
+                if (msg.type === "search_tag") {
                     let options = "";
                     for (let i = 0; i < msg.num.length; i++) {
                         let value = selected_tag + "&" + msg.num[i];
                         options = options + "<a href='#' class='collection-item tag_spec'>" + value + "</a>";
                     }
                     $("#tag_list").html(options);
-                    $(".tag_spec").mouseover(function(e) {
+                    $(".tag_spec").mouseover(function() {
                         port.postMessage({
                             type: "select_tag",
                             tag: selected_tag,
@@ -338,25 +373,25 @@ $(document).ready(function() {
                 }
             })
         })
-    })
+    });
 
     // 筛选class和id
     $(".select_class_id").change(function() {
-        var select_class_id = $(this).val();
+        let select_class_id = $(this).val();
         connect(port => {
             port.postMessage({
                 type: "search_class_id",
                 content: select_class_id
             });
             port.onMessage.addListener(function(msg) {
-                if (msg.type == "search_class_id") {
+                if (msg.type === "search_class_id") {
                     let options = "";
                     for (let i = 0; i < msg.num.length; i++) {
                         let value = select_class_id + "&" + msg.num[i];
                         options = options + "<a href='#' class='collection-item tag_spec'>" + value + "</a>";
                     }
                     $("#tag_list").html(options);
-                    $(".tag_spec").mouseover(function(e) {
+                    $(".tag_spec").mouseover(function() {
                         port.postMessage({
                             type: "select_class_id",
                             content: $(this).text().split("&")[0],
@@ -366,33 +401,59 @@ $(document).ready(function() {
                 }
             })
         })
-    })
+    });
+
+    $(".query_selecter").change(function() {
+        let selecter = $(this).val();
+        connect(port => {
+            port.postMessage({
+                type: "search_query_selecter",
+                content: selecter
+            });
+            port.onMessage.addListener(function(msg) {
+                if(msg.type === "search_query_selecter") {
+                    let options = "";
+                    for (let i = 0; i < msg.num.length; i++) {
+                        let value = selecter + "&" + msg.num[i];
+                        options = options + "<a href='#' class='collection-item tag_spec'>" + value + "</a>";
+                    }
+                    $("#tag_list").html(options);
+                    $(".tag_spec").mouseover(function() {
+                        port.postMessage({
+                            type: "select_query_selecter",
+                            content: $(this).text().split("&")[0],
+                            n: parseInt($(this).text().split("&")[1])
+                        });
+                    })
+                }
+            })
+        })
+    });
 
     // 选择一个筛选后的元素
-    $("#tag_list").on("click", ".tag_spec", function(e) {
+    $("#tag_list").on("click", ".tag_spec", function() {
         $("body").css("width", "250px");
-        $("#tag_list").css("margin-top", "0px");
-        $("#tag_list").html("<div id='seldn' class='collection-item' data=" + $(this).text() + "><a href='#' id='hasseled'>已选: " + $(this).text() + "</a></div>");
+        $("#tag_list").css("margin-top", "20px")
+            .html("<div id='seldn' class='collection-item' data=" + $(this).text() + "><a href='#' id='hasseled'>已选: " + $(this).text() + "</a></div>");
         $(".chose_tag").hide();
         $(".chose_opera").show();
         $(".chose_class_id").hide();
     })
-
     // 返回到筛选器
-    $("#tag_list").on("click", "#hasseled", function(e) {
+    .on("click", "#hasseled", function() {
         $(".chose_tag").show();
         $(".chose_opera").hide();
         $("body").css("width", "150px");
-        $("#tag_list").css("margin-top", "-20px");
-    })
+        $("#tag_list").css("margin-top", "0px");
+    });
 
     $("#sel_opera").change(function() {
-        if ($(this).val() == "value" || $(this).val() == "pagejump") {
+        if ($(this).val() === "value" || $(this).val() === "pagejump") {
             $("#set_value").show();
         } else {
             $("#set_value").hide();
         }
-    })
+    });
 
     // 添加 / 保存 流程
     $("#process_add").click(function() {
@@ -417,7 +478,7 @@ $(document).ready(function() {
             $("#new_process").hide();
             $("#process_view").show();
         })
-    })
+    });
 
     $("#edit_source").click(function() {
         get_my_robot(my_robot => {
@@ -425,41 +486,6 @@ $(document).ready(function() {
             set_my_robot(my_robot);
             $("#case_view").show();
             $("#sourcecode_view").hide();
-        })
-    })
-
-    // 导出事务
-    $("#cases").on("mousedown", ".export_case", function() {
-        var case_name = $(this).parent().parent().attr("id");
-        $(this).html("导出成功");
-        var that = $(this);
-        var clipcontent = "";
-        get_my_robot(my_robot => {
-            clipcontent = JSON.stringify(my_robot[case_name]);
-            new ClipboardJS('.export_case', {
-                text: function(trigger) {
-                    return clipcontent;
-                }
-            });  
-        })
-        setTimeout(function() {
-            that.html("导出");
-        }, 1000);
-    })
-
-    $("#cases").on("click", ".sim_run", function() {
-        let case_name = $(this).parent().parent().attr("id");
-        get_my_robot(my_robot => {
-            if(my_robot[case_name]["case_type"] === "process") {
-                var bg = chrome.extension.getBackgroundPage();
-                bg.simexecute(my_robot[case_name]["case_process"]);
-                window.close();
-            }else {
-                fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(respose => {
-                    chrome.tabs.create({url: my_robot[case_name]["control_url"]});     
-                    window.close();
-                })
-            }
         })
     });
 
@@ -470,7 +496,7 @@ $(document).ready(function() {
             $("#case_view").show();
             $("#control_view").hide();
         })
-    })
+    });
 
     $("#record_opera").click(function() {
         if(confirm("确认开始录制？按ESC结束录制")){
@@ -483,7 +509,7 @@ $(document).ready(function() {
                 })
             })
         }
-    })
+    });
 
     // 连接当前页面
     exectab(tab_id => {
@@ -498,7 +524,7 @@ $(document).ready(function() {
                 "value": $("#ssv").val()
             };
             chrome.tabs.executeScript(tab_id, { code: jscode(process_data) });
-        })
+        });
 
         // 流程页测试运行
         $("#process_list").on("click", "#process_test_run", function() {
@@ -507,22 +533,20 @@ $(document).ready(function() {
                 chrome.tabs.executeScript(tab_id, { code: jscode(my_robot[case_name]["case_process"][processs_n]) });
             })
         })
-
         // 编辑单个流程事件
-        $("#process_list").on("click", "#process_edit", function() {
+        .on("click", "#process_edit", function() {
             let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
             edit_prcess_n = processs_n;
             $("#process_view").hide();
             $("#new_process").show();
             $(".chose_opera").show();
             $(".chose_tag").hide();
-            $(".chose_opera").show();
             $(".chose_class_id").hide();
-            if (init_select == 1) {
+            if (init_select === 1) {
                 init_process_opera(tag_types, operas);
                 init_select = 0;
             }
-            $("#tag_list").css("margin-top", "0px");
+            $("#tag_list").css("margin-top", "20px");
             get_my_robot(my_robot => {
                 let the_process =  my_robot[case_name]["case_process"][processs_n];
                 let select_tag = `${the_process.tag}&${the_process.n}`;
@@ -541,8 +565,8 @@ $(document).ready(function() {
                 $("#tag_list").html(`<div id='seldn' class='collection-item' data=${select_tag}><a href='#' id='hasseled'>已选: ${select_tag}</a></div>`);
             })
         })
-
-        $("#process_list").on("click", "#process_move", function() {
+        // 事件上移
+        .on("click", "#process_move", function() {
             let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
             get_my_robot(my_robot => {
                 if(processs_n > 0) {
@@ -554,8 +578,8 @@ $(document).ready(function() {
                 refresh_process(case_name);
             })
         })
-
-        $("#process_list").on("click", "#process_copy", function() {
+        // 事件拷贝
+        .on("click", "#process_copy", function() {
             let processs_n = parseInt($(this).parent().parent().parent().attr("id").split("-")[1]);
             get_my_robot(my_robot => {
                 let tmp = my_robot[case_name]["case_process"][processs_n];
@@ -563,7 +587,7 @@ $(document).ready(function() {
                 set_my_robot(my_robot);
                 refresh_process(case_name);
             })
-        })
+        });
 
         // 运行事务，调用background
         $("#cases").on("click", ".run_case", function() {
@@ -583,18 +607,15 @@ $(document).ready(function() {
                         that.html(save_run);
                     }, process_wait)
                 }else if(my_robot[case_name]["case_type"] === "sourcecode"){
-                    chrome.tabs.executeScript(tab_id, {code: source_jscode(my_robot[case_name]["case_sourcecode"])})
+                    chrome.tabs.executeScript(tab_id, {code: source_jscode(my_robot[case_name]["case_sourcecode"])});
                     setTimeout(function() {
                         that.html(save_run);
                     }, 1000)
-                }else{
-                    return;
                 }
             })
         })
-
         // 轮播事务
-        $("#cases").on("click", ".lun_case", function() {
+        .on("click", ".lun_case", function() {
             var case_name = $(this).parent().parent().attr("id");
             var save_run = $(this).parent().html();
             var that = $(this).parent();
@@ -623,4 +644,4 @@ $(document).ready(function() {
         })
 
     })
-})
+});

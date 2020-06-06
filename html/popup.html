@@ -59,8 +59,8 @@
             display: block;
         }
         
-        #tag_list {
-            max-height: 157px;
+        .tag_select {
+            max-height: 200px;
             overflow: scroll;
             margin: 0px;
             margin-top: -20px;
@@ -72,6 +72,9 @@
         
         .sel_tag option {
             height: 10px;
+        }
+        .pc {
+            width: 19%;
         }
     </style>
 </head>
@@ -144,12 +147,15 @@
                     </select>
                 </div>
             </div>
-            <div class="chose_class_id" style="display: none;">
-                <div class="input-field col s12" style="margin-top: 0px;">
-                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" />
+            <div class="tag_select">
+                <div class="chose_class_id" style="display: none;">
+                    <div class="input-field col s12" style="margin-top: 0px;">
+    <!--                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" style="display: none" />-->
+                        <input class="query_selecter" type="text" placeholder="query selecter" />
+                    </div>
                 </div>
-            </div>
-            <div class="collection" id="tag_list">
+                <div class="collection" id="tag_list">
+                </div>
             </div>
             <div class="chose_opera" style="display: none">
                 <div class="input-field col s12" id="select_opera" style="margin-top: 0px">

@@ -1,6 +1,5 @@
-
-
 const tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+const local_client_host = "http://127.0.0.1:12580/";
 
 // 获取数据存储
 function get_my_robot(callback) {
@@ -55,7 +54,7 @@ function exectab(callback) {
 
 // 连接测试本地客户端
 function connect_client(callback) {
-    fetch("http://127.0.0.1:12580").then(() => {
+    fetch(local_client_host).then(() => {
         callback()
     }).catch(() => {
         alert("本地WEB客户端连接失败");
@@ -363,7 +362,7 @@ $(document).ready(function() {
                     return;
                 }
                 connect_client(() => {
-                    fetch("http://127.0.0.1:12580/recover/?case_name=" + case_name).then(() => {
+                    fetch(local_client_host + "recover/?case_name=" + case_name).then(() => {
                         chrome.tabs.create({url: my_robot[case_name]["control_url"]});
                         window.close();
                     })
@@ -616,7 +615,7 @@ $(document).ready(function() {
                 my_robot[case_name]["control_url"] = $("#control_url").val();
                 set_my_robot(my_robot);
                 connect_client(() => {
-                    fetch("http://127.0.0.1:12580/record/?case_name=" + case_name).then(function(){
+                    fetch(local_client_host + "record/?case_name=" + case_name).then(function(){
                         chrome.tabs.create({url: $("#control_url").val()});
                         window.close();
                     })

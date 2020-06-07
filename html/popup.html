@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,67 +7,83 @@
     <title>web_robot</title>
     <link rel="stylesheet" href="../css/materialize.min.css">
     <style type="text/css">
-        body {
-            width: 280px;
+        *{
+            margin: 0;
+            padding: 0;
         }
-        
+        body {
+            min-width: 300px;
+        }
+
+        .container {
+            width: 100%;
+            overflow-y: auto;
+        }
+
         .collection {
             margin: 0px;
         }
-        
-        .contain {
-            height: 280px;
-            overflow: scroll;
-        }
-        
+
+        /* cases_view start */
         .cases_view {
-            overflow: scroll;
+            overflow-y: auto;
+            height: 320px;
         }
-        
+
+        .case-btn-wrapper{
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+        }
+
         .btn-flat {
-            border: solid 1px #cccccc;
+            border: solid 1px #ccc;
         }
-        
+        #modal1 .input-field{
+            margin: 0;
+        }
+        /* cases_view ends */
+
+        /* process_view start */
         #process_view {
             overflow: scroll;
         }
-        
+        /* process_view ends */
+
         .row {
             margin-bottom: 0px;
         }
-        
+
         .h5 {
             font-size: 1.64rem;
             line-height: 110%;
             margin: 0.82rem 0 0.656rem 0;
         }
-        
+
         .header {
             vertical-align: middle;
         }
-        
-        .add_btn {
-            margin: 10px;
-        }
-        
+
+
         .modal-overlay {
             top: 0px;
         }
-        
+
         #new_process {
             display: block;
         }
-        
+
         .tag_select {
             max-height: 200px;
             margin: 0px;
             margin-top: 60px;
         }
-        
+
         .collection-item {
             padding: 3px !important;
         }
-        
+
         .sel_tag option {
             height: 10px;
         }
@@ -87,12 +102,12 @@
 </head>
 
 <body>
-    <div class="contain">
+    <section class="container">
         <div class="cases_view" id="case_view" style="display: block">
             <!-- <div class="header">
-                        <span class="h5">用例：</span>
-                        <a href="#"><span class="h5">添加用例</span></a>
-                    </div> -->
+                <span class="h5">用例：</span>
+                <a href="#"><span class="h5">添加用例</span></a>
+            </div> -->
             <table class="bordered centered">
                 <thead>
                     <tr>
@@ -103,12 +118,12 @@
                 <tbody id="cases">
                 </tbody>
             </table>
-            <div>
-                <a class="waves-effect waves-teal btn-flat add_btn" href="#modal1">添加事务</a>
-                <a class="waves-effect waves-teal btn-flat" href="#model2">导入事务</a>
+            <div class="case-btn-wrapper">
+                <a class="waves-effect waves-teal btn-flat add_btn" href="#add-transaction-modal">添加事务</a>
+                <a class="waves-effect waves-teal btn-flat" href="#load-transaction-modal">导入事务</a>
             </div>
 
-            <div id="modal1" class="modal modal-fixed-footer">
+            <div id="add-transaction-modal" class="modal modal-fixed-footer">
                 <div class="modal-content">
                     <div class="input-field">
                         <input type="text" id="case_name_input">
@@ -127,7 +142,7 @@
                 </div>
             </div>
 
-            <div id="model2" class="modal modal-fixed-footer">
+            <div id="load-transaction-modal" class="modal modal-fixed-footer">
                 <div class="modal-content">
                     <div class="input-field">
                         <input type="text" id="inport_case_input" placeholder="导入事务">
@@ -201,7 +216,7 @@
             </div>
             <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit" style="width: 100%; text-align: center;">确认</a>
         </div>
-    </div>
+    </section>
     <script type="text/javascript" src="../js/jquery.min.js "></script>
     <script type="text/javascript" src="../js/clipboard.min.js"></script>
     <script type="text/javascript" src="../js/materialize.min.js "></script>

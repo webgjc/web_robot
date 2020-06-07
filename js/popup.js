@@ -9,7 +9,7 @@ function get_my_robot(callback) {
 }
 
 /**
-数据存储格式 
+数据存储格式
 storage key: my_robot
 {
     事务名: {
@@ -31,9 +31,9 @@ storage key: my_robot
 */
 
 // 设置数据存储
-function set_my_robot(new_robot, callback) {
+function set_my_robot(new_robot, cb) {
     chrome.storage.local.set({ "my_robot": new_robot }, function() {
-        if (callback) callback()
+        cb && cb()
     })
 }
 
@@ -611,7 +611,7 @@ $(document).ready(function() {
     // 受控事务录制事件
     $("#record_opera").click(function() {
         if(confirm("确认开始录制？按ESC结束录制")){
-            get_my_robot(my_robot => {  
+            get_my_robot(my_robot => {
                 my_robot[case_name]["control_url"] = $("#control_url").val();
                 set_my_robot(my_robot);
                 connect_client(() => {
@@ -626,7 +626,7 @@ $(document).ready(function() {
 
     // 连接当前页面
     exectab(tab_id => {
-        
+
         // 添加过程测试运行
         $("#test_run").click(function() {
             let data = $("#seldn").attr("data").split("&");

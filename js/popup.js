@@ -65,12 +65,14 @@ function connect_client(callback) {
 // 拼接要执行的js代码
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if(tag_types.indexOf(process.tag) === -1) {
-        exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`
-    }else{
-        exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`
+    if(process["opera"] === "click" || process["opera"] === "value") {
+        if(tag_types.indexOf(process.tag) === -1) {
+            exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`
+        }else{
+            exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`
+        }
+        exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
     }
-    exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
     if (process["opera"] === "click") {
         exec_code += "robot_node.click();"
     } else if (process["opera"] === "value") {
@@ -624,6 +626,16 @@ $(document).ready(function() {
         }
     });
 
+    $("#add_process_free").click(function() {
+        connect(port => {
+            port.postMessage({
+                type: "add_event",
+                case_name: case_name
+            });
+            window.close();
+        })
+    });
+
     // 连接当前页面
     exectab(tab_id => {
 
@@ -739,7 +751,7 @@ $(document).ready(function() {
                     }, 1000);
                 }
             })
-        })
+        });
 
     })
 });

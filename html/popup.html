@@ -47,7 +47,39 @@
 
         /* process_view start */
         #process_view {
-            overflow: scroll;
+            height: 320px;
+            overflow-y: auto;
+        }
+        #process_view .add_btn{
+            display: flex;
+            justify-content: space-around;
+            margin-top: 12px;
+        }
+        #new_process {
+            height: 200px;
+            position: relative;
+        }
+        .chose_tag {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1;
+            background: white;
+            height: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .chose_tag > .input-field{
+            margin-top: 0px;
+            display: inline-block;
+            flex: 1 1 auto;
+        }
+        .tag_select {
+            overflow-y: auto;
+        }
+        #tag_list{
+            margin-top: 0!important;
         }
         /* process_view ends */
 
@@ -70,15 +102,7 @@
             top: 0px;
         }
 
-        #new_process {
-            display: block;
-        }
 
-        .tag_select {
-            max-height: 200px;
-            margin: 0px;
-            margin-top: 60px;
-        }
 
         .collection-item {
             padding: 3px !important;
@@ -90,14 +114,7 @@
         .pc {
             width: 19%;
         }
-        .chose_tag {
-            position: fixed;
-            top: 0px;
-            z-index: 999;
-            background: white;
-            margin: 0px;
-            height: 40px;
-        }
+
         .add_btn > a {
             width: 30%;
             padding: 0px;
@@ -169,11 +186,12 @@
         </div>
         <div id="new_process" style="display: none">
             <div class="chose_tag">
-                <div class="input-field col s12" style="margin-top: 0px;">
+                <div class="input-field" style="margin-top: 0px;">
                     <select class="sel_tag">
                         <option value="" disabled selected>选择标签/选择器</option>
                     </select>
                 </div>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="process_back">返回</a>
             </div>
             <div class="tag_select">
                 <div class="chose_class_id" style="display: none;">

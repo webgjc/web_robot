@@ -73,6 +73,12 @@ async function exec_run(process, tab_id) {
     }
 }
 
+function get_my_robot(callback) {
+    chrome.storage.local.get(["my_robot"], function (res) {
+      if (callback) callback(res.my_robot);
+    });
+}
+
 // 受控运行流程事务
 async function con_run(process, tabs) {
     let port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
@@ -108,3 +114,21 @@ function simexecute(case_process) {
         con_run(case_process, tabs);
     })
 }
+
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
+    if(request.type === "torun") {
+        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+            exec_run(request.case.case_process, tabs[0].id);
+        })
+    }
+})
+
+
+// get_my_robot(myrobot => {
+//     for(let i in myrobot) {
+//         if(myrobot[i] === "") {
+
+//         }
+//     }
+// })

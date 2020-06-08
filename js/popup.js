@@ -46,7 +46,9 @@ storage key: my_robot
         ],
         case_sourcecode(源码事务的js源码): "",
         control_url(受控地址): "",
-        case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)"
+        case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)",
+        last_runtime(上次运行时间): 1591616590387,
+        runtime(定时时间): null / 10(分钟);
     },
 }
 */
@@ -150,6 +152,7 @@ function refresh_cases() {
             my_robot[i]["case_type"] === "sourcecode"
           ) {
             tr += '<a href="#" class="run_case">运行</a> ';
+            tr += '<a href="#" class="timer_run">定时运行</a> ';
           }
           if (
             my_robot[i]["case_type"] === "process" ||
@@ -407,6 +410,10 @@ $(document).ready(function () {
         that.html("导出");
       }, 1000);
     })
+    .on("click", ".timer_run", function(){
+      case_name = $(this).parent().parent().attr("id");
+      $("#timer_run_model").modal("open");
+    })
     // 受控运行
     .on("click", ".sim_run", function () {
       let case_name = $(this).parent().parent().attr("id");
@@ -512,6 +519,15 @@ $(document).ready(function () {
       init_select = 0;
     }
   });
+
+  $("#submit_timer_run").click(function(){
+    get_my_robot(my_robot => {
+      my_robot[case_name]["runtime"] = $("#timer_run_input").val();
+      my_robot[case_name]["last_runtime"] = (new Date()).valueOf();
+      console.log(my_robot);
+      set_my_robot(my_robot);
+    })
+  })
 
   // 筛选html标签
   $(".sel_tag").change(function () {

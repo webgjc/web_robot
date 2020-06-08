@@ -240,6 +240,21 @@
             </div>
             <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit" style="width: 100%; text-align: center;">确认</a>
         </div>
+        <div id="timer_run_model" class="modal modal-fixed-footer">
+            <div class="modal-content">
+                <div class="input-field">
+                    <input type="text" id="timer_run_input">
+                    <label for="timer_run_input">定时, 1d每日/10m分钟间隔</label>
+                </div>
+                <div><b>提醒</b>：定时运行的开启需保证浏览器的开启和一个不空白页(目前无创建新页事件)</div>
+                <div>${n}d 表示每n天运行，会在第n天检查到时就运行</div>
+                <div>${n}m 表示每隔n分钟运行，采用的定时轮询，具体会有出入</div>
+                <div>配置完定时不会直接运行，当前时间为开始计时时间</div>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="submit_timer_run">确认</a>
+            </div>
+        </div>
     </section>
     <script type="text/javascript" src="../js/jquery.min.js "></script>
     <script type="text/javascript" src="../js/clipboard.min.js"></script>

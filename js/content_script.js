@@ -80,7 +80,6 @@ function myrobot_get_selector(dom) {
     let nodelist = document.querySelectorAll(selector);
     for(i in nodelist) {
         if(nodelist[i] === dom) {
-            console.log([selector, i]);
             return [selector, i];
         }
     }
@@ -104,7 +103,6 @@ function myrobot_set_body_event(case_name) {
 }
 
 function myrobot_create_event_input(selectorn, case_name) {
-    console.log(selectorn, case_name);
     let operas = ["click", "value", "refresh", "pagejump"];
     let thisid = "myrobot_event_input";
     if(!document.getElementById(thisid)) {

@@ -152,6 +152,8 @@ function refresh_cases() {
             my_robot[i]["case_type"] === "sourcecode"
           ) {
             tr += '<a href="#" class="run_case">运行</a> ';
+          }
+          if(my_robot[i]["case_type"] === "process") {
             tr += '<a href="#" class="timer_run">定时运行</a> ';
           }
           if (

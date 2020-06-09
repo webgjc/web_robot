@@ -2,17 +2,18 @@
 自动化网页操作
 
 ## 详细说明
-请见博客 
-[使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)
+请见博客   
+[使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
+[持续更新教程](http://ganjiacheng.cn/article/article_21_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT/)
 
 ## 已有功能
-1. 管理多个事务，每个事务有多个过程，每个过程对应一种操作   
-2. 新增操作中方便的页面元素筛选器，querySelect自由筛选器
-3. 测试运行一个过程，运行一个事务，运行转为background后台   
+1. 管理多个事务，每个事务有多个事件，每个事件对应一种操作   
+2. 新增事件中方便的页面元素筛选器，querySelect自由筛选器
+3. 可以测试运行一个事件，运行一整个事务。
 4. 支持事务的导入导出
-5. 支持源码事务
-6. 支持本地鼠标键盘受控执行事务
-7. 受控事务，实现键鼠录制和还原
+5. 支持源码事务，写js源码并注入运行
+6. 支持流程事务的受控运行，本地鼠标和键盘还原事件。
+7. 支持受控事务，实现键鼠录制和还原
 8. 支持元素筛选和执行时的自动定位
 9. 支持设值事件作为运行前自定义参数
 10. 支持页面直接添加事件
@@ -34,6 +35,12 @@
 1. 浏览器设置（三个点）--> 更多工具 --> 扩展程序 ↓  
 2. 打开右上角开发者模式 --> 加载已解压的扩展程序 --> 选择clone下来的该项目根目录 ↓  
 3. 弄完可关掉开发者模式 --> 右键项目图标 --> 检查可读取和更改网站数据 --> 在所有网站上
+
+## 版本更新
+
+> git pull
+
+在继续上面的1，2步骤
 
 ### 受控运行，需开启本地客户端web服务
 
@@ -121,3 +128,8 @@ v1.6.0 (2020.06.09)
 1. [materializecss](http://www.materializecss.cn/about.html)
 3. [官方轮子](https://developer.chrome.com/extensions)
 4. [插件教程](https://www.cnblogs.com/liuxianan/p/chrome-plugin-develop.html)
+
+
+### License
+
+web_robot is [MIT licensed](./LICENSE).

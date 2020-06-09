@@ -244,12 +244,13 @@
             <div class="modal-content">
                 <div class="input-field">
                     <input type="text" id="timer_run_input">
-                    <label for="timer_run_input">定时, 1d每日/10m分钟间隔</label>
+                    <label for="timer_run_input">定时, 15:00/10m</label>
                 </div>
-                <div><b>提醒</b>：定时运行的开启需保证浏览器的开启和一个不空白页(目前无创建新页事件)</div>
-                <div>${n}d 表示每n天运行，会在第n天检查到时就运行</div>
-                <div>${n}m 表示每隔n分钟运行，采用的定时轮询，具体会有出入</div>
-                <div>配置完定时不会直接运行，当前时间为开始计时时间</div>
+                <div><b>提醒</b>：1. 定时运行需保证浏览器的开启和浏览焦点在一个不空白页(目前无创建新页事件)</div>
+                <div>2. 15:00 表示每天下午三点运行</div>
+                <div>3. 5m 表示每隔5分钟运行，采用的定时轮询，具体会有出入</div>
+                <div>4. 配置完定时不会直接运行，2当天开始计时，3当前时间为开始计时时间</div>
+                <div>5. 设置为空时为取消定时</div>
             </div>
             <div class="modal-footer">
                 <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="submit_timer_run">确认</a>

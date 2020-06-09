@@ -410,9 +410,14 @@ $(document).ready(function () {
         that.html("导出");
       }, 1000);
     })
+    // 定时运行
     .on("click", ".timer_run", function(){
       case_name = $(this).parent().parent().attr("id");
       $("#timer_run_model").modal("open");
+      get_my_robot(my_robot => {
+        $("#timer_run_input").val(my_robot[case_name].runtime);
+        Materialize.updateTextFields();
+      })
     })
     // 受控运行
     .on("click", ".sim_run", function () {
@@ -523,8 +528,8 @@ $(document).ready(function () {
   $("#submit_timer_run").click(function(){
     get_my_robot(my_robot => {
       my_robot[case_name]["runtime"] = $("#timer_run_input").val();
-      my_robot[case_name]["last_runtime"] = (new Date()).valueOf();
-      console.log(my_robot);
+      my_robot[case_name]["last_runtime"] = new Date().getTime() - 24*60*60*1000;
+      console.log(my_robot[case_name])
       set_my_robot(my_robot);
     })
   })

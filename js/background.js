@@ -79,6 +79,12 @@ function get_my_robot(callback) {
     });
 }
 
+function set_my_robot(new_robot, cb) {
+    chrome.storage.local.set({ my_robot: new_robot }, function () {
+      cb && cb();
+    });
+  }
+
 // 受控运行流程事务
 async function con_run(process, tabs) {
     let port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
@@ -115,20 +121,50 @@ function simexecute(case_process) {
     })
 }
 
+function calc_minute(time) {
+    return ((new Date()).getTime() - time) / (1000 * 60);
+}
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
-    if(request.type === "torun") {
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            exec_run(request.case.case_process, tabs[0].id);
+function compare_time(time) {
+    let t = time.split(":")
+    return parseInt(t[0]) * 60 + parseInt(t[1]) <= new Date().getHours() * 60 + new Date().getMinutes()
+}
+
+async function async_run(myrobot, i) {
+    await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
+        await exec_run(myrobot[i].case_process, tabs[0].id);
+        myrobot[i].last_runtime = new Date().getTime();
+        set_my_robot(myrobot);
+    })
+}
+
+async function timer_run_robot(myrobot) {
+    for(let i in myrobot) {
+        if(myrobot[i].runtime) {
+            if(myrobot[i].runtime.endsWith("m")) {
+                let minute = parseInt(myrobot[i].runtime.slice(0, -1));
+                if (calc_minute(myrobot[i].last_runtime) >= minute) {
+                   await async_run(myrobot, i);
+                }
+            }else if(myrobot[i].runtime.indexOf(":") != -1) {
+                if(compare_time(myrobot[i].runtime)) {
+                    if(new Date(myrobot[i].last_runtime).getDate() != new Date().getDate()) {
+                        await async_run(myrobot, i);
+                    }
+                }
+            }
+        }
+    }
+}
+
+async function timer_runing() {
+    while(true) {
+        await sleep(60);
+        console.log(new Date());
+        await get_my_robot(async my_robot => {
+            await timer_run_robot(my_robot)
         })
     }
-})
+}
 
-
-// get_my_robot(myrobot => {
-//     for(let i in myrobot) {
-//         if(myrobot[i] === "") {
-
-//         }
-//     }
-// })
+timer_runing();

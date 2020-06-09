@@ -233,7 +233,7 @@ function refresh_process(case_name) {
 }
 
 // 加载标签和操作
-function init_process_opera(tag_types, operas) {
+function init_process_opera(tag_types, operas, operas_alias) {
   let tag_type_content =
     "<option value='选择标签类型' selected disabled>选择标签类型</option>";
   for (let i = 0; i < tag_types.length; i++) {
@@ -250,13 +250,8 @@ function init_process_opera(tag_types, operas) {
   let sel_opera_content =
     "<option value='选择操作' selected disabled>选择操作</option>";
   for (let i = 0; i < operas.length; i++) {
-    sel_opera_content =
-      sel_opera_content +
-      "<option value=" +
-      operas[i] +
-      ">" +
-      operas[i] +
-      "</option>";
+    sel_opera_content +=
+      `<option value="${operas[i]}">${operas[i]}(${operas_alias[i]})</option>`;
   }
   $("#sel_opera").html(sel_opera_content);
   $("select").material_select();
@@ -351,6 +346,7 @@ function process_argv(process, callback) {
 $(document).ready(function () {
   // 操作
   var operas = ["click", "value", "refresh", "pagejump"];
+  var operas_alias = ["点击", "设值", "刷新", "本页跳转"];
   var case_name = "";
   var edit_prcess_n = -1;
   var init_select = 1;
@@ -519,10 +515,10 @@ $(document).ready(function () {
     $("#new_process").show();
     $(".chose_tag").show();
     $(".chose_opera").hide();
-    $(".tag_select").css("margin-top", "60px");
+    $(".tag_select").css("margin-top", "40px");
     $("#tag_list").css("margin-top", "-20px");
     if (init_select === 1) {
-      init_process_opera(tag_types, operas);
+      init_process_opera(tag_types, operas, operas_alias);
       init_select = 0;
     }
   });
@@ -662,7 +658,7 @@ $(document).ready(function () {
       $(".chose_tag").show();
       $(".chose_opera").hide();
       $("body").css("width", "150px");
-      $(".tag_select").css("margin-top", "60px");
+      $(".tag_select").css("margin-top", "40px");
       $("#tag_list").css("margin-top", "-20px");
     });
 
@@ -785,7 +781,7 @@ $(document).ready(function () {
         $(".chose_tag").hide();
         $(".chose_class_id").hide();
         if (init_select === 1) {
-          init_process_opera(tag_types, operas);
+          init_process_opera(tag_types, operas, operas_alias);
           init_select = 0;
         }
         $(".tag_select").css("margin-top", "0px");

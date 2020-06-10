@@ -34,16 +34,30 @@ function jscode(process) {
     return exec_code;
 }
 
-// 运行
-function execute(the_case, tab_id) {
-    var process_wait = 0;
-    for (let i = 0; i < the_case.length; i++) {
-        process_wait = process_wait + the_case[i]["wait"] * 1000;
-        setTimeout(function() {
-            chrome.tabs.executeScript(tab_id, { code: jscode(the_case[i]) });
-        }, process_wait);
+// 运行源码
+function source_jscode(sourcecode) {
+    let exec_code = "(function(){ \n";
+    exec_code += sourcecode;
+    exec_code += "\n})();";
+    return exec_code;
+}
+
+function sourcecode_run(sourcecode, sourcecode_url, tab) {
+    if(new RegExp(sourcecode_url).test(tab.url)) {
+        chrome.tabs.executeScript(tab.id, {code: source_jscode(sourcecode)});
     }
 }
+
+// 运行
+// function execute(the_case, tab_id) {
+//     var process_wait = 0;
+//     for (let i = 0; i < the_case.length; i++) {
+//         process_wait = process_wait + the_case[i]["wait"] * 1000;
+//         setTimeout(function() {
+//             chrome.tabs.executeScript(tab_id, { code: jscode(the_case[i]) });
+//         }, process_wait);
+//     }
+// }
 
 // function execute_lunbo(the_case, tab_id) {
 //     var process_wait = 0;
@@ -132,9 +146,16 @@ function compare_time(time) {
 
 async function async_run(myrobot, i) {
     await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
-        await exec_run(myrobot[i].case_process, tabs[0].id);
-        myrobot[i].last_runtime = new Date().getTime();
-        set_my_robot(myrobot);
+        if(myrobot[i].case_type === "process") {
+            await exec_run(myrobot[i].case_process, tabs[0].id);
+            myrobot[i].last_runtime = new Date().getTime();
+            set_my_robot(myrobot);
+        }
+        if(myrobot[i].case_type === "sourcecode") {
+            sourcecode_run(myrobot[i].case_sourcecode, myrobot[i].sourcecode_url, tabs[0]);
+            myrobot[i].last_runtime = new Date().getTime();
+            set_my_robot(myrobot);
+        }
     })
 }
 
@@ -159,8 +180,8 @@ async function timer_run_robot(myrobot) {
 
 async function timer_runing() {
     while(true) {
-        await sleep(60);
-        console.log(new Date());
+        await sleep(30);
+        // console.log(new Date());
         await get_my_robot(async my_robot => {
             await timer_run_robot(my_robot)
         })

@@ -45,6 +45,7 @@ function get_my_robot(callback) {
             }
         ],
         case_sourcecode(源码事务的js源码): "",
+        sourcecode_url(源码主入正则匹配地址): "",
         control_url(受控地址): "",
         case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)",
         last_runtime(上次运行时间): 1591616590387,
@@ -71,7 +72,7 @@ function connect(callback) {
 // 当前tab执行
 function exectab(callback) {
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        callback(tabs[0].id);
+        callback(tabs[0].id, tabs[0]);
     });
 }
 
@@ -152,8 +153,6 @@ function refresh_cases() {
                         my_robot[i]["case_type"] === "sourcecode"
                     ) {
                         tr += '<a href="#" class="run_case">运行</a> ';
-                    }
-                    if (my_robot[i]["case_type"] === "process") {
                         tr += '<a href="#" class="timer_run">定时运行</a> ';
                     }
                     if (
@@ -280,6 +279,13 @@ async function lun_run(process, tab_id, that, save_run) {
     that.html(save_run);
 }
 
+// 源码事务运行
+function sourcecode_run(sourcecode, sourcecode_url, tab) {
+    if(new RegExp(sourcecode_url).test(tab.url)) {
+        chrome.tabs.executeScript(tab.id, {code: source_jscode(sourcecode)});
+    }
+}
+
 // 获取自定义参数
 function process_get_argv(process) {
     keys = [];
@@ -371,10 +377,11 @@ $(document).ready(function () {
                         .val(my_robot[case_name]["case_sourcecode"])
                         .trigger("autoresize");
                     $("#sourcecode_view").show();
+                    $("#sourcecode_url").val(my_robot[case_name].sourcecode_url);
                     Materialize.updateTextFields();
                 } else {
                     $("#case_view").hide();
-                    $("#control_url").val(my_robot[case_name]["control_url"]);
+                    $("#control_url").val(my_robot[case_name].control_url);
                     $("#control_view").show();
                     Materialize.updateTextFields();
                 }
@@ -473,6 +480,7 @@ $(document).ready(function () {
                 case_process: [],
                 case_sourcecode: "",
                 control_url: "",
+                sourcecode_url: ".*",
             };
             set_my_robot(my_robot, refresh_cases);
         });
@@ -527,7 +535,6 @@ $(document).ready(function () {
         get_my_robot(my_robot => {
             my_robot[case_name]["runtime"] = $("#timer_run_input").val();
             my_robot[case_name]["last_runtime"] = new Date().getTime() - 24 * 60 * 60 * 1000;
-            console.log(my_robot[case_name])
             set_my_robot(my_robot);
         })
     })
@@ -698,7 +705,8 @@ $(document).ready(function () {
     // 修改源码事务
     $("#edit_source").click(function () {
         get_my_robot((my_robot) => {
-            my_robot[case_name]["case_sourcecode"] = $("#jssourcecode").val();
+            my_robot[case_name].case_sourcecode = $("#jssourcecode").val();
+            my_robot[case_name].sourcecode_url = $("#sourcecode_url").val();
             set_my_robot(my_robot);
             $("#case_view").show();
             $("#sourcecode_view").hide();
@@ -744,7 +752,7 @@ $(document).ready(function () {
     });
 
     // 连接当前页面
-    exectab((tab_id) => {
+    exectab((tab_id, tab) => {
         // 添加过程测试运行
         $("#test_run").click(function () {
             let data = $("#seldn").attr("data").split("&");
@@ -850,9 +858,7 @@ $(document).ready(function () {
                         });
                     } else if (my_robot[case_name]["case_type"] === "sourcecode") {
                         that.html("运行中");
-                        chrome.tabs.executeScript(tab_id, {
-                            code: source_jscode(my_robot[case_name]["case_sourcecode"]),
-                        });
+                        sourcecode_run(my_robot[case_name].case_sourcecode, my_robot[case_name].sourcecode_url, tab);
                         setTimeout(function () {
                             that.html(save_run);
                         }, 1000);

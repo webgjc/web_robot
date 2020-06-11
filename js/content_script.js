@@ -226,3 +226,23 @@ chrome.runtime.onConnect.addListener(function (port) {
         })
     }
 });
+
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse)
+{
+	if (msg.type === "get_position") {
+        var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+        let posidom;
+        if (tag_types.indexOf(msg.tag) === -1) {
+            posidom = document.querySelectorAll(msg.tag)[msg.n];
+        } else {
+            posidom = document.getElementsByTagName(msg.tag)[msg.n];
+        }
+        myrobot_scroll_position(posidom);
+        sendResponse({
+            type: msg.type,
+            x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
+            y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
+        });
+    }
+});

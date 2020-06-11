@@ -100,40 +100,41 @@ function set_my_robot(new_robot, cb) {
   }
 
 // 受控运行流程事务
-async function con_run(process, tabs) {
-    let port = chrome.tabs.connect(tabs[0].id, { name: "robot" });
-    let event;
-    let process_wait = 0;
-    port.onMessage.addListener(function(msg) {
-        if (msg.type === "get_position") {
-            let postdata = {
-                x: msg.x,
-                y: msg.y,
-                opera: event["opera"],
-                value: event["value"]
-            };
-            fetch("http://127.0.0.1:12580/webexec/", {
-                method: "POST",
-                body: JSON.stringify(postdata)
-            })
+async function simexecute(process, tabs) {
+    await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
+        for(let i = 0; i < process.length; i++) {
+            await sleep(process[i].wait);
+            if(process[i].opera === "click" || process[i].opera === "value") {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type: "get_position",
+                    tag: process[i].tag,
+                    n: process[i].n,
+                }, function(msg) {
+                    if (msg.type === "get_position") {
+                        let postdata = {
+                            x: msg.x,
+                            y: msg.y,
+                            opera: process[i].opera,
+                            value: process[i].value
+                        };
+                        fetch("http://127.0.0.1:12580/webexec/", {
+                            method: "POST",
+                            body: JSON.stringify(postdata)
+                        })
+                    }
+                });
+            }else{
+                chrome.tabs.executeScript(tabs[0].id, {code : jscode(process[i])});
+            }
         }
-    });
-    for(let i = 0; i < process.length; i++) {
-        await sleep(process[i].wait);
-        event = process[i];
-        port.postMessage({
-            type: "get_position",
-            tag: process[i].tag,
-            n: process[i].n,
-        });
-    }
-}
-
-function simexecute(case_process) {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        con_run(case_process, tabs);
     })
 }
+
+// function simexecute(case_process) {
+//     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+//         con_run(case_process, tabs);
+//     })
+// }
 
 function calc_minute(time) {
     return ((new Date()).getTime() - time) / (1000 * 60);
@@ -180,8 +181,8 @@ async function timer_run_robot(myrobot) {
 
 async function timer_runing() {
     while(true) {
-        await sleep(30);
-        // console.log(new Date());
+        await sleep(10);
+        console.log(new Date());
         await get_my_robot(async my_robot => {
             await timer_run_robot(my_robot)
         })

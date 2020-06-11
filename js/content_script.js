@@ -106,30 +106,33 @@ function myrobot_create_event_input(selectorn, case_name) {
     let operas = ["click", "value", "refresh", "pagejump"];
     let thisid = "myrobot_event_input";
     if(!document.getElementById(thisid)) {
-        let container = document.createElement("div");
+        let container = document.createElement("iframe");
         container.id = thisid;
-        container.setAttribute("style", "position: fixed;top: 0px;right: 0px;z-index: 999999;border: solid 1px #000;background: #fff;max-width: 300px;");
+        container.setAttribute("style", "position: fixed;top: 0px;right: 0px;z-index: 999999;border: solid 1px #000;background: #fff;max-width: 180px; height: 180px");
+        let html = `<div id="myrobot_selected">已选元素: ${selectorn[0]} & ${selectorn[1]}</div>`;
+        html += `<select style="margin-top:10px" id="myrobot_select_opera"><option disabled selected>选择事件</option>${operas.map(item => `<option value=${item}>${item}</option>`).join("")}</select>`;
+        html += `<div style="margin-top:10px"><input type="text" placeholder="设值" id="myrobot_value" /></div>`;
+        html += `<div style="margin-top:10px;margin-bottom: 10px"><input type="number" placeholder="延时" id="myrobot_wait" value="1" /></div>`;
+        html += `<button id="myrobot_submit_event" style="margin-right:5px">提交</button>`;
+        html += `<button id="myrobot_cancel">取消</button>`;
+        container.srcdoc = html;
         document.body.appendChild(container);
     }else{
+        let iframe = document.getElementById(thisid).contentWindow.document;
+        iframe.getElementById("myrobot_selected").innerHTML= `已选元素: ${selectorn[0]} & ${selectorn[1]}`;
         document.getElementById(thisid).style.display = "block";
     }
-    let html = `<div>已选元素: ${selectorn[0]} & ${selectorn[1]}</div>`;
-    html += `<select style="margin-top:10px" id="myrobot_select_opera"><option disabled selected>选择事件</option>${operas.map(item => `<option value=${item}>${item}</option>`).join("")}</select>`;
-    html += `<div style="margin-top:10px"><input type="text" placeholder="设值" id="myrobot_value" /></div>`;
-    html += `<div style="margin-top:10px"><input type="number" placeholder="延时" id="myrobot_wait" value="1" /></div>`;
-    html += `<button id="myrobot_submit_event" style="margin-right:5px">提交</button>`;
-    html += `<button id="myrobot_cancel">取消</button>`;
-    document.getElementById(thisid).innerHTML = html;
-    document.getElementById(thisid).addEventListener("click", function (e) {
+    let iframe = document.getElementById(thisid).contentWindow;
+    iframe.addEventListener("click", function (e) {
         let node = e.target;
         if(node.id === "myrobot_submit_event") {
             get_my_robot(myrobot => {
                 myrobot[case_name]["case_process"].push({
                     "tag": selectorn[0],
                     "n": selectorn[1],
-                    "opera": document.getElementById("myrobot_select_opera").value,
-                    "value": document.getElementById("myrobot_value").value,
-                    "wait": document.getElementById("myrobot_wait").value
+                    "opera": iframe.document.getElementById("myrobot_select_opera").value,
+                    "value": iframe.document.getElementById("myrobot_value").value,
+                    "wait": iframe.document.getElementById("myrobot_wait").value
                 });
                 set_my_robot(myrobot);
             });

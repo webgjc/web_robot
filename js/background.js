@@ -6,11 +6,27 @@ function jscode(process) {
     let exec_code = "(function(){ \n";
     if(process["opera"] === "click" || process["opera"] === "value") {
         if(tag_types.indexOf(process.tag) === -1) {
-            exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`
+            exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];\n`
         }else{
-            exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`
+            exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`
         }
-        exec_code += 'window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);';
+        exec_code += `function myrobot_getAbsPoin(dom) {
+            let x = dom.offsetLeft;
+            let y = dom.offsetTop;
+            while (dom.offsetParent) {
+                dom = dom.offsetParent;
+                x += dom.offsetLeft;
+                y += dom.offsetTop;
+            }
+            return {
+                'x': x,
+                'y': y
+            };
+        };\n`;
+        exec_code += `let domposi = myrobot_getAbsPoint(robot_node);\n`;
+        exec_code += `if (domposi.y < window.scrollY || domposi.y > (window.scrollY + window.innerHeight * 0.8) ||
+                domposi.x < window.scrollX || domposi.x > (window.scrollX + window.innerWidth * 0.8)) {
+                window.scrollTo(domposi.x - window.innerWidth / 2, domposi.y - window.innerHeight / 2);}\n`;
     }
     if (process["opera"] === "click") {
         exec_code += "robot_node.click();"

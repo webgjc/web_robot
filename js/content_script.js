@@ -87,7 +87,8 @@ function myrobot_get_selector(dom) {
 }
 
 function myrobot_set_body_event(case_name) {
-    document.body.onmousedown = (e) => {
+    document.body.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
         e.preventDefault();
         let selectorn = myrobot_get_selector(e.target);
         if(selectorn === null) {
@@ -96,10 +97,11 @@ function myrobot_set_body_event(case_name) {
         }
         myrobot_create_event_input(selectorn, case_name);
         document.body.onmousedown = null;
-        document.querySelectorAll(selectorn[0])[selectorn[1]].onclick = function(e) {
-            e.preventDefault();
-        }
-    }
+        document.querySelectorAll(selectorn[0])[selectorn[1]].addEventListener("click", function(e) {
+             e.preventDefault();
+             e.stopPropagation();
+        }, true);
+    }, true);
 }
 
 function myrobot_create_event_input(selectorn, case_name) {
@@ -231,8 +233,7 @@ chrome.runtime.onConnect.addListener(function (port) {
 });
 
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse)
-{
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if (msg.type === "get_position") {
         var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
         let posidom;
@@ -249,3 +250,15 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse)
         });
     }
 });
+
+window.onload = function(){
+    get_my_robot(my_robot => {
+        for(let i in my_robot) {
+            if(my_robot.hasOwnProperty(i) && my_robot[i].case_type === "sourcecode" && my_robot[i].start_inject) {
+                if(new RegExp(my_robot[i].sourcecode_url).test(window.location.href)) {
+                    eval(my_robot[i].case_sourcecode);
+                }
+            }
+        }
+    })
+}

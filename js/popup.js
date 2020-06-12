@@ -46,6 +46,7 @@ function get_my_robot(callback) {
         ],
         case_sourcecode(源码事务的js源码): "",
         sourcecode_url(源码主入正则匹配地址): "",
+        start_inject(开启注入): false,
         control_url(受控地址): "",
         case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)",
         last_runtime(上次运行时间): 1591616590387,
@@ -154,6 +155,9 @@ function refresh_cases() {
                     ) {
                         tr += '<a href="#" class="run_case">运行</a> ';
                         tr += '<a href="#" class="timer_run">定时运行</a> ';
+                    }
+                    if (my_robot[i]["case_type"] === "sourcecode") {
+                        tr += `<a href="#" class="start_inject">${my_robot[i].start_inject ? "关闭": "开启"}注入</a> `;
                     }
                     if (
                         my_robot[i]["case_type"] === "process" ||
@@ -451,6 +455,15 @@ $(document).ready(function () {
                     });
                 }
             });
+        })
+        // 源码事务开关注入
+        .on("click", ".start_inject", function() {
+            let case_name = $(this).parent().parent().attr("id");
+            get_my_robot(my_robot => {
+                my_robot[case_name]["start_inject"] = !my_robot[case_name]["start_inject"];
+                set_my_robot(my_robot);
+                refresh_cases();
+            })
         });
 
     // 点击删除一个事件

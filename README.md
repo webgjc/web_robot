@@ -69,6 +69,7 @@
 
 ## 受控运行，需开启本地客户端web服务
 
+0. 重要：**目前本地客户端只在mac系统上进行过测试**。
 1. 首先准备一个python3虚拟环境，venv/ 放于项目根目录下，如有自己的python3，请修改py/web.py中的PYTHON_ENV
 - PYTHON_ENV = "./venv/bin/python"
 2. pip下载 py/requirements.txt 里的包

@@ -330,7 +330,7 @@ function process_argv(process, callback) {
     let argvs = process_get_argv(process);
     if (argvs.length > 0) {
         let tmp = "";
-        for (let i in argvs) {
+        for (let i = 0; i < argvs.length; i++) {
             tmp +=
                 `<div class="input-field col s12">\n` +
                 `<input id="argv_${argvs[i]}" type="text" >\n` +
@@ -341,7 +341,7 @@ function process_argv(process, callback) {
         $("#model3").modal("open");
         $("#argv_submit").click(function () {
             let kv = {};
-            for (let i in argvs) {
+            for (let i = 0; i < argvs.length; i++) {
                 kv[argvs[i]] = $("#argv_" + argvs[i]).val();
             }
             process_set_argv(process, kv);
@@ -355,8 +355,8 @@ function process_argv(process, callback) {
 // 主要
 $(document).ready(function () {
     // 操作
-    var operas = ["click", "value", "refresh", "pagejump"];
-    var operas_alias = ["点击", "设值", "刷新", "本页跳转"];
+    const operas = ["click", "value", "refresh", "pagejump"];
+    const operas_alias = ["点击", "设值", "刷新", "本页跳转"];
     var case_name = "";
     var edit_prcess_n = -1;
     var init_select = 1;
@@ -550,7 +550,7 @@ $(document).ready(function () {
             my_robot[case_name]["last_runtime"] = new Date().getTime() - 24 * 60 * 60 * 1000;
             set_my_robot(my_robot);
         })
-    })
+    });
 
     // 筛选html标签
     $(".sel_tag").change(function () {

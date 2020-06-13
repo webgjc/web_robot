@@ -6,6 +6,7 @@
 [使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
 [持续更新教程](http://ganjiacheng.cn/article/article_21_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT/)
 
+
 ## 已有功能
 1. 管理多个事务，每个事务有多个事件，每个事件对应一种操作   
 2. 新增事件中方便的页面元素筛选器，querySelect自由筛选器
@@ -173,6 +174,11 @@ v1.6.2 (2020.06.13)
 3. [官方轮子](https://developer.chrome.com/extensions)
 4. [插件教程](https://www.cnblogs.com/liuxianan/p/chrome-plugin-develop.html)
 
+
+## 感谢Contributors，欢迎加入
+
+- [webgjc](https://github.com/webgjc)
+- [ILovePing](https://github.com/ILovePing)
 
 ### License
 

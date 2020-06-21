@@ -4,7 +4,7 @@ var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "i
 // 拼接执行的js
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if(process["opera"] === "click" || process["opera"] === "value") {
+    if(process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
         if(tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];\n`
         }else{
@@ -45,6 +45,9 @@ function jscode(process) {
         exec_code += "window.location.reload();";
     } else if (process["opera"] === "pagejump") {
         exec_code += `window.location.href='${process.value}';`;
+    } else if (process["opera"] === "mouseover") {
+        exec_code += `let mouseoverevent = new MouseEvent('mouseover', {bubbles: true, cancelable: true});`;
+        exec_code += `robot_node.dispatchEvent(mouseoverevent);`
     }
     exec_code += "\n})();";
     return exec_code;
@@ -120,7 +123,7 @@ async function simexecute(process, tabs) {
     await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
         for(let i = 0; i < process.length; i++) {
             await sleep(process[i].wait);
-            if(process[i].opera === "click" || process[i].opera === "value") {
+            if(process[i].opera === "click" || process[i].opera === "value" || process[i].opera === "mouseover") {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     type: "get_position",
                     tag: process[i].tag,

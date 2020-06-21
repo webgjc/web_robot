@@ -91,7 +91,7 @@ function connect_client(callback) {
 // 拼接要执行的js代码
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if (process["opera"] === "click" || process["opera"] === "value") {
+    if (process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
         if (tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];`;
         } else {
@@ -117,6 +117,9 @@ function jscode(process) {
         exec_code += "window.location.reload();";
     } else if (process["opera"] === "pagejump") {
         exec_code += `window.location.href='${process.value}';`;
+    } else if (process["opera"] === "mouseover") {
+        exec_code += `let mouseoverevent = new MouseEvent('mouseover', {bubbles: true, cancelable: true});`;
+        exec_code += `robot_node.dispatchEvent(mouseoverevent);`
     }
     exec_code += "\n})();";
     return exec_code;
@@ -355,8 +358,8 @@ function process_argv(process, callback) {
 // 主要
 $(document).ready(function () {
     // 操作
-    const operas = ["click", "value", "refresh", "pagejump"];
-    const operas_alias = ["点击", "设值", "刷新", "本页跳转"];
+    const operas = ["click", "value", "mouseover", "refresh", "pagejump"];
+    const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转"];
     var case_name = "";
     var edit_prcess_n = -1;
     var init_select = 1;

@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "name": "web_robot",
+    "name": "Web Robot",
     "version": "1.6.2",
     "description": "网页自动化操作机器人",
     "browser_action": {

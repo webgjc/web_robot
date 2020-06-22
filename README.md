@@ -54,6 +54,7 @@
   - value 设值
   - refresh 刷新
   - pagejump 当页跳转
+  - mouseover 鼠标移入
 
 注：受控相关的都必须使用开启本地客户端。
 
@@ -75,6 +76,7 @@
 1. 首先准备一个python3虚拟环境，venv/ 放于项目根目录下，如有自己的python3，请修改py/web.py中的PYTHON_ENV
 - PYTHON_ENV = "./venv/bin/python"
 2. pip下载 py/requirements.txt 里的包
+- pip install -r py/requirements.txt
 3. 项目根目录下启动web服务 **python py/web.py**
 4. 如果没反应，以mac举例，左上角的设置 -> 系统偏好设置 -> 安全性与隐私 -> 辅助功能 将开启web服务的应用(如iTerm)加入到里面
 
@@ -136,6 +138,10 @@ v1.6.1 (2020.06.10)
 v1.6.2 (2020.06.13)
 1. 优化运行元素的定位
 2. 新增源码事务直接注入的开启与关闭
+
+v1.6.3 (2020.06.22)
+1. 新增鼠标移入事件操作
+
 
 # 项目规划
 

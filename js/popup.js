@@ -57,22 +57,32 @@ function get_my_robot(callback) {
 
 // 设置数据存储
 function set_my_robot(new_robot, cb) {
-    chrome.storage.local.set({my_robot: new_robot}, function () {
+    chrome.storage.local.set({
+        my_robot: new_robot
+    }, function () {
         cb && cb();
     });
 }
 
 // 连接
 function connect(callback) {
-    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        var port = chrome.tabs.connect(tabs[0].id, {name: "robot"});
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, function (tabs) {
+        var port = chrome.tabs.connect(tabs[0].id, {
+            name: "robot"
+        });
         callback(port);
     });
 }
 
 // 当前tab执行
 function exectab(callback) {
-    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, function (tabs) {
         callback(tabs[0].id, tabs[0]);
     });
 }
@@ -97,8 +107,23 @@ function jscode(process) {
         } else {
             exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`;
         }
-        exec_code +=
-            "window.scrollTo(robot_node.offsetLeft, robot_node.offsetTop - window.innerHeight / 2);";
+        exec_code += `function myrobot_getAbsPoin(dom) {
+            let x = dom.offsetLeft;
+            let y = dom.offsetTop;
+            while (dom.offsetParent) {
+                dom = dom.offsetParent;
+                x += dom.offsetLeft;
+                y += dom.offsetTop;
+            }
+            return {
+                'x': x,
+                'y': y
+            };
+        };\n`;
+        exec_code += `let domposi = myrobot_getAbsPoint(robot_node);\n`;
+        exec_code += `if (domposi.y < window.scrollY || domposi.y > (window.scrollY + window.innerHeight * 0.8) ||
+                domposi.x < window.scrollX || domposi.x > (window.scrollX + window.innerWidth * 0.8)) {
+                window.scrollTo(domposi.x - window.innerWidth / 2, domposi.y - window.innerHeight / 2);}\n`;
     }
     if (process["opera"] === "click") {
         exec_code += "robot_node.click();";
@@ -274,7 +299,9 @@ function sleep(s) {
 async function exec_run(process, tab_id) {
     for (let i = 0; i < process.length; i++) {
         await sleep(process[i]["wait"]);
-        chrome.tabs.executeScript(tab_id, {code: jscode(process[i])});
+        chrome.tabs.executeScript(tab_id, {
+            code: jscode(process[i])
+        });
     }
 }
 
@@ -288,8 +315,10 @@ async function lun_run(process, tab_id, that, save_run) {
 
 // 源码事务运行
 function sourcecode_run(sourcecode, sourcecode_url, tab) {
-    if(new RegExp(sourcecode_url).test(tab.url)) {
-        chrome.tabs.executeScript(tab.id, {code: source_jscode(sourcecode)});
+    if (new RegExp(sourcecode_url).test(tab.url)) {
+        chrome.tabs.executeScript(tab.id, {
+            code: source_jscode(sourcecode)
+        });
     }
 }
 
@@ -451,7 +480,9 @@ $(document).ready(function () {
                     connect_client(() => {
                         fetch(local_client_host + "recover/?case_name=" + case_name).then(
                             () => {
-                                chrome.tabs.create({url: my_robot[case_name]["control_url"]});
+                                chrome.tabs.create({
+                                    url: my_robot[case_name]["control_url"]
+                                });
                                 window.close();
                             }
                         );
@@ -460,7 +491,7 @@ $(document).ready(function () {
             });
         })
         // 源码事务开关注入
-        .on("click", ".start_inject", function() {
+        .on("click", ".start_inject", function () {
             let case_name = $(this).parent().parent().attr("id");
             get_my_robot(my_robot => {
                 my_robot[case_name]["start_inject"] = !my_robot[case_name]["start_inject"];
@@ -748,7 +779,9 @@ $(document).ready(function () {
                 connect_client(() => {
                     fetch(local_client_host + "record/?case_name=" + case_name).then(
                         function () {
-                            chrome.tabs.create({url: $("#control_url").val()});
+                            chrome.tabs.create({
+                                url: $("#control_url").val()
+                            });
                             window.close();
                         }
                     );
@@ -778,7 +811,9 @@ $(document).ready(function () {
                 opera: $("#sel_opera").val(),
                 value: $("#ssv").val(),
             };
-            chrome.tabs.executeScript(tab_id, {code: jscode(process_data)});
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process_data)
+            });
         });
 
         // 流程页测试运行

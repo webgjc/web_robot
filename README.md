@@ -1,7 +1,7 @@
 # web_robot
 自动化网页操作机器人
 
-![图片](http://ganjiacheng.cn/img/mypost/robot_pic.jpg)
+![图片](https://github.com/webgjc/web_robot/blob/master/images/robot_pic.jpg?raw=true)
 
 ## 详细说明
 请见博客   
@@ -182,4 +182,4 @@ web_robot is [MIT licensed](./LICENSE).
 
 ## 赞赏
 
-![赞赏](http://ganjiacheng.cn/about/reward.png)
+![赞赏](https://raw.githubusercontent.com/webgjc/web_robot/master/images/reward.png)

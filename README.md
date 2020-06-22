@@ -1,6 +1,8 @@
 # web_robot
 自动化网页操作机器人
 
+![图片](http://ganjiacheng.cn/img/mypost/robot_pic.jpg)
+
 ## 详细说明
 请见博客   
 [使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
@@ -174,6 +176,10 @@ v1.6.2 (2020.06.13)
 - [webgjc](https://github.com/webgjc)
 - [ILovePing](https://github.com/ILovePing)
 
-### License
+## License
 
 web_robot is [MIT licensed](./LICENSE).
+
+## 赞赏
+
+![赞赏](http://ganjiacheng.cn/about/reward.png)

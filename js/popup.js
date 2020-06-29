@@ -297,18 +297,42 @@ function sleep(s) {
 
 // 运行流程事务
 async function exec_run(process, tab_id) {
+    let args = {};
     for (let i = 0; i < process.length; i++) {
         await sleep(process[i]["wait"]);
-        chrome.tabs.executeScript(tab_id, {
-            code: jscode(process[i])
-        });
+        if (process[i].opera === "getvalue") {
+            await chrome.tabs.sendMessage(tab_id, {
+                type: "get_value",
+                tag: process[i].tag,
+                n: process[i].n,
+            }, function (msg) {
+                if (msg.type === "get_value") {
+                    args[process[i].value] = msg.data;
+                }
+                chrome.tabs.executeScript(tab_id, {
+                    code: jscode(process[i])
+                });
+            });
+        } else if (process[i].opera === "value") {
+            if (args[process[i].value] != undefined) {
+                process[i].value = args[process[i].value];
+            }
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process[i])
+            });
+        } else {
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process[i])
+            });
+        }
     }
 }
 
 // 轮播
 async function lun_run(process, tab_id, that, save_run) {
     for (let i = 0; i < 100; i++) {
-        await exec_run(process, tab_id);
+        let tmp = JSON.parse(JSON.stringify(process));
+        await exec_run(tmp, tab_id);
     }
     that.html(save_run);
 }
@@ -350,11 +374,13 @@ function process_set_argv(process, kv) {
 }
 
 // 运行
-async function process_run(process, tab_id, that, save_run) {
+function process_run(process, tab_id, that, save_run) {
     that.html("运行中");
     let bg = chrome.extension.getBackgroundPage();
-    await bg.exec_run(process, tab_id);
-    that.html(save_run);
+    bg.exec_run(process, tab_id);
+    setTimeout(() => {
+        that.html(save_run)
+    }, 1000 * process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b)));
 }
 
 // 运行前参数设置
@@ -387,8 +413,8 @@ function process_argv(process, callback) {
 // 主要
 $(document).ready(function () {
     // 操作
-    const operas = ["click", "value", "mouseover", "refresh", "pagejump"];
-    const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转"];
+    const operas = ["click", "value", "mouseover", "refresh", "pagejump", "getvalue"];
+    const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转", "取值"];
     var case_name = "";
     var edit_prcess_n = -1;
     var init_select = 1;
@@ -578,6 +604,7 @@ $(document).ready(function () {
         }
     });
 
+    // 设置定时运行
     $("#submit_timer_run").click(function () {
         get_my_robot(my_robot => {
             my_robot[case_name]["runtime"] = $("#timer_run_input").val();
@@ -716,8 +743,9 @@ $(document).ready(function () {
             $("#tag_list").css("margin-top", "-20px");
         });
 
+    // 设置设值显隐
     $("#sel_opera").change(function () {
-        if ($(this).val() === "value" || $(this).val() === "pagejump") {
+        if ($(this).val() === "value" || $(this).val() === "pagejump" || $(this).val() === "getvalue") {
             $("#set_value").show();
         } else {
             $("#set_value").hide();

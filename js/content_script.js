@@ -1,13 +1,15 @@
 // 获取数据存储
 function get_my_robot(callback) {
-    chrome.storage.local.get(["my_robot"], function(res) {
+    chrome.storage.local.get(["my_robot"], function (res) {
         if (callback) callback(res.my_robot)
     })
 }
 
 // 设置数据存储
 function set_my_robot(new_robot, callback) {
-    chrome.storage.local.set({ "my_robot": new_robot }, function() {
+    chrome.storage.local.set({
+        "my_robot": new_robot
+    }, function () {
         if (callback) callback()
     })
 }
@@ -70,16 +72,16 @@ function myrobot_scroll_position(dom) {
 
 function myrobot_get_selector(dom) {
     let selector;
-    if(dom.id) {
+    if (dom.id) {
         selector = `${dom.nodeName}[id="${dom.id}"]`;
-    }else if(dom.class) {
+    } else if (dom.class) {
         selector = `${dom.nodeName}[class="${dom.className}"]`;
-    }else{
+    } else {
         selector = `${dom.nodeName}`;
     }
     let nodelist = document.querySelectorAll(selector);
-    for(i in nodelist) {
-        if(nodelist[i] === dom) {
+    for (i in nodelist) {
+        if (nodelist[i] === dom) {
             return [selector, i];
         }
     }
@@ -87,27 +89,27 @@ function myrobot_get_selector(dom) {
 }
 
 function myrobot_set_body_event(case_name) {
-    document.body.addEventListener('mousedown', function(e) {
+    document.body.addEventListener('mousedown', function (e) {
         e.stopPropagation();
         e.preventDefault();
         let selectorn = myrobot_get_selector(e.target);
-        if(selectorn === null) {
+        if (selectorn === null) {
             alert("未找到元素");
             return;
         }
         myrobot_create_event_input(selectorn, case_name);
         document.body.onmousedown = null;
-        document.querySelectorAll(selectorn[0])[selectorn[1]].addEventListener("click", function(e) {
-             e.preventDefault();
-             e.stopPropagation();
+        document.querySelectorAll(selectorn[0])[selectorn[1]].addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
         }, true);
     }, true);
 }
 
 function myrobot_create_event_input(selectorn, case_name) {
-    let operas = ["click", "value", "mouseover", "refresh", "pagejump"];
+    let operas = ["click", "value", "mouseover", "refresh", "pagejump", "getvalue"];
     let thisid = "myrobot_event_input";
-    if(!document.getElementById(thisid)) {
+    if (!document.getElementById(thisid)) {
         let container = document.createElement("iframe");
         container.id = thisid;
         container.setAttribute("style", "position: fixed;top: 0px;right: 0px;z-index: 999999;border: solid 1px #000;background: #fff;max-width: 180px; height: 180px");
@@ -119,15 +121,15 @@ function myrobot_create_event_input(selectorn, case_name) {
         html += `<button id="myrobot_cancel">取消</button>`;
         container.srcdoc = html;
         document.body.appendChild(container);
-    }else{
+    } else {
         let iframe = document.getElementById(thisid).contentWindow.document;
-        iframe.getElementById("myrobot_selected").innerHTML= `已选元素: ${selectorn[0]} & ${selectorn[1]}`;
+        iframe.getElementById("myrobot_selected").innerHTML = `已选元素: ${selectorn[0]} & ${selectorn[1]}`;
         document.getElementById(thisid).style.display = "block";
     }
     let iframe = document.getElementById(thisid).contentWindow;
     iframe.addEventListener("click", function (e) {
         let node = e.target;
-        if(node.id === "myrobot_submit_event") {
+        if (node.id === "myrobot_submit_event") {
             get_my_robot(myrobot => {
                 myrobot[case_name]["case_process"].push({
                     "tag": selectorn[0],
@@ -140,7 +142,7 @@ function myrobot_create_event_input(selectorn, case_name) {
             });
             document.getElementById(thisid).style.display = "none";
             myrobot_set_body_event(case_name);
-        }else if(node.id === "myrobot_cancel") {
+        } else if (node.id === "myrobot_cancel") {
             document.getElementById(thisid).style.display = "none";
             myrobot_set_body_event(case_name);
         }
@@ -233,29 +235,35 @@ chrome.runtime.onConnect.addListener(function (port) {
 });
 
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	if (msg.type === "get_position") {
-        var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
-        let posidom;
-        if (tag_types.indexOf(msg.tag) === -1) {
-            posidom = document.querySelectorAll(msg.tag)[msg.n];
-        } else {
-            posidom = document.getElementsByTagName(msg.tag)[msg.n];
-        }
+chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+    var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+    let posidom;
+    if (tag_types.indexOf(msg.tag) === -1) {
+        posidom = document.querySelectorAll(msg.tag)[msg.n];
+    } else {
+        posidom = document.getElementsByTagName(msg.tag)[msg.n];
+    }
+    if (msg.type === "get_position") {
         myrobot_scroll_position(posidom);
         sendResponse({
             type: msg.type,
             x: posidom.getBoundingClientRect().left + posidom.getBoundingClientRect().width / 2 + window.screenLeft,
             y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
         });
+    } else if (msg.type === "get_value") {
+        console.log(posidom.innerText)
+        sendResponse({
+            type: msg.type,
+            data: posidom.innerText
+        })
     }
 });
 
-window.onload = function(){
+window.onload = function () {
     get_my_robot(my_robot => {
-        for(let i in my_robot) {
-            if(my_robot.hasOwnProperty(i) && my_robot[i].case_type === "sourcecode" && my_robot[i].start_inject) {
-                if(new RegExp(my_robot[i].sourcecode_url).test(window.location.href)) {
+        for (let i in my_robot) {
+            if (my_robot.hasOwnProperty(i) && my_robot[i].case_type === "sourcecode" && my_robot[i].start_inject) {
+                if (new RegExp(my_robot[i].sourcecode_url).test(window.location.href)) {
                     eval(my_robot[i].case_sourcecode);
                 }
             }

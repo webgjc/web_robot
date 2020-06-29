@@ -4,10 +4,10 @@ var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "i
 // 拼接执行的js
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if(process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
-        if(tag_types.indexOf(process.tag) === -1) {
+    if (process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
+        if (tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];\n`
-        }else{
+        } else {
             exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`
         }
         exec_code += `function myrobot_getAbsPoin(dom) {
@@ -62,8 +62,10 @@ function source_jscode(sourcecode) {
 }
 
 function sourcecode_run(sourcecode, sourcecode_url, tab) {
-    if(new RegExp(sourcecode_url).test(tab.url)) {
-        chrome.tabs.executeScript(tab.id, {code: source_jscode(sourcecode)});
+    if (new RegExp(sourcecode_url).test(tab.url)) {
+        chrome.tabs.executeScript(tab.id, {
+            code: source_jscode(sourcecode)
+        });
     }
 }
 
@@ -93,57 +95,112 @@ function sourcecode_run(sourcecode, sourcecode_url, tab) {
 
 // 等待
 function sleep(s) {
-    return new Promise(function(resolve, reject) {
-        setTimeout(resolve,s * 1000);
+    return new Promise(function (resolve, reject) {
+        setTimeout(resolve, s * 1000);
     })
 }
 
 // 运行流程事务
 async function exec_run(process, tab_id) {
-    for(let i = 0;i < process.length; i++) {
+    let args = {};
+    for (let i = 0; i < process.length; i++) {
         await sleep(process[i].wait);
-        chrome.tabs.executeScript(tab_id, {code: jscode(process[i])});
+        if (process[i].opera === "getvalue") {
+            chrome.tabs.sendMessage(tab_id, {
+                type: "get_value",
+                tag: process[i].tag,
+                n: process[i].n,
+            }, function (msg) {
+                if (msg.type === "get_value") {
+                    args[process[i].value] = msg.data;
+                }
+                chrome.tabs.executeScript(tab_id, {
+                    code: jscode(process[i])
+                });
+            });
+        } else if (process[i].opera === "value") {
+            if (args[process[i].value] != undefined) {
+                process[i].value = args[process[i].value];
+            }
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process[i])
+            });
+        } else {
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process[i])
+            });
+        }
     }
 }
 
 function get_my_robot(callback) {
     chrome.storage.local.get(["my_robot"], function (res) {
-      if (callback) callback(res.my_robot);
+        if (callback) callback(res.my_robot);
     });
 }
 
 function set_my_robot(new_robot, cb) {
-    chrome.storage.local.set({ my_robot: new_robot }, function () {
-      cb && cb();
+    chrome.storage.local.set({
+        my_robot: new_robot
+    }, function () {
+        cb && cb();
     });
-  }
+}
+
+function post_client_run(msg, process) {
+    let postdata = {
+        x: msg.x,
+        y: msg.y,
+        opera: process.opera,
+        value: process.value
+    };
+    fetch("http://127.0.0.1:12580/webexec/", {
+        method: "POST",
+        body: JSON.stringify(postdata)
+    })
+}
 
 // 受控运行流程事务
 async function simexecute(process, tabs) {
-    await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
-        for(let i = 0; i < process.length; i++) {
+    await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, async function (tabs) {
+        let args = {};
+        for (let i = 0; i < process.length; i++) {
             await sleep(process[i].wait);
-            if(process[i].opera === "click" || process[i].opera === "value" || process[i].opera === "mouseover") {
-                chrome.tabs.sendMessage(tabs[0].id, {
+            if (process[i].opera === "click" || process[i].opera === "value" || process[i].opera === "mouseover" || process[i].opera === "getvalue") {
+                await chrome.tabs.sendMessage(tabs[0].id, {
                     type: "get_position",
                     tag: process[i].tag,
                     n: process[i].n,
-                }, function(msg) {
+                }, function (msg) {
                     if (msg.type === "get_position") {
-                        let postdata = {
-                            x: msg.x,
-                            y: msg.y,
-                            opera: process[i].opera,
-                            value: process[i].value
-                        };
-                        fetch("http://127.0.0.1:12580/webexec/", {
-                            method: "POST",
-                            body: JSON.stringify(postdata)
-                        })
+                        if (process[i].opera === "getvalue") {
+                            chrome.tabs.sendMessage(tabs[0].id, {
+                                type: "get_value",
+                                tag: process[i].tag,
+                                n: process[i].n,
+                            }, function (msg) {
+                                if (msg.type === "get_value") {
+                                    args[process[i].value] = msg.data;
+                                }
+                                post_client_run(msg, process[i]);
+                            });
+                        } else if (process[i].opera === "value") {
+                            if (args[process[i].value] != undefined) {
+                                process[i].value = args[process[i].value];
+                            }
+                            post_client_run(msg, process[i]);
+                        } else {
+                            post_client_run(msg, process[i]);
+                        }
                     }
                 });
-            }else{
-                chrome.tabs.executeScript(tabs[0].id, {code : jscode(process[i])});
+            } else {
+                chrome.tabs.executeScript(tabs[0].id, {
+                    code: jscode(process[i])
+                });
             }
         }
     })
@@ -165,13 +222,16 @@ function compare_time(time) {
 }
 
 async function async_run(myrobot, i) {
-    await chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
-        if(myrobot[i].case_type === "process") {
+    await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, async function (tabs) {
+        if (myrobot[i].case_type === "process") {
             await exec_run(myrobot[i].case_process, tabs[0].id);
             myrobot[i].last_runtime = new Date().getTime();
             set_my_robot(myrobot);
         }
-        if(myrobot[i].case_type === "sourcecode") {
+        if (myrobot[i].case_type === "sourcecode") {
             sourcecode_run(myrobot[i].case_sourcecode, myrobot[i].sourcecode_url, tabs[0]);
             myrobot[i].last_runtime = new Date().getTime();
             set_my_robot(myrobot);
@@ -180,16 +240,16 @@ async function async_run(myrobot, i) {
 }
 
 async function timer_run_robot(myrobot) {
-    for(let i in myrobot) {
-        if(myrobot[i].runtime) {
-            if(myrobot[i].runtime.endsWith("m")) {
+    for (let i in myrobot) {
+        if (myrobot[i].runtime) {
+            if (myrobot[i].runtime.endsWith("m")) {
                 let minute = parseInt(myrobot[i].runtime.slice(0, -1));
                 if (calc_minute(myrobot[i].last_runtime) >= minute) {
-                   await async_run(myrobot, i);
+                    await async_run(myrobot, i);
                 }
-            }else if(myrobot[i].runtime.indexOf(":") != -1) {
-                if(compare_time(myrobot[i].runtime)) {
-                    if(new Date(myrobot[i].last_runtime).getDate() != new Date().getDate()) {
+            } else if (myrobot[i].runtime.indexOf(":") != -1) {
+                if (compare_time(myrobot[i].runtime)) {
+                    if (new Date(myrobot[i].last_runtime).getDate() != new Date().getDate()) {
                         await async_run(myrobot, i);
                     }
                 }
@@ -199,9 +259,9 @@ async function timer_run_robot(myrobot) {
 }
 
 async function timer_runing() {
-    while(true) {
+    while (true) {
         await sleep(10);
-        console.log(new Date());
+        // console.log(new Date());
         await get_my_robot(async my_robot => {
             await timer_run_robot(my_robot)
         })

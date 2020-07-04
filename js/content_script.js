@@ -330,13 +330,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             RDATA.first_recording = false;
         }
     } else if (msg.type === "end_recording") {
-        RDATA.time_wait = 0;
-        RDATA.recording_data = [];
         chrome.runtime.sendMessage({
             type: "ADD_EVENT",
             case_name: RDATA.case_name,
             data: RDATA.recording_data
         });
+        RDATA.recording_data = [];
         clearInterval(RDATA.itv_timer);
         RDATA.recording = false;
     }

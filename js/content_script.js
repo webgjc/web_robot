@@ -149,6 +149,23 @@ function myrobot_create_event_input(selectorn, case_name) {
     })
 }
 
+
+function getCssSelectorShort(el) {
+    let path = [], parent;
+    while (parent = el.parentNode) {
+        let tag = el.tagName, siblings;
+        path.unshift(
+            el.id ? `#${el.id}` : (
+                siblings = parent.children,
+                    [].filter.call(siblings, sibling => sibling.tagName === tag).length === 1 ? tag :
+                        `${tag}:nth-child(${1 + [].indexOf.call(siblings, el)})`
+            )
+        );
+        el = parent;
+    }
+    return `${path.join(' > ')}`.toLowerCase();
+}
+
 chrome.runtime.onConnect.addListener(function (port) {
     if (port.name === "robot") {
         port.onMessage.addListener(function (msg) {
@@ -234,10 +251,21 @@ chrome.runtime.onConnect.addListener(function (port) {
     }
 });
 
+let RDATA = {
+    first_recording: true,
+    recording: false,
+    time_wait: 0,
+    case_name: "",
+    recording_data: [],
+    click_tag: "",
+    ivr_time: 0,
+};
+
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
     let posidom;
+
     if (tag_types.indexOf(msg.tag) === -1) {
         posidom = document.querySelectorAll(msg.tag)[msg.n];
     } else {
@@ -251,11 +279,65 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
         });
     } else if (msg.type === "get_value") {
-        console.log(posidom.innerText)
         sendResponse({
             type: msg.type,
             data: posidom.innerText
         })
+    } else if (msg.type === "start_recording") {
+        RDATA.recording = true;
+        RDATA.time_wait = 0;
+        RDATA.recording_data = [];
+        RDATA.case_name = msg.case_name;
+        RDATA.itv_timer = setInterval(() => {
+            RDATA.time_wait += 0.5;
+        }, 500);
+        if (RDATA.first_recording) {
+            document.addEventListener("click", function (e) {
+                if (RDATA.recording) {
+                    let tmp_selector = myrobot_get_selector(e.target);
+                    RDATA.click_tag = tmp_selector[0];
+                    RDATA.recording_data.push({
+                        tag: tmp_selector[0],
+                        n: tmp_selector[1],
+                        opera: "click",
+                        value: "",
+                        wait: RDATA.time_wait,
+                    });
+                    RDATA.time_wait = 0;
+                    console.log("asd")
+                }
+            }, true);
+            document.addEventListener("keypress", function (e) {
+                if (RDATA.recording) {
+                    if(RDATA.recording_data.length > 0) {
+                        let last_event = RDATA.recording_data[RDATA.recording_data.length-1];
+                        if(last_event.tag === RDATA.click_tag && last_event.opera === "value") {
+                            last_event.value += String.fromCharCode(e.keyCode);
+                            RDATA.time_wait = 0;
+                            return;
+                        }
+                    }
+                    RDATA.recording_data.push({
+                        tag: RDATA.click_tag,
+                        n: 0,
+                        opera: "value",
+                        value: String.fromCharCode(e.keyCode),
+                        wait: RDATA.time_wait,
+                    });
+                    RDATA.time_wait = 0;
+                }
+            }, true);
+            RDATA.first_recording = false;
+        }
+    } else if (msg.type === "end_recording") {
+
+        chrome.runtime.sendMessage({
+            type: "ADD_EVENT",
+            case_name: RDATA.case_name,
+            data: RDATA.recording_data
+        });
+        clearInterval(RDATA.itv_timer);
+        RDATA.recording = false;
     }
 });
 
@@ -269,4 +351,4 @@ window.onload = function () {
             }
         }
     })
-}
+};

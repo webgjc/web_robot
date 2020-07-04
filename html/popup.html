@@ -7,10 +7,11 @@
     <title>web_robot</title>
     <link rel="stylesheet" href="../css/materialize.min.css">
     <style type="text/css">
-        *{
+        * {
             margin: 0;
             padding: 0;
         }
+
         body {
             min-width: 300px;
         }
@@ -30,7 +31,7 @@
             height: 320px;
         }
 
-        .case-btn-wrapper{
+        .case-btn-wrapper {
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -40,9 +41,11 @@
         .btn-flat {
             border: solid 1px #ccc;
         }
-        #modal1 .input-field{
+
+        #modal1 .input-field {
             margin: 0;
         }
+
         /* cases_view ends */
 
         /* process_view start */
@@ -51,15 +54,18 @@
             overflow-y: auto;
             max-width: 300px;
         }
-        #process_view .add_btn{
+
+        #process_view .add_btn {
             display: flex;
             justify-content: space-around;
             margin-top: 12px;
         }
+
         #new_process {
             height: 200px;
             position: relative;
         }
+
         .chose_tag {
             position: fixed;
             top: 0;
@@ -71,24 +77,30 @@
             display: flex;
             justify-content: space-between;
         }
-        .chose_tag > .input-field{
+
+        .chose_tag > .input-field {
             margin-top: 0px;
             display: inline-block;
             flex: 1 1 auto;
         }
+
         .tag_select {
             overflow-y: auto;
         }
-        #tag_list{
-            margin-top: 0!important;
+
+        #tag_list {
+            margin-top: 0 !important;
         }
+
         #process_back {
             height: 42px;
             border-radius: 0px;
         }
+
         .chose_class_id {
             height: 42px;
         }
+
         /* process_view ends */
 
         .row {
@@ -111,7 +123,6 @@
         }
 
 
-
         .collection-item {
             padding: 3px !important;
         }
@@ -119,9 +130,11 @@
         .sel_tag option {
             height: 10px;
         }
+
         .sel_tag {
             height: 40px;
         }
+
         .pc {
             width: 19%;
         }
@@ -135,147 +148,151 @@
 </head>
 
 <body>
-    <section class="container">
-        <div class="cases_view" id="case_view" style="display: block">
-            <!-- <div class="header">
-                <span class="h5">用例：</span>
-                <a href="#"><span class="h5">添加用例</span></a>
-            </div> -->
-            <table class="bordered centered">
-                <thead>
-                    <tr>
-                        <th>事务名</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="cases">
-                </tbody>
-            </table>
-            <div class="case-btn-wrapper">
-                <a class="waves-effect waves-teal btn-flat add_btn" href="#add-transaction-modal">添加事务</a>
-                <a class="waves-effect waves-teal btn-flat" href="#load-transaction-modal">导入事务</a>
-            </div>
+<section class="container">
+    <div class="cases_view" id="case_view" style="display: block">
+        <!-- <div class="header">
+            <span class="h5">用例：</span>
+            <a href="#"><span class="h5">添加用例</span></a>
+        </div> -->
+        <table class="bordered centered">
+            <thead>
+            <tr>
+                <th>事务名</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="cases">
+            </tbody>
+        </table>
+        <div class="case-btn-wrapper">
+            <a class="waves-effect waves-teal btn-flat add_btn" href="#add-transaction-modal">添加事务</a>
+            <a class="waves-effect waves-teal btn-flat" href="#load-transaction-modal">导入事务</a>
+        </div>
 
-            <div id="add-transaction-modal" class="modal modal-fixed-footer">
-                <div class="modal-content">
-                    <div class="input-field">
-                        <input type="text" id="case_name_input">
-                        <label for="case_name_input">事务名</label>
-                    </div>
-                    <div class="input-field">
-                        <select id="select_case_type">
-                            <option value="process" selected>流程事务</option>
-                            <option value="sourcecode">源码事务</option>
-                            <option value="control">受控事务</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="add_case">确认</a>
-                </div>
-            </div>
-
-            <div id="load-transaction-modal" class="modal modal-fixed-footer">
-                <div class="modal-content">
-                    <div class="input-field">
-                        <input type="text" id="inport_case_input" placeholder="导入事务">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="inport_case">确认</a>
-                </div>
-            </div>
-        </div>
-        <div id="process_view" style="display: none;">
-            <ul class="collection" id="process_list">
-            </ul>
-            <div class="add_btn">
-                <a class="waves-effect waves-teal btn-flat" href="#" id="add_process">添加过程</a>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="add_process_free">页面添加</a>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="case_back">返回主页</a>
-            </div>
-        </div>
-        <div id="new_process" style="display: none">
-            <div class="chose_tag">
-                <div class="input-field" style="margin-top: 0px;">
-                    <select class="sel_tag">
-                        <option value="" disabled selected>选择标签/选择器</option>
-                    </select>
-                </div>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="process_back">返回</a>
-            </div>
-            <div class="tag_select">
-                <div class="chose_class_id" style="display: none;">
-                    <div class="input-field col s12" style="margin-top: 0px;">
-    <!--                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" style="display: none" />-->
-                        <input class="query_selecter" type="text" placeholder="query selecter" />
-                    </div>
-                </div>
-                <div class="collection" id="tag_list">
-                </div>
-            </div>
-            <div class="chose_opera" style="display: none">
-                <div class="input-field col s12" id="select_opera" style="margin-top: 0px">
-                    <select id="sel_opera">
-                    </select>
-                </div>
-                <div class="input-field col s12" id="set_value" style="display: none">
-                    <input placeholder="设值/${自定义参数}" id="ssv" type="text">
-                </div>
-                <div class="input-field col s12">
-                    <input id="num_wait" type="number" class="wait" value="1">
-                    <label for="num_wait">执行前等待时间</label>
-                </div>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="test_run">测试运行</a>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="process_add">添加</a>
-            </div>
-        </div>
-        <div id="sourcecode_view" style="display: none;">
-            <div class="input-field col s12">
-                <input id="sourcecode_url" type="text" value=".*">
-                <label for="sourcecode_url">源码注入正则匹配地址</label>
-            </div>
-            <div class="input-field col s12">
-                <textarea id="jssourcecode" class="materialize-textarea"></textarea>
-                <label for="jssourcecode">原生js代码</label>
-            </div>
-            <a class="waves-effect waves-teal btn-flat" href="#" id="edit_source">修改代码</a>
-            <a class="waves-effect waves-teal btn-flat source_back" href="#">返回主页</a>
-        </div>
-        <div id="control_view" style="display: none;">
-            <div class="input-field col s12">
-                <input id="control_url" type="text">
-                <label for="control_url">受控地址</label>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="edit_control_url">修改地址</a>
-                <a class="waves-effect waves-teal btn-flat" href="#" id="record_opera">录制操作</a>
-            </div>
-        </div>
-        <div id="model3" class="modal">
-            <div id="argv_input" class="row">
-            </div>
-            <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit" style="width: 100%; text-align: center;">确认</a>
-        </div>
-        <div id="timer_run_model" class="modal modal-fixed-footer">
+        <div id="add-transaction-modal" class="modal modal-fixed-footer">
             <div class="modal-content">
                 <div class="input-field">
-                    <input type="text" id="timer_run_input">
-                    <label for="timer_run_input">定时, 15:00/10m</label>
+                    <input type="text" id="case_name_input">
+                    <label for="case_name_input">事务名</label>
                 </div>
-                <div><b>提醒</b>：1. 定时运行需保证浏览器的开启和浏览焦点在一个不空白页(目前无创建新页事件)</div>
-                <div>2. 15:00 表示每天下午三点运行</div>
-                <div>3. 5m 表示每隔5分钟运行，采用的定时轮询，具体会有出入</div>
-                <div>4. 配置完定时不会直接运行，2当天开始计时，3当前时间为开始计时时间</div>
-                <div>5. 设置为空时为取消定时</div>
+                <div class="input-field">
+                    <select id="select_case_type">
+                        <option value="process" selected>流程事务</option>
+                        <option value="sourcecode">源码事务</option>
+                        <option value="control">受控事务</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
-                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="submit_timer_run">确认</a>
+                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="add_case">确认</a>
             </div>
         </div>
-    </section>
-    <script type="text/javascript" src="../js/jquery.min.js "></script>
-    <script type="text/javascript" src="../js/clipboard.min.js"></script>
-    <script type="text/javascript" src="../js/materialize.min.js "></script>
-    <script type="text/javascript" src="../js/popup.js "></script>
+
+        <div id="load-transaction-modal" class="modal modal-fixed-footer">
+            <div class="modal-content">
+                <div class="input-field">
+                    <input type="text" id="inport_case_input" placeholder="导入事务">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="inport_case">确认</a>
+            </div>
+        </div>
+    </div>
+    <div id="process_view" style="display: none;">
+        <ul class="collection" id="process_list">
+        </ul>
+        <div class="add_btn">
+            <a class="waves-effect waves-teal btn-flat" href="#" id="add_process">添加过程</a>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="case_back">返回主页</a>
+        </div>
+        <div class="add_btn">
+            <a class="waves-effect waves-teal btn-flat" href="#" id="add_process_free">页面录制</a>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="end_process_free">结束页面录制</a>
+        </div>
+    </div>
+    <div id="new_process" style="display: none">
+        <div class="chose_tag">
+            <div class="input-field" style="margin-top: 0px;">
+                <select class="sel_tag">
+                    <option value="" disabled selected>选择标签/选择器</option>
+                </select>
+            </div>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="process_back">返回</a>
+        </div>
+        <div class="tag_select">
+            <div class="chose_class_id" style="display: none;">
+                <div class="input-field col s12" style="margin-top: 0px;">
+                    <!--                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" style="display: none" />-->
+                    <input class="query_selecter" type="text" placeholder="query selecter"/>
+                </div>
+            </div>
+            <div class="collection" id="tag_list">
+            </div>
+        </div>
+        <div class="chose_opera" style="display: none">
+            <div class="input-field col s12" id="select_opera" style="margin-top: 0px">
+                <select id="sel_opera">
+                </select>
+            </div>
+            <div class="input-field col s12" id="set_value" style="display: none">
+                <input placeholder="设值/${自定义参数}" id="ssv" type="text">
+            </div>
+            <div class="input-field col s12">
+                <input id="num_wait" type="number" class="wait" value="1">
+                <label for="num_wait">执行前等待时间</label>
+            </div>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="test_run">测试运行</a>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="process_add">添加</a>
+        </div>
+    </div>
+    <div id="sourcecode_view" style="display: none;">
+        <div class="input-field col s12">
+            <input id="sourcecode_url" type="text" value=".*">
+            <label for="sourcecode_url">源码注入正则匹配地址</label>
+        </div>
+        <div class="input-field col s12">
+            <textarea id="jssourcecode" class="materialize-textarea"></textarea>
+            <label for="jssourcecode">原生js代码</label>
+        </div>
+        <a class="waves-effect waves-teal btn-flat" href="#" id="edit_source">修改代码</a>
+        <a class="waves-effect waves-teal btn-flat source_back" href="#">返回主页</a>
+    </div>
+    <div id="control_view" style="display: none;">
+        <div class="input-field col s12">
+            <input id="control_url" type="text">
+            <label for="control_url">受控地址</label>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="edit_control_url">修改地址</a>
+            <a class="waves-effect waves-teal btn-flat" href="#" id="record_opera">录制操作</a>
+        </div>
+    </div>
+    <div id="model3" class="modal">
+        <div id="argv_input" class="row">
+        </div>
+        <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit"
+           style="width: 100%; text-align: center;">确认</a>
+    </div>
+    <div id="timer_run_model" class="modal modal-fixed-footer">
+        <div class="modal-content">
+            <div class="input-field">
+                <input type="text" id="timer_run_input">
+                <label for="timer_run_input">定时, 15:00/10m</label>
+            </div>
+            <div><b>提醒</b>：1. 定时运行需保证浏览器的开启和浏览焦点在一个不空白页(目前无创建新页事件)</div>
+            <div>2. 15:00 表示每天下午三点运行</div>
+            <div>3. 5m 表示每隔5分钟运行，采用的定时轮询，具体会有出入</div>
+            <div>4. 配置完定时不会直接运行，2当天开始计时，3当前时间为开始计时时间</div>
+            <div>5. 设置为空时为取消定时</div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" id="submit_timer_run">确认</a>
+        </div>
+    </div>
+</section>
+<script type="text/javascript" src="../js/jquery.min.js "></script>
+<script type="text/javascript" src="../js/clipboard.min.js"></script>
+<script type="text/javascript" src="../js/materialize.min.js "></script>
+<script type="text/javascript" src="../js/popup.js "></script>
 </body>
 
 </html>

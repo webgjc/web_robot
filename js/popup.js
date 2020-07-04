@@ -22,6 +22,8 @@ const tag_types = [
 ];
 const local_client_host = "http://127.0.0.1:12580/";
 
+const RECORD_CASE = "RECORD_CASE";
+
 // 获取数据存储
 function get_my_robot(callback) {
     chrome.storage.local.get(["my_robot"], function (res) {
@@ -167,6 +169,7 @@ function refresh_cases() {
             var cases = "";
             for (let i in my_robot) {
                 if (my_robot.hasOwnProperty(i)) {
+                    if([RECORD_CASE].indexOf(i) !== -1) continue;
                     let tr =
                         "<tr id=" +
                         i +
@@ -185,7 +188,7 @@ function refresh_cases() {
                         tr += '<a href="#" class="timer_run">定时运行</a> ';
                     }
                     if (my_robot[i]["case_type"] === "sourcecode") {
-                        tr += `<a href="#" class="start_inject">${my_robot[i].start_inject ? "关闭": "开启"}注入</a> `;
+                        tr += `<a href="#" class="start_inject">${my_robot[i].start_inject ? "关闭" : "开启"}注入</a> `;
                     }
                     if (
                         my_robot[i]["case_type"] === "process" ||
@@ -415,11 +418,19 @@ $(document).ready(function () {
     // 操作
     const operas = ["click", "value", "mouseover", "refresh", "pagejump", "getvalue"];
     const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转", "取值"];
-    var case_name = "";
-    var edit_prcess_n = -1;
-    var init_select = 1;
+    let case_name = "";
+    let edit_prcess_n = -1;
+    let init_select = 1;
 
-    refresh_cases();
+    get_my_robot(data => {
+        refresh_cases();
+        if(data[RECORD_CASE]) {
+            case_name = data[RECORD_CASE];
+            $("#case_view").hide();
+            $("#process_view").show();
+            refresh_process(data[RECORD_CASE]);
+        }
+    });
 
     $(".modal").modal();
     $("#select_case_type").material_select();
@@ -724,11 +735,9 @@ $(document).ready(function () {
             $("#tag_list")
                 .css("margin-top", "0px")
                 .html(
-                    "<div id='seldn' class='collection-item' data=" +
-                    $(this).text() +
-                    "><a href='#' id='hasseled'>已选: " +
-                    $(this).text() +
-                    "</a></div>"
+                    `<div id='seldn' class='collection-item' data="${$(this).text()}">
+                        <a href='#' id='hasseled'>已选: ${$(this).text()}</a>
+                    </div>`
                 );
             $(".chose_tag").hide();
             $(".chose_opera").show();
@@ -818,14 +827,39 @@ $(document).ready(function () {
         }
     });
 
+    // $("#add_process_free").click(function () {
+    //     connect((port) => {
+    //         port.postMessage({
+    //             type: "add_event",
+    //             case_name: case_name,
+    //         });
+    //         window.close();
+    //     });
+    // });
+
     $("#add_process_free").click(function () {
-        connect((port) => {
-            port.postMessage({
-                type: "add_event",
+        exectab(function (tab_id) {
+            chrome.tabs.sendMessage(tab_id, {
+                type: "start_recording",
                 case_name: case_name,
             });
-            window.close();
+            get_my_robot(data => {
+                data[RECORD_CASE] = case_name;
+                set_my_robot(data, () => window.close());
+            })
         });
+    });
+
+    $("#end_process_free").click(function () {
+        exectab(function (tab_id) {
+            chrome.tabs.sendMessage(tab_id, {
+                type: "end_recording",
+            });
+            get_my_robot(data => {
+                data[RECORD_CASE] = undefined;
+                set_my_robot(data);
+            })
+        })
     });
 
     // 连接当前页面
@@ -964,4 +998,14 @@ $(document).ready(function () {
                 });
             });
     });
+});
+
+
+chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+    if (msg.type === "ADD_EVENT") {
+        get_my_robot(data => {
+            data[msg.case_name].case_process = data[msg.case_name].case_process.concat(msg.data);
+            set_my_robot(data, () => refresh_process(msg.case_name));
+        })
+    }
 });

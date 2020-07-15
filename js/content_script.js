@@ -88,6 +88,54 @@ function myrobot_get_selector(dom) {
     return null;
 }
 
+function dom_to_selector(doc, dom) {
+    let names = [];
+    let dombak = dom;
+    do {
+        if (!dom && !dom.parentElement) break;
+        if (dom.id && isNaN(Number(dom.id[0]))) {
+            names.unshift(`${dom.tagName}#${dom.id}`);
+            break;
+        } else {
+            let tmp;
+            let classNames = [];
+            for (let i = 0; i < dom.classList.length; i++) {
+                classNames.push(dom.classList[i]);
+            }
+            if (classNames.length > 0) {
+                tmp = `${dom.tagName}.${classNames.join(".")}`;
+            } else {
+                tmp = `${dom.tagName}`;
+            }
+            names.unshift(tmp);
+        }
+        dom = dom.parentElement;
+    } while (dom !== null);
+    let selector = names.join(" > ");
+    let nodes = doc.querySelectorAll(selector);
+    for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i] === dombak) {
+            return [selector, i];
+        }
+    }
+}
+
+function getCssSelectorShort(el) {
+    let path = [], parent;
+    while (parent = el.parentNode) {
+        let tag = el.tagName, siblings;
+        path.unshift(
+            el.id ? `#${el.id}` : (
+                siblings = parent.children,
+                    [].filter.call(siblings, sibling => sibling.tagName === tag).length === 1 ? tag :
+                        `${tag}:nth-child(${1 + [].indexOf.call(siblings, el)})`
+            )
+        );
+        el = parent;
+    }
+    return `${path.join(' > ')}`.toLowerCase();
+}
+
 function myrobot_set_body_event(case_name) {
     document.body.addEventListener('mousedown', function (e) {
         e.stopPropagation();
@@ -147,23 +195,6 @@ function myrobot_create_event_input(selectorn, case_name) {
             myrobot_set_body_event(case_name);
         }
     })
-}
-
-
-function getCssSelectorShort(el) {
-    let path = [], parent;
-    while (parent = el.parentNode) {
-        let tag = el.tagName, siblings;
-        path.unshift(
-            el.id ? `#${el.id}` : (
-                siblings = parent.children,
-                    [].filter.call(siblings, sibling => sibling.tagName === tag).length === 1 ? tag :
-                        `${tag}:nth-child(${1 + [].indexOf.call(siblings, el)})`
-            )
-        );
-        el = parent;
-    }
-    return `${path.join(' > ')}`.toLowerCase();
 }
 
 chrome.runtime.onConnect.addListener(function (port) {
@@ -294,7 +325,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (RDATA.first_recording) {
             document.addEventListener("click", function (e) {
                 if (RDATA.recording) {
-                    let tmp_selector = myrobot_get_selector(e.target);
+                    let tmp_selector = dom_to_selector(document, e.target);
                     RDATA.click_tag = tmp_selector[0];
                     RDATA.recording_data.push({
                         tag: tmp_selector[0],
@@ -304,7 +335,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                         wait: RDATA.time_wait,
                     });
                     RDATA.time_wait = 0;
-                    console.log("asd")
                 }
             }, true);
             document.addEventListener("keypress", function (e) {

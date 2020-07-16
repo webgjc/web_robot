@@ -911,10 +911,10 @@ $(document).ready(function () {
                     let select_tag = `${the_process.tag}&${the_process.n}`;
                     if (the_process.value) {
                         $("#set_value").show();
-                        $("#ssv").val(the_process.value);
                     } else {
                         $("#set_value").hide();
                     }
+                    $("#ssv").val(the_process.value);
                     $("#sel_opera").val(the_process.opera);
                     $("#sel_opera option").attr("selected", false);
                     $(`#sel_opera option[value='${the_process.opera}']`).attr(
@@ -925,7 +925,7 @@ $(document).ready(function () {
                     $("#num_wait").val(the_process.wait);
                     $("#process_add").text("保存");
                     $("#tag_list").html(
-                        `<div id='seldn' class='collection-item' data=${select_tag}><a href='#' id='hasseled'>已选: ${select_tag}</a></div>`
+                        `<div id='seldn' class='collection-item' data="${select_tag}"><a href='#' id='hasseled'>已选: ${select_tag}</a></div>`
                     );
                 });
             })

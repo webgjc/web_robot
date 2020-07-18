@@ -23,6 +23,9 @@ const tag_types = [
 const local_client_host = "http://127.0.0.1:12580/";
 
 const RECORD_CASE = "RECORD_CASE";
+const SETTING_DATA = "SETTING_DATA";
+const WEB_ADD_CASE = "WEB_ADD_CASE";
+const WEB_ADD_EVENT = "WEB_ADD_EVENT";
 
 // 获取数据存储
 function get_my_robot(callback) {
@@ -54,6 +57,14 @@ function get_my_robot(callback) {
         last_runtime(上次运行时间): 1591616590387,
         runtime(定时时间): null / 10(分钟);
     },
+    SETTING_DATA: {
+        RECORD_CASE: "录制事务名",
+        WEB_ADD_CASE: "页面添加事务名",
+        WEB_ADD_EVENT: {
+            tag: "标签",
+            n: "1"
+        }
+    }
 }
  */
 
@@ -169,7 +180,7 @@ function refresh_cases() {
             var cases = "";
             for (let i in my_robot) {
                 if (my_robot.hasOwnProperty(i)) {
-                    if([RECORD_CASE].indexOf(i) !== -1) continue;
+                    if(i === SETTING_DATA) continue;
                     let tr =
                         "<tr id=" +
                         i +
@@ -317,7 +328,7 @@ async function exec_run(process, tab_id) {
                 });
             });
         } else if (process[i].opera === "value") {
-            if (args[process[i].value] != undefined) {
+            if (args[process[i].value] !== undefined) {
                 process[i].value = args[process[i].value];
             }
             chrome.tabs.executeScript(tab_id, {
@@ -424,11 +435,38 @@ $(document).ready(function () {
 
     get_my_robot(data => {
         refresh_cases();
-        if(data[RECORD_CASE]) {
-            case_name = data[RECORD_CASE];
+        if(data[SETTING_DATA] === undefined) {
+            data[SETTING_DATA] = {};
+            set_my_robot(data)
+        }
+        if(data[SETTING_DATA][RECORD_CASE]) {
+            case_name = data[SETTING_DATA][RECORD_CASE];
             $("#case_view").hide();
             $("#process_view").show();
-            refresh_process(data[RECORD_CASE]);
+            refresh_process(data[SETTING_DATA][RECORD_CASE]);
+            $("#add_process_free").hide();
+            $("#end_process_free").show();
+        }else{
+            $("#add_process_free").show();
+            $("#end_process_free").hide();
+        }
+        if(data[SETTING_DATA][WEB_ADD_CASE]) {
+            $("#case_view").hide();
+            $("#process_view").hide();
+            $("#new_process").show();
+            $(".chose_tag").hide();
+            $(".chose_opera").show();
+            init_process_opera(tag_types, operas, operas_alias);
+            case_name = data[SETTING_DATA][WEB_ADD_CASE];
+            $("#tag_list")
+                .css("margin-top", "0px")
+                .html(
+                    `<div id='seldn' class='collection-item' data="${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}">
+                        <a href='#' id='hasseled'>已选: ${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}</a>
+                    </div>`
+                );
+            data[SETTING_DATA][WEB_ADD_CASE] = undefined;
+            set_my_robot(data);
         }
     });
 
@@ -838,16 +876,18 @@ $(document).ready(function () {
     // });
 
     $("#add_process_free").click(function () {
-        exectab(function (tab_id) {
-            chrome.tabs.sendMessage(tab_id, {
-                type: "start_recording",
-                case_name: case_name,
+        if(confirm("页面录制仅支持点击/英文设值事件，点击确认开始录制")){
+            exectab(function (tab_id) {
+                chrome.tabs.sendMessage(tab_id, {
+                    type: "start_recording",
+                    case_name: case_name,
+                });
+                get_my_robot(data => {
+                    data[SETTING_DATA][RECORD_CASE] = case_name;
+                    set_my_robot(data, () => window.close());
+                })
             });
-            get_my_robot(data => {
-                data[RECORD_CASE] = case_name;
-                set_my_robot(data, () => window.close());
-            })
-        });
+        }
     });
 
     $("#end_process_free").click(function () {
@@ -856,10 +896,20 @@ $(document).ready(function () {
                 type: "end_recording",
             });
             get_my_robot(data => {
-                data[RECORD_CASE] = undefined;
+                data[SETTING_DATA][RECORD_CASE] = undefined;
                 set_my_robot(data);
             })
         })
+    });
+
+    $("#add_process_web").click(function () {
+        exectab(tab_id => {
+            chrome.tabs.sendMessage(tab_id, {
+                type: "direct_add_event",
+                case_name: case_name,
+            });
+            window.close();
+        });
     });
 
     // 连接当前页面

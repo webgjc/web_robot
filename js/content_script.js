@@ -14,7 +14,7 @@ function set_my_robot(new_robot, callback) {
     })
 }
 
-function robot_make_select_canvass(dom) {
+function robot_make_select_canvas(dom) {
     myrobot_scroll_position(dom);
     let canvas = document.createElement("div");
     canvas.id = "robot_select";
@@ -197,6 +197,20 @@ function myrobot_create_event_input(selectorn, case_name) {
     })
 }
 
+
+function make_robot_window(x, y) {
+    x = Math.min(window.innerWidth - 300, x);
+    y = Math.min(window.innerHeight - 320, y);
+    let ifr = document.createElement("iframe");
+    ifr.src = chrome.extension.getURL('html/popup.html');
+    ifr.style.cssText = `z-index: 99999; position: fixed; top: ${y}px; left: ${x}px; background: #fff; border: solid 1px #ccc; min-height: 320px; min-width: 300px;`;
+    ifr.id = "robot_iframe";
+    document.body.appendChild(ifr);
+}
+
+// make_robot_window();
+
+
 chrome.runtime.onConnect.addListener(function (port) {
     if (port.name === "robot") {
         port.onMessage.addListener(function (msg) {
@@ -239,10 +253,10 @@ chrome.runtime.onConnect.addListener(function (port) {
                 if (msg.content.startsWith("#")) {
                     dom = document.getElementById(msg.content.substring(1));
                 }
-                robot_make_select_canvass(dom);
+                robot_make_select_canvas(dom);
             } else if (msg.type === "select_tag") {
                 let dom = document.getElementsByTagName(msg.tag)[msg.n];
-                robot_make_select_canvass(dom);
+                robot_make_select_canvas(dom);
             } else if (msg.type === "get_position") {
                 let posidom;
                 if (msg.tag.startsWith(".")) {
@@ -272,7 +286,7 @@ chrome.runtime.onConnect.addListener(function (port) {
                 })
             } else if (msg.type === "select_query_selecter") {
                 let dom = document.querySelectorAll(msg.content)[msg.n];
-                robot_make_select_canvass(dom);
+                robot_make_select_canvas(dom);
             } else if (msg.type === "add_event") {
                 myrobot_set_body_event(msg.case_name);
             } else {
@@ -367,7 +381,49 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         });
         RDATA.recording_data = [];
         clearInterval(RDATA.itv_timer);
+        window.location.reload();
         RDATA.recording = false;
+    } else if (msg.type === "direct_add_event") {
+        let last_dom;
+        let last_dom_border;
+        let last_dom_boxshadow;
+        let last_dom_zindex;
+        document.onmouseover = (e) => {
+            e.stopPropagation();
+            let tmp = e.target.style.border;
+            let tmp1 = e.target.style.boxShadow;
+            let tmp2 = e.target.style.zIndex;
+            e.target.style.border = "solid 2px #ffa3a3";
+            e.target.style.boxShadow = "0px 0px 8px 8px #ffa3a3";
+            e.target.style.zIndex = 999;
+            if(last_dom !== undefined) {
+                last_dom.style.border=last_dom_border;
+                last_dom.style.boxShadow=last_dom_boxshadow;
+                last_dom.zIndex=last_dom_zindex;
+            }
+            last_dom = e.target;
+            last_dom_border = tmp;
+            last_dom_boxshadow = tmp1;
+            last_dom_zindex = tmp2;
+        };
+        document.addEventListener("click", function (e) {
+            if(document.getElementById("robot_iframe")){
+                document.getElementById("robot_iframe").remove();
+            }
+            e.stopPropagation();
+            e.preventDefault();
+            let selector = dom_to_selector(document, e.target);
+            get_my_robot(data => {
+                data["SETTING_DATA"]["WEB_ADD_CASE"] = msg.case_name;
+                data["SETTING_DATA"]["WEB_ADD_EVENT"] = {
+                    tag: selector[0],
+                    n: selector[1]
+                };
+                set_my_robot(data, () => {
+                    make_robot_window(e.x, e.y);
+                })
+            });
+        }, true);
     }
 });
 

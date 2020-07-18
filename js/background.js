@@ -119,7 +119,7 @@ async function exec_run(process, tab_id) {
                 });
             });
         } else if (process[i].opera === "value") {
-            if (args[process[i].value] != undefined) {
+            if (args[process[i].value] !== undefined) {
                 process[i].value = args[process[i].value];
             }
             chrome.tabs.executeScript(tab_id, {
@@ -188,7 +188,7 @@ async function simexecute(process, tabs) {
                                 post_client_run(msg, process[i]);
                             });
                         } else if (process[i].opera === "value") {
-                            if (args[process[i].value] != undefined) {
+                            if (args[process[i].value] !== undefined) {
                                 process[i].value = args[process[i].value];
                             }
                             post_client_run(msg, process[i]);
@@ -217,7 +217,7 @@ function calc_minute(time) {
 }
 
 function compare_time(time) {
-    let t = time.split(":")
+    let t = time.split(":");
     return parseInt(t[0]) * 60 + parseInt(t[1]) <= new Date().getHours() * 60 + new Date().getMinutes()
 }
 
@@ -241,15 +241,15 @@ async function async_run(myrobot, i) {
 
 async function timer_run_robot(myrobot) {
     for (let i in myrobot) {
-        if (myrobot[i].runtime) {
+        if (myrobot[i].runtime && myrobot.hasOwnProperty(i)) {
             if (myrobot[i].runtime.endsWith("m")) {
                 let minute = parseInt(myrobot[i].runtime.slice(0, -1));
                 if (calc_minute(myrobot[i].last_runtime) >= minute) {
                     await async_run(myrobot, i);
                 }
-            } else if (myrobot[i].runtime.indexOf(":") != -1) {
+            } else if (myrobot[i].runtime.indexOf(":") !== -1) {
                 if (compare_time(myrobot[i].runtime)) {
-                    if (new Date(myrobot[i].last_runtime).getDate() != new Date().getDate()) {
+                    if (new Date(myrobot[i].last_runtime).getDate() !== new Date().getDate()) {
                         await async_run(myrobot, i);
                     }
                 }

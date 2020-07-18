@@ -682,11 +682,7 @@ $(document).ready(function () {
                     let options = "";
                     for (let i = 0; i < msg.num.length; i++) {
                         let value = selected_tag + "&" + msg.num[i];
-                        options =
-                            options +
-                            "<a href='#' class='collection-item tag_spec'>" +
-                            value +
-                            "</a>";
+                        options += `<a href='#' class='collection-item tag_spec'>${value}</a>`;
                     }
                     $("#tag_list").html(options);
                     $(".tag_spec").mouseover(function () {
@@ -787,7 +783,17 @@ $(document).ready(function () {
             $(".chose_opera").hide();
             $("body").css("width", "150px");
             $(".tag_select").css("margin-top", "40px");
-            $("#tag_list").css("margin-top", "-20px");
+            $("#tag_list").css("margin-top", "-20px")
+                .html(`<a href='#' class='collection-item tag_spec'>${$("#seldn").attr("data")}</a>`);
+            $(".tag_spec").mouseover(function () {
+                connect(port => {
+                    port.postMessage({
+                        type: "select_query_selecter",
+                        content: $(this).text().split("&")[0],
+                        n: parseInt($(this).text().split("&")[1]),
+                    });
+                })
+            });
         });
 
     // 设置设值显隐

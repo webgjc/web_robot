@@ -390,6 +390,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         let last_dom_zindex;
         document.onmouseover = (e) => {
             e.stopPropagation();
+            e.preventDefault();
             let tmp = e.target.style.border;
             let tmp1 = e.target.style.boxShadow;
             let tmp2 = e.target.style.zIndex;
@@ -399,7 +400,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             if(last_dom !== undefined) {
                 last_dom.style.border=last_dom_border;
                 last_dom.style.boxShadow=last_dom_boxshadow;
-                last_dom.zIndex=last_dom_zindex;
+                last_dom.style.zIndex=last_dom_zindex;
             }
             last_dom = e.target;
             last_dom_border = tmp;

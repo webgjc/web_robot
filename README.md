@@ -162,6 +162,7 @@ V1.8.0 (2020.07.20)
 
 V1.8.1 (2020.08.09)
 1. 流程事务支持新页面跳转操作
+2. 主页默认根据创建时间展示列表,支持移位
 
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)

@@ -58,6 +58,7 @@ function get_my_robot(callback) {
         runtime(定时时间): null / 10(分钟);
     },
     SETTING_DATA: {
+        KEYS: [],
         RECORD_CASE: "录制事务名",
         WEB_ADD_CASE: "页面添加事务名",
         WEB_ADD_EVENT: {
@@ -177,20 +178,12 @@ function refresh_cases() {
         if (my_robot === undefined) {
             set_my_robot({});
         } else {
-            var cases = "";
-            for (let i in my_robot) {
+            let cases = "";
+            for (let n = 0; n < my_robot[SETTING_DATA]["KEYS"].length; n++) {
+                let i = my_robot[SETTING_DATA]["KEYS"][n];
                 if (my_robot.hasOwnProperty(i)) {
                     if(i === SETTING_DATA) continue;
-                    let tr =
-                        "<tr id=" +
-                        i +
-                        '> \
-                                            <td> \
-                                                <a href="#" class="case_name">' +
-                        i +
-                        "</a> \
-                                            </td> \
-                                            <td>";
+                    let tr = "<tr id=" + i + '><td><a href="#" class="case_name">' + i + "</a></td><td>";
                     if (
                         my_robot[i]["case_type"] === "process" ||
                         my_robot[i]["case_type"] === "sourcecode"
@@ -207,10 +200,12 @@ function refresh_cases() {
                     ) {
                         tr += '<a href="#" class="sim_run">受控运行</a> ';
                     }
-                    tr += '<a href="#" class="del_case">删除</a> ';
                     if (my_robot[i]["case_type"] === "process") {
                         tr += '<a href="#" class="lun_case">轮播</a> ';
                     }
+                    tr += '<br />';
+                    tr += '<a href="#" class="moveup_case">上移</a> ';
+                    tr += '<a href="#" class="del_case">删除</a> ';
                     if (my_robot[i]["case_type"] !== "control") {
                         tr += '<a href="#" class="export_case">导出</a></td></tr>';
                     }
@@ -434,11 +429,21 @@ $(document).ready(function () {
     let init_select = 1;
 
     get_my_robot(data => {
-        refresh_cases();
         if(data[SETTING_DATA] === undefined) {
             data[SETTING_DATA] = {};
             set_my_robot(data)
         }
+        if(data[SETTING_DATA]["KEYS"] === undefined) {
+            let tmp = [];
+            for(let key in data){
+                if(data.hasOwnProperty(key) && key !== SETTING_DATA) {
+                    tmp.push(key);
+                }
+            }
+            data[SETTING_DATA]["KEYS"] = tmp;
+            set_my_robot(data);
+        }
+        refresh_cases();
         if(data[SETTING_DATA][RECORD_CASE]) {
             case_name = data[SETTING_DATA][RECORD_CASE];
             $("#case_view").hide();
@@ -504,6 +509,7 @@ $(document).ready(function () {
             if (confirm(`确认删除 ${case_name}`)) {
                 get_my_robot((my_robot) => {
                     delete my_robot[case_name];
+                    my_robot[SETTING_DATA]["KEYS"].splice(my_robot[SETTING_DATA]["KEYS"].indexOf(case_name), 1);
                     set_my_robot(my_robot, refresh_cases);
                 });
             }
@@ -573,6 +579,17 @@ $(document).ready(function () {
                 set_my_robot(my_robot);
                 refresh_cases();
             })
+        }).on("click", ".moveup_case", function () {
+            let case_name = $(this).parent().parent().attr("id");
+            get_my_robot((my_robot) => {
+                let idx = my_robot[SETTING_DATA]["KEYS"].indexOf(case_name);
+                if(idx !== -1 && idx > 0) {
+                    let tmp = my_robot[SETTING_DATA]["KEYS"][idx-1];
+                    my_robot[SETTING_DATA]["KEYS"][idx-1] = my_robot[SETTING_DATA]["KEYS"][idx];
+                    my_robot[SETTING_DATA]["KEYS"][idx] = tmp;
+                }
+                set_my_robot(my_robot, refresh_cases);
+            });
         });
 
     // 点击删除一个事件
@@ -604,6 +621,7 @@ $(document).ready(function () {
                 control_url: "",
                 sourcecode_url: ".*",
             };
+            my_robot[SETTING_DATA]["KEYS"].push(new_case_name);
             set_my_robot(my_robot, refresh_cases);
         });
     });
@@ -618,6 +636,7 @@ $(document).ready(function () {
                     return;
                 }
                 my_robot[case_content["case_name"]] = case_content;
+                my_robot[SETTING_DATA]["KEYS"].push(case_content["case_name"]);
                 set_my_robot(my_robot, refresh_cases);
             });
         } catch {

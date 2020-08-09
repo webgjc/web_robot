@@ -125,6 +125,16 @@ async function exec_run(process, tab_id) {
             chrome.tabs.executeScript(tab_id, {
                 code: jscode(process[i])
             });
+        } else if (process[i].opera === "newpage") {
+            chrome.tabs.create({
+                url: process[i].value
+            });
+            await chrome.tabs.query({
+                active: true,
+                currentWindow: true
+            }, async function (tabs) {
+                tab_id = tabs[0].id
+            });
         } else {
             chrome.tabs.executeScript(tab_id, {
                 code: jscode(process[i])

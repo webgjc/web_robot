@@ -427,8 +427,8 @@ function process_argv(process, callback) {
 // 主要
 $(document).ready(function () {
     // 操作
-    const operas = ["click", "value", "mouseover", "refresh", "pagejump", "getvalue"];
-    const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转", "取值"];
+    const operas = ["click", "value", "mouseover", "refresh", "pagejump", "newpage", "getvalue"];
+    const operas_alias = ["点击", "设值", "鼠标移入", "刷新", "本页跳转", "新开页面", "取值"];
     let case_name = "";
     let edit_prcess_n = -1;
     let init_select = 1;
@@ -798,7 +798,8 @@ $(document).ready(function () {
 
     // 设置设值显隐
     $("#sel_opera").change(function () {
-        if ($(this).val() === "value" || $(this).val() === "pagejump" || $(this).val() === "getvalue") {
+        if ($(this).val() === "value" || $(this).val() === "pagejump"
+            || $(this).val() === "getvalue" || $(this).val() === "newpage") {
             $("#set_value").show();
         } else {
             $("#set_value").hide();

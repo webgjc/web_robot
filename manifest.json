@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Web Robot",
-    "version": "1.8.1",
-    "description": "网页自动化操作机器人",
+    "version": "1.8.2",
+    "description": "网页自动化操作机器人, 可以帮助自动化测试网页，可以运行一些特定流程，支持对接本地的客户端受控运行，支持录制还原等",
     "browser_action": {
         "default_popup": "html/popup.html",
         "default_icon": {

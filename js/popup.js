@@ -108,7 +108,7 @@ function connect_client(callback) {
             callback();
         })
         .catch(() => {
-            alert("本地WEB客户端连接失败");
+            alert("本地WEB客户端连接失败，请开启pythonWeb服务");
         });
 }
 
@@ -204,6 +204,7 @@ function refresh_cases() {
                         tr += '<a href="#" class="lun_case">轮播</a> ';
                     }
                     tr += '<br />';
+                    tr += '<a href="#" class="rename_case">重命名</a> ';
                     tr += '<a href="#" class="moveup_case">上移</a> ';
                     tr += '<a href="#" class="del_case">删除</a> ';
                     if (my_robot[i]["case_type"] !== "control") {
@@ -590,11 +591,28 @@ $(document).ready(function () {
                 }
                 set_my_robot(my_robot, refresh_cases);
             });
-        });
+        }).on("click", ".rename_case", function () {
+            case_name = $(this).parent().parent().attr("id");
+            $("#rename-case-modal").modal("open");
+    });
+
+    $("#input_new_case_name").click(function () {
+        get_my_robot(my_robot => {
+            let tmp = $("#new_case_name").val();
+            let idx = my_robot[SETTING_DATA]["KEYS"].indexOf(case_name);
+            if(tmp && tmp !== case_name) {
+                my_robot[tmp] = my_robot[case_name];
+                my_robot[SETTING_DATA]["KEYS"][idx] = tmp;
+                delete my_robot[case_name];
+            }
+            set_my_robot(my_robot, refresh_cases);
+        })
+
+    });
 
     // 点击删除一个事件
     $("#process_list").on("click", "#process_del", function () {
-        var processs_n = parseInt(
+        let processs_n = parseInt(
             $(this).parent().parent().parent().attr("id").split("-")[1]
         );
         get_my_robot((my_robot) => {

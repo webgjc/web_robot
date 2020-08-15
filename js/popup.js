@@ -437,6 +437,16 @@ $(document).ready(function () {
             set_my_robot(new_data);
             return;
         }
+        if(data[SETTING_DATA]["KEYS"] === undefined) {
+            let tmp = [];
+            for(let key in data){
+                if(data.hasOwnProperty(key) && key !== SETTING_DATA) {
+                    tmp.push(key);
+                }
+            }
+            data[SETTING_DATA]["KEYS"] = tmp;
+            set_my_robot(data);
+        }
         refresh_cases();
         if(data[SETTING_DATA][RECORD_CASE]) {
             case_name = data[SETTING_DATA][RECORD_CASE];

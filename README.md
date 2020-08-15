@@ -164,6 +164,10 @@ V1.8.1 (2020.08.09)
 1. 流程事务支持新页面跳转操作
 2. 主页默认根据创建时间展示列表,支持移位
 
+V1.8.2 (2020.08.15)
+1. 新用户初始化数据修复
+2. 新增重命名操作
+
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)
 3. [官方轮子](https://developer.chrome.com/extensions)

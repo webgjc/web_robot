@@ -430,19 +430,12 @@ $(document).ready(function () {
     let init_select = 1;
 
     get_my_robot(data => {
-        if(data[SETTING_DATA] === undefined) {
-            data[SETTING_DATA] = {};
-            set_my_robot(data)
-        }
-        if(data[SETTING_DATA]["KEYS"] === undefined) {
-            let tmp = [];
-            for(let key in data){
-                if(data.hasOwnProperty(key) && key !== SETTING_DATA) {
-                    tmp.push(key);
-                }
-            }
-            data[SETTING_DATA]["KEYS"] = tmp;
-            set_my_robot(data);
+        if(data === undefined) {
+            let new_data = {};
+            new_data[SETTING_DATA] = {};
+            new_data[SETTING_DATA]["KEYS"] = [];
+            set_my_robot(new_data);
+            return;
         }
         refresh_cases();
         if(data[SETTING_DATA][RECORD_CASE]) {

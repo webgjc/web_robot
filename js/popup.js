@@ -605,6 +605,7 @@ $(document).ready(function () {
             let idx = my_robot[SETTING_DATA]["KEYS"].indexOf(case_name);
             if(tmp && tmp !== case_name) {
                 my_robot[tmp] = my_robot[case_name];
+                my_robot[case_name]["case_name"] = tmp;
                 my_robot[SETTING_DATA]["KEYS"][idx] = tmp;
                 delete my_robot[case_name];
             }

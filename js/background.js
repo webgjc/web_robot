@@ -270,7 +270,7 @@ async function timer_run_robot(myrobot) {
 
 async function timer_runing() {
     while (true) {
-        await sleep(10);
+        await sleep(20);
         // console.log(new Date());
         await get_my_robot(async my_robot => {
             await timer_run_robot(my_robot)

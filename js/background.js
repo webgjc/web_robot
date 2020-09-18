@@ -1,14 +1,22 @@
-var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
-
+const tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
 
 // 拼接执行的js
 function jscode(process) {
     let exec_code = "(function(){ \n";
     if (process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
         if (tag_types.indexOf(process.tag) === -1) {
-            exec_code += `var robot_node = document.querySelectorAll('${process.tag}')[${process.n}];\n`
+            exec_code += `var robot_node;\n`;
+            exec_code += `
+                let ptag = '${process.tag}';
+                if (ptag.indexOf("{") !== -1 && ptag.indexOf("}") !== -1) {
+                    let doms = document.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
+                    let value = ptag.substring(ptag.indexOf("{") + 1, ptag.indexOf("}"));
+                    robot_node = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[${process.n}];
+                }else{
+                    robot_node = document.querySelectorAll(ptag)[${process.n}];
+                }\n`;
         } else {
-            exec_code += `var robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`
+            exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`
         }
         exec_code += `function myrobot_getAbsPoin(dom) {
             let x = dom.offsetLeft;

@@ -25,6 +25,7 @@
 13. 支持流程取值事件，取到的值对当次流程有效
 14. 支持流程事件的直接录制
 15. 页面添加事件中优秀的可视化圈选
+16. 支持值选择器
 
 
 ## 核心部分--事务和运行机制说明
@@ -94,6 +95,42 @@
 - 源码事务的的定时运行适用于如定时提醒喝水(alert)等
 - 源码事务的开始注入适用于如百度去广告的场景等
 - 受控事务的录制和受控运行适用于对一个复杂操作(无法用流程实现)的定义和复现。
+
+## 演示用例
+
+- 基本操作
+```json
+{"case_name":"基本操作","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"1"},{"n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"2"},{"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
+```
+
+- 取值事件
+```json
+{"case_name":"取值事件用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"getvalue","tag":"HTML.macos.desktop.landscape > BODY > NAV.navbar.navbar-default.navbar-custom.navbar-fixed-top > DIV.container-fluid > DIV.navbar-header.page-scroll > A.navbar-brand","value":"title","wait":"3"},{"n":"0","opera":"pagejump","tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"2"},{"n":"0","opera":"value","tag":"INPUT#kw","value":"title","wait":"1"},{"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
+```
+
+- 百度去广告(源码事务)
+```json
+{"case_name":"百度去广告","case_process":[],"case_sourcecode":"Array.from(\n            document.querySelectorAll('#content_left>div'))\n            .forEach(el => \n                />广告</.test(el.innerHTML) && el.parentNode.removeChild(el)\n        );\nsetInterval(() => {\n    try{\n        Array.from(\n            document.querySelectorAll('#content_left>div'))\n            .forEach(el => \n                />广告</.test(el.innerHTML) && el.parentNode.removeChild(el)\n        )\n    } catch(e){}\n}, 1000)\n","case_type":"sourcecode","control_url":"","sourcecode_url":"baidu.com.*","start_inject":true}
+```
+
+- 定时喝水(源码事务)
+```json
+{"case_name":"定时喝水","case_process":[],"case_sourcecode":"alert(\"你该喝水咯\")","case_type":"sourcecode","control_url":"","last_runtime":1599706892179,"runtime":"60m","sourcecode_url":".*"}
+```
+
+- 值选择器用例
+```json
+{"case_name":"值选择器用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"click","tag":"a{About}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Archives}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Home}","value":"","wait":"2"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
+```
+
+- 演示1
+![演示1](http://blog.ganjiacheng.cn/img/mypost/robot_demo1.gif)
+
+- 演示2
+![演示2](http://blog.ganjiacheng.cn/img/mypost/robot_demo2.gif)
+
+- 演示3
+![演示3](http://blog.ganjiacheng.cn/img/mypost/robot_demo3.gif)
 
 ## 版本迭代
 
@@ -167,6 +204,9 @@ V1.8.1 (2020.08.09)
 V1.8.2 (2020.08.15)
 1. 新用户初始化数据修复
 2. 新增重命名操作
+
+V1.8.3（2020.09.18）
+1. 支持值选择器
 
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)

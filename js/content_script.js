@@ -273,11 +273,18 @@ chrome.runtime.onConnect.addListener(function (port) {
                     y: posidom.getBoundingClientRect().top + posidom.getBoundingClientRect().height / 2 + window.screenTop + (window.outerHeight - window.innerHeight)
                 })
             } else if (msg.type === "search_query_selecter") {
-                let doms = document.querySelectorAll(msg.content);
+                let doms;
+                if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
+                    doms = document.querySelectorAll(msg.content.substring(0, msg.content.indexOf("{")));
+                    let value = msg.content.substring(msg.content.indexOf("{") + 1, msg.content.indexOf("}"));
+                    doms = Array.prototype.slice.call(doms).filter(d => d.textContent === value);
+                } else {
+                    doms = document.querySelectorAll(msg.content);
+                }
                 let nums = Array();
                 for (let i = 0; i < doms.length; i++) {
                     if (doms[i].offsetHeight > 0) {
-                        nums.push(i)
+                        nums.push(i);
                     }
                 }
                 port.postMessage({
@@ -285,7 +292,14 @@ chrome.runtime.onConnect.addListener(function (port) {
                     num: nums
                 })
             } else if (msg.type === "select_query_selecter") {
-                let dom = document.querySelectorAll(msg.content)[msg.n];
+                let dom;
+                if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
+                    let doms = document.querySelectorAll(msg.content.substring(0, msg.content.indexOf("{")));
+                    let value = msg.content.substring(msg.content.indexOf("{") + 1, msg.content.indexOf("}"));
+                    dom = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[msg.n];
+                } else {
+                    dom = document.querySelectorAll(msg.content)[msg.n];
+                }
                 robot_make_select_canvas(dom);
             } else if (msg.type === "add_event") {
                 myrobot_set_body_event(msg.case_name);
@@ -311,8 +325,14 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
     let posidom;
 
-    if (tag_types.indexOf(msg.tag) === -1) {
-        posidom = document.querySelectorAll(msg.tag)[msg.n];
+    if (tag_types.indexOf(msg.tag) === -1 && msg.tag) {
+        if (msg.tag.indexOf("{") !== -1 && msg.tag.indexOf("}") !== -1) {
+            let doms = document.querySelectorAll(msg.tag.substring(0, msg.tag.indexOf("{")));
+            let value = msg.tag.substring(msg.tag.indexOf("{") + 1, msg.tag.indexOf("}"));
+            posidom = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[msg.n];
+        } else {
+            posidom = document.querySelectorAll(msg.tag)[msg.n];
+        }
     } else {
         posidom = document.getElementsByTagName(msg.tag)[msg.n];
     }
@@ -353,9 +373,9 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             }, true);
             document.addEventListener("keypress", function (e) {
                 if (RDATA.recording) {
-                    if(RDATA.recording_data.length > 0) {
-                        let last_event = RDATA.recording_data[RDATA.recording_data.length-1];
-                        if(last_event.tag === RDATA.click_tag && last_event.opera === "value") {
+                    if (RDATA.recording_data.length > 0) {
+                        let last_event = RDATA.recording_data[RDATA.recording_data.length - 1];
+                        if (last_event.tag === RDATA.click_tag && last_event.opera === "value") {
                             last_event.value += String.fromCharCode(e.keyCode);
                             RDATA.time_wait = 0;
                             return;
@@ -384,6 +404,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         window.location.reload();
         RDATA.recording = false;
     } else if (msg.type === "direct_add_event") {
+        console.log(123)
         let last_dom;
         let last_dom_border;
         let last_dom_boxshadow;
@@ -397,10 +418,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             e.target.style.border = "solid 2px #ffa3a3";
             e.target.style.boxShadow = "0px 0px 8px 8px #ffa3a3";
             e.target.style.zIndex = 999;
-            if(last_dom !== undefined) {
-                last_dom.style.border=last_dom_border;
-                last_dom.style.boxShadow=last_dom_boxshadow;
-                last_dom.style.zIndex=last_dom_zindex;
+            if (last_dom !== undefined) {
+                last_dom.style.border = last_dom_border;
+                last_dom.style.boxShadow = last_dom_boxshadow;
+                last_dom.style.zIndex = last_dom_zindex;
             }
             last_dom = e.target;
             last_dom_border = tmp;
@@ -408,7 +429,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             last_dom_zindex = tmp2;
         };
         document.addEventListener("click", function (e) {
-            if(document.getElementById("robot_iframe")){
+            if (document.getElementById("robot_iframe")) {
                 document.getElementById("robot_iframe").remove();
             }
             e.stopPropagation();

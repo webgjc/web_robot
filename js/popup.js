@@ -123,7 +123,8 @@ function jscode(process) {
                 if (ptag.indexOf("{") !== -1 && ptag.indexOf("}") !== -1) {
                     let doms = document.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
                     let value = ptag.substring(ptag.indexOf("{") + 1, ptag.indexOf("}"));
-                    robot_node = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[${process.n}];
+                    robot_node = Array.prototype.slice.call(doms)
+                    .filter(d => d.textContent.trim() === value && d.children.length === 0)[${process.n}];
                 }else{
                     robot_node = document.querySelectorAll(ptag)[${process.n}];
                 }\n`;

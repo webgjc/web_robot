@@ -277,7 +277,7 @@ chrome.runtime.onConnect.addListener(function (port) {
                 if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
                     doms = document.querySelectorAll(msg.content.substring(0, msg.content.indexOf("{")));
                     let value = msg.content.substring(msg.content.indexOf("{") + 1, msg.content.indexOf("}"));
-                    doms = Array.prototype.slice.call(doms).filter(d => d.textContent === value);
+                    doms = Array.prototype.slice.call(doms).filter(d => d.textContent.trim() === value && d.children.length === 0);
                 } else {
                     doms = document.querySelectorAll(msg.content);
                 }
@@ -296,7 +296,7 @@ chrome.runtime.onConnect.addListener(function (port) {
                 if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
                     let doms = document.querySelectorAll(msg.content.substring(0, msg.content.indexOf("{")));
                     let value = msg.content.substring(msg.content.indexOf("{") + 1, msg.content.indexOf("}"));
-                    dom = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[msg.n];
+                    dom = Array.prototype.slice.call(doms).filter(d => d.textContent.trim() === value && d.children.length === 0)[msg.n];
                 } else {
                     dom = document.querySelectorAll(msg.content)[msg.n];
                 }
@@ -322,14 +322,14 @@ let RDATA = {
 
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-    var tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+    const tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
     let posidom;
 
     if (tag_types.indexOf(msg.tag) === -1 && msg.tag) {
         if (msg.tag.indexOf("{") !== -1 && msg.tag.indexOf("}") !== -1) {
             let doms = document.querySelectorAll(msg.tag.substring(0, msg.tag.indexOf("{")));
             let value = msg.tag.substring(msg.tag.indexOf("{") + 1, msg.tag.indexOf("}"));
-            posidom = Array.prototype.slice.call(doms).filter(d => d.textContent === value)[msg.n];
+            posidom = Array.prototype.slice.call(doms).filter(d => d.textContent.trim() === value && d.children.length === 0)[msg.n];
         } else {
             posidom = document.querySelectorAll(msg.tag)[msg.n];
         }

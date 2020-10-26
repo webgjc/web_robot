@@ -1,9 +1,34 @@
-const tag_types = ["自由选择器", "a", "body", "button", "div", "i", "img", "input", "li", "p", "span", "td", "textarea", "tr", "ul", "h1", "h2", "h3", "h4", "h5"];
+const tag_types = [
+    "自由选择器",
+    "a",
+    "body",
+    "button",
+    "div",
+    "i",
+    "img",
+    "input",
+    "li",
+    "p",
+    "span",
+    "td",
+    "textarea",
+    "tr",
+    "ul",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+];
 
 // 拼接执行的js
 function jscode(process) {
     let exec_code = "(function(){ \n";
-    if (process["opera"] === "click" || process["opera"] === "value" || process["opera"] === "mouseover") {
+    if (
+        process["opera"] === "click" ||
+        process["opera"] === "value" ||
+        process["opera"] === "mouseover"
+    ) {
         if (tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node;\n`;
             exec_code += `
@@ -17,8 +42,9 @@ function jscode(process) {
                     robot_node = document.querySelectorAll(ptag)[${process.n}];
                 }\n`;
         } else {
-            exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`
+            exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`;
         }
+        exec_code += `console.log(robot_node);\n`;
         exec_code += `function myrobot_getAbsPoin(dom) {
             let x = dom.offsetLeft;
             let y = dom.offsetTop;
@@ -38,7 +64,7 @@ function jscode(process) {
                 window.scrollTo(domposi.x - window.innerWidth / 2, domposi.y - window.innerHeight / 2);}\n`;
     }
     if (process["opera"] === "click") {
-        exec_code += "robot_node.click();"
+        exec_code += "robot_node.click();";
     } else if (process["opera"] === "value") {
         /**
          * 为react兼容
@@ -56,7 +82,7 @@ function jscode(process) {
         exec_code += `window.location.href='${process.value}';`;
     } else if (process["opera"] === "mouseover") {
         exec_code += `let mouseoverevent = new MouseEvent('mouseover', {bubbles: true, cancelable: true});`;
-        exec_code += `robot_node.dispatchEvent(mouseoverevent);`
+        exec_code += `robot_node.dispatchEvent(mouseoverevent);`;
     }
     exec_code += "\n})();";
     return exec_code;
@@ -73,7 +99,7 @@ function source_jscode(sourcecode) {
 function sourcecode_run(sourcecode, sourcecode_url, tab) {
     if (new RegExp(sourcecode_url).test(tab.url)) {
         chrome.tabs.executeScript(tab.id, {
-            code: source_jscode(sourcecode)
+            code: source_jscode(sourcecode),
         });
     }
 }
@@ -101,12 +127,44 @@ function sourcecode_run(sourcecode, sourcecode_url, tab) {
 //     }
 // }
 
-
 // 等待
 function sleep(s) {
     return new Promise(function (resolve, reject) {
         setTimeout(resolve, s * 1000);
-    })
+    });
+}
+
+function exec_run_item(process_item, tab_id, args) {
+    console.log(`start run ${JSON.stringify(process_item)}`);
+    if (process_item.opera === "getvalue") {
+        chrome.tabs.sendMessage(tab_id, {
+            type: "get_value",
+            tag: process_item.tag,
+            n: process_item.n,
+        }, function (msg) {
+            if (msg.type === "get_value") {
+                args[process_item.value] = msg.data;
+            }
+            chrome.tabs.executeScript(tab_id, {
+                code: jscode(process_item)
+            });
+        });
+    } else if (process_item.opera === "value") {
+        if (args[process_item.value] !== undefined) {
+            process_item.value = args[process_item.value];
+        }
+        chrome.tabs.executeScript(tab_id, {
+            code: jscode(process_item)
+        });
+    } else if (process_item.opera === "newpage") {
+        chrome.tabs.create({
+            url: process_item.value
+        });
+    } else {
+        chrome.tabs.executeScript(tab_id, {
+            code: jscode(process_item)
+        });
+    }
 }
 
 // 运行流程事务
@@ -114,41 +172,7 @@ async function exec_run(process, tab_id) {
     let args = {};
     for (let i = 0; i < process.length; i++) {
         await sleep(process[i].wait);
-        if (process[i].opera === "getvalue") {
-            chrome.tabs.sendMessage(tab_id, {
-                type: "get_value",
-                tag: process[i].tag,
-                n: process[i].n,
-            }, function (msg) {
-                if (msg.type === "get_value") {
-                    args[process[i].value] = msg.data;
-                }
-                chrome.tabs.executeScript(tab_id, {
-                    code: jscode(process[i])
-                });
-            });
-        } else if (process[i].opera === "value") {
-            if (args[process[i].value] !== undefined) {
-                process[i].value = args[process[i].value];
-            }
-            chrome.tabs.executeScript(tab_id, {
-                code: jscode(process[i])
-            });
-        } else if (process[i].opera === "newpage") {
-            chrome.tabs.create({
-                url: process[i].value
-            });
-            await chrome.tabs.query({
-                active: true,
-                currentWindow: true
-            }, async function (tabs) {
-                tab_id = tabs[0].id
-            });
-        } else {
-            chrome.tabs.executeScript(tab_id, {
-                code: jscode(process[i])
-            });
-        }
+        exec_run_item(process[i], tab_id, args);
     }
 }
 
@@ -159,11 +183,14 @@ function get_my_robot(callback) {
 }
 
 function set_my_robot(new_robot, cb) {
-    chrome.storage.local.set({
-        my_robot: new_robot
-    }, function () {
-        cb && cb();
-    });
+    chrome.storage.local.set(
+        {
+            my_robot: new_robot,
+        },
+        function () {
+            cb && cb();
+        }
+    );
 }
 
 function post_client_run(msg, process) {
@@ -171,58 +198,76 @@ function post_client_run(msg, process) {
         x: msg.x,
         y: msg.y,
         opera: process.opera,
-        value: process.value
+        value: process.value,
     };
     fetch("http://127.0.0.1:12580/webexec/", {
         method: "POST",
-        body: JSON.stringify(postdata)
-    })
+        body: JSON.stringify(postdata),
+    });
 }
 
 // 受控运行流程事务
 async function simexecute(process, tabs) {
-    await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    }, async function (tabs) {
-        let args = {};
-        for (let i = 0; i < process.length; i++) {
-            await sleep(process[i].wait);
-            if (process[i].opera === "click" || process[i].opera === "value" || process[i].opera === "mouseover" || process[i].opera === "getvalue") {
-                await chrome.tabs.sendMessage(tabs[0].id, {
-                    type: "get_position",
-                    tag: process[i].tag,
-                    n: process[i].n,
-                }, function (msg) {
-                    if (msg.type === "get_position") {
-                        if (process[i].opera === "getvalue") {
-                            chrome.tabs.sendMessage(tabs[0].id, {
-                                type: "get_value",
-                                tag: process[i].tag,
-                                n: process[i].n,
-                            }, function (msg) {
-                                if (msg.type === "get_value") {
-                                    args[process[i].value] = msg.data;
+    await chrome.tabs.query(
+        {
+            active: true,
+            currentWindow: true,
+        },
+        async function (tabs) {
+            let args = {};
+            for (let i = 0; i < process.length; i++) {
+                await sleep(process[i].wait);
+                if (
+                    process[i].opera === "click" ||
+                    process[i].opera === "value" ||
+                    process[i].opera === "mouseover" ||
+                    process[i].opera === "getvalue"
+                ) {
+                    await chrome.tabs.sendMessage(
+                        tabs[0].id,
+                        {
+                            type: "get_position",
+                            tag: process[i].tag,
+                            n: process[i].n,
+                        },
+                        function (msg) {
+                            if (msg.type === "get_position") {
+                                if (process[i].opera === "getvalue") {
+                                    chrome.tabs.sendMessage(
+                                        tabs[0].id,
+                                        {
+                                            type: "get_value",
+                                            tag: process[i].tag,
+                                            n: process[i].n,
+                                        },
+                                        function (msg) {
+                                            if (msg.type === "get_value") {
+                                                args[process[i].value] =
+                                                    msg.data;
+                                            }
+                                            post_client_run(msg, process[i]);
+                                        }
+                                    );
+                                } else if (process[i].opera === "value") {
+                                    if (args[process[i].value] !== undefined) {
+                                        process[i].value =
+                                            args[process[i].value];
+                                    }
+                                    post_client_run(msg, process[i]);
+                                } else {
+                                    post_client_run(msg, process[i]);
                                 }
-                                post_client_run(msg, process[i]);
-                            });
-                        } else if (process[i].opera === "value") {
-                            if (args[process[i].value] !== undefined) {
-                                process[i].value = args[process[i].value];
                             }
-                            post_client_run(msg, process[i]);
-                        } else {
-                            post_client_run(msg, process[i]);
                         }
-                    }
-                });
-            } else {
-                chrome.tabs.executeScript(tabs[0].id, {
-                    code: jscode(process[i])
-                });
+                    );
+                } else {
+                    chrome.tabs.executeScript(tabs[0].id, {
+                        code: jscode(process[i]),
+                    });
+                }
             }
         }
-    })
+    );
 }
 
 // function simexecute(case_process) {
@@ -232,30 +277,99 @@ async function simexecute(process, tabs) {
 // }
 
 function calc_minute(time) {
-    return ((new Date()).getTime() - time) / (1000 * 60);
+    return (new Date().getTime() - time) / (1000 * 60);
 }
 
 function compare_time(time) {
     let t = time.split(":");
-    return parseInt(t[0]) * 60 + parseInt(t[1]) <= new Date().getHours() * 60 + new Date().getMinutes()
+    return (
+        parseInt(t[0]) * 60 + parseInt(t[1]) <=
+        new Date().getHours() * 60 + new Date().getMinutes()
+    );
 }
 
 async function async_run(myrobot, i) {
-    await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    }, async function (tabs) {
-        if (myrobot[i].case_type === "process") {
-            await exec_run(myrobot[i].case_process, tabs[0].id);
-            myrobot[i].last_runtime = new Date().getTime();
-            set_my_robot(myrobot);
+    await chrome.tabs.query(
+        {
+            active: true,
+            currentWindow: true,
+        },
+        async function (tabs) {
+            if (myrobot[i].case_type === "process") {
+                dom_check_run(myrobot[i].case_process, tabs[0].id);
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
+            if (myrobot[i].case_type === "sourcecode") {
+                sourcecode_run(
+                    myrobot[i].case_sourcecode,
+                    myrobot[i].sourcecode_url,
+                    tabs[0]
+                );
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
         }
-        if (myrobot[i].case_type === "sourcecode") {
-            sourcecode_run(myrobot[i].case_sourcecode, myrobot[i].sourcecode_url, tabs[0]);
-            myrobot[i].last_runtime = new Date().getTime();
-            set_my_robot(myrobot);
+    );
+}
+
+// dom检查自旋运行
+function dom_check_run(process, tab_id) {
+    let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
+    let now_index = 0; // 当前运行process
+    let args = {};
+    let count = 0;
+    let dom_itvl = setInterval(function () {
+        console.log(`status: ${run_status}`);
+        if (run_status == 0 && !process[now_index].check) {
+            run_status = 1;
         }
-    })
+        if (run_status == 0) {
+            count += 1;
+            chrome.tabs.sendMessage(
+                tab_id,
+                {
+                    type: "get_dom",
+                    tag: process[now_index].tag,
+                    n: process[now_index].n,
+                },
+                function (msg) {
+                    if (msg.type == "get_dom" && msg.dom) {
+                        run_status = 1;
+                        count = 0;
+                    }
+                }
+            );
+        } else if (run_status == 1) {
+            run_status = 2;
+            setTimeout(function () {
+                exec_run_item(process[now_index], tab_id, args);
+                if (process[now_index].opera === "newpage") {
+                    chrome.tabs.query({
+                        active: true,
+                        currentWindow: true
+                    }, async function (tabs) {
+                        tab_id = tabs[0].id
+                    });
+                }
+                now_index += 1;
+                run_status = 0;
+            }, process[now_index].wait * 1000);
+            if (process.length - 1 == now_index) {
+                clearInterval(dom_itvl);
+            }
+        }
+        if (count == 50) {
+            clearInterval(dom_itvl);
+            chrome.tabs.sendMessage(tab_id, {
+                type: "show_msg",
+                msg: `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
+            });
+            console.log(
+                `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
+            );
+        }
+    }, 200);
 }
 
 async function timer_run_robot(myrobot) {
@@ -268,7 +382,10 @@ async function timer_run_robot(myrobot) {
                 }
             } else if (myrobot[i].runtime.indexOf(":") !== -1) {
                 if (compare_time(myrobot[i].runtime)) {
-                    if (new Date(myrobot[i].last_runtime).getDate() !== new Date().getDate()) {
+                    if (
+                        new Date(myrobot[i].last_runtime).getDate() !==
+                        new Date().getDate()
+                    ) {
                         await async_run(myrobot, i);
                     }
                 }
@@ -277,14 +394,9 @@ async function timer_run_robot(myrobot) {
     }
 }
 
-async function timer_runing() {
-    while (true) {
-        await sleep(20);
-        // console.log(new Date());
-        await get_my_robot(async my_robot => {
-            await timer_run_robot(my_robot)
-        })
-    }
-}
-
-timer_runing();
+// 开启定时运行检查
+setInterval(function () {
+    get_my_robot((my_robot) => {
+        timer_run_robot(my_robot);
+    });
+}, 5000);

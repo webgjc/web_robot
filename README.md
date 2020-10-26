@@ -211,6 +211,10 @@ V1.8.2 (2020.08.15)
 V1.8.3（2020.09.18）
 1. 支持值选择器
 
+V1.9.0（2020.10.26）
+1. 重构运行流程事务，增加dom检查自旋支持
+2. 新增页面消息提醒
+
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)
 3. [官方轮子](https://developer.chrome.com/extensions)

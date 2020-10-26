@@ -26,6 +26,7 @@
 14. 支持流程事件的直接录制
 15. 页面添加事件中优秀的可视化圈选
 16. 支持值选择器
+17. 支持dom自旋检查
 
 
 ## 核心部分--事务和运行机制说明
@@ -122,6 +123,12 @@
 ```json
 {"case_name":"值选择器用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"click","tag":"a{About}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Archives}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Home}","value":"","wait":"2"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
+
+- dom检查自旋用例(可以实现在dom出现时立刻运行)
+```json
+{"case_name":"test","case_process":[{"check":true,"n":"0","opera":"newpage","tag":"body","value":"https://www.baidu.com/","wait":"0.1"},{"check":true,"n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0.1"},{"check":true,"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"01"}],"case_sourcecode":"","case_type":"process","control_url":"","last_runtime":1603672211550,"runtime":"4:00","sourcecode_url":".*"}
+```
+
 
 - 演示1
 

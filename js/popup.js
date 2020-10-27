@@ -57,6 +57,7 @@ function get_my_robot(callback) {
         case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)",
         last_runtime(上次运行时间): 1591616590387,
         runtime(定时时间): null / 10(分钟);
+        fail_rerun: true;
     },
     SETTING_DATA: {
         KEYS: [],
@@ -649,6 +650,7 @@ $(document).ready(function () {
             $("#timer_run_model").modal("open");
             get_my_robot((my_robot) => {
                 $("#timer_run_input").val(my_robot[case_name].runtime);
+                $("#fail_rerun").prop("checked", my_robot[case_name].fail_rerun == null ? false : my_robot[case_name].fail_rerun);
                 Materialize.updateTextFields();
             });
         })
@@ -814,6 +816,7 @@ $(document).ready(function () {
     $("#submit_timer_run").click(function () {
         get_my_robot((my_robot) => {
             my_robot[case_name]["runtime"] = $("#timer_run_input").val();
+            my_robot[case_name]["fail_rerun"] = $("#fail_rerun").prop("checked");
             my_robot[case_name]["last_runtime"] =
                 new Date().getTime() - 24 * 60 * 60 * 1000;
             set_my_robot(my_robot);

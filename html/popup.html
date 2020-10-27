@@ -300,11 +300,16 @@
                     <input type="text" id="timer_run_input">
                     <label for="timer_run_input">定时, 15:00/10m</label>
                 </div>
+                <div class="input-field" style="margin-top: -10px; margin-bottom: 20px;">
+                    <input type="checkbox" class="filled-in" id="fail_rerun" checked="checked" />
+                    <label for="fail_rerun">开启失败重试</label>
+                </div>
                 <div><b>提醒</b>：1. 定时运行需保证浏览器的开启</div>
                 <div>2. 15:00 表示每天下午三点运行</div>
                 <div>3. 5m 表示每隔5分钟运行，采用的定时轮询，具体会有出入</div>
-                <div>4. 配置完定时不会直接运行，2当天开始计时，3当前时间为开始计时时间</div>
+                <div>4. 配置完定时运行后当天开始计时</div>
                 <div>5. 设置为空时为取消定时</div>
+                <div>6. dom检查失败进入重试，总共会尝试10次，每次相隔1分钟</div>
             </div>
             <div class="modal-footer">
                 <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat"

@@ -222,6 +222,9 @@ V1.9.0（2020.10.26）
 1. 重构运行流程事务，增加dom检查自旋支持
 2. 新增页面消息提醒
 
+V1.9.1（2020.10.27）
+1. 定时运行增加可配置的失败重试
+
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)
 3. [官方轮子](https://developer.chrome.com/extensions)

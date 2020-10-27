@@ -20,6 +20,7 @@ const tag_types = [
     "h4",
     "h5",
 ];
+var timer_rerun_count = {};
 
 // 拼接执行的js
 function jscode(process) {
@@ -288,33 +289,8 @@ function compare_time(time) {
     );
 }
 
-async function async_run(myrobot, i) {
-    await chrome.tabs.query(
-        {
-            active: true,
-            currentWindow: true,
-        },
-        async function (tabs) {
-            if (myrobot[i].case_type === "process") {
-                dom_check_run(myrobot[i].case_process, tabs[0].id);
-                myrobot[i].last_runtime = new Date().getTime();
-                set_my_robot(myrobot);
-            }
-            if (myrobot[i].case_type === "sourcecode") {
-                sourcecode_run(
-                    myrobot[i].case_sourcecode,
-                    myrobot[i].sourcecode_url,
-                    tabs[0]
-                );
-                myrobot[i].last_runtime = new Date().getTime();
-                set_my_robot(myrobot);
-            }
-        }
-    );
-}
-
 // dom检查自旋运行
-function dom_check_run(process, tab_id) {
+function dom_check_run(process, tab_id, myrobot, index) {
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
     let args = {};
@@ -359,12 +335,32 @@ function dom_check_run(process, tab_id) {
                 clearInterval(dom_itvl);
             }
         }
-        if (count == 50) {
+        if (count == 5) {
             clearInterval(dom_itvl);
             chrome.tabs.sendMessage(tab_id, {
                 type: "show_msg",
                 msg: `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
             });
+            if (myrobot[index].fail_rerun) {
+                setTimeout(function () {
+                    if (timer_rerun_count[index] == null) {
+                        myrobot[index].last_runtime = 0;
+                        set_my_robot(myrobot);
+                        timer_rerun_count[index] = 1;
+                    }
+                    if (timer_rerun_count[index] <= 10) {
+                        timer_rerun_count[index] += 1;
+                        myrobot[index].last_runtime = 0;
+                        set_my_robot(myrobot);
+                    } else {
+                        delete timer_rerun_count[index];
+                        chrome.tabs.sendMessage(tab_id, {
+                            type: "show_msg",
+                            msg: `定时运行失败 : ${myrobot[index].case_name}`
+                        });
+                    }
+                }, 60000);
+            }
             console.log(
                 `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
             );
@@ -372,13 +368,39 @@ function dom_check_run(process, tab_id) {
     }, 200);
 }
 
-async function timer_run_robot(myrobot) {
+function async_run(myrobot, i) {
+    chrome.tabs.query(
+        {
+            active: true,
+            currentWindow: true,
+        },
+        function (tabs) {
+            if (myrobot[i].case_type === "process") {
+                dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i);
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
+            if (myrobot[i].case_type === "sourcecode") {
+                sourcecode_run(
+                    myrobot[i].case_sourcecode,
+                    myrobot[i].sourcecode_url,
+                    tabs[0]
+                );
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
+        }
+    );
+}
+
+
+function timer_run_robot(myrobot) {
     for (let i in myrobot) {
         if (myrobot[i].runtime && myrobot.hasOwnProperty(i)) {
             if (myrobot[i].runtime.endsWith("m")) {
                 let minute = parseInt(myrobot[i].runtime.slice(0, -1));
                 if (calc_minute(myrobot[i].last_runtime) >= minute) {
-                    await async_run(myrobot, i);
+                    async_run(myrobot, i);
                 }
             } else if (myrobot[i].runtime.indexOf(":") !== -1) {
                 if (compare_time(myrobot[i].runtime)) {
@@ -386,7 +408,7 @@ async function timer_run_robot(myrobot) {
                         new Date(myrobot[i].last_runtime).getDate() !==
                         new Date().getDate()
                     ) {
-                        await async_run(myrobot, i);
+                        async_run(myrobot, i);
                     }
                 }
             }
@@ -399,4 +421,4 @@ setInterval(function () {
     get_my_robot((my_robot) => {
         timer_run_robot(my_robot);
     });
-}, 5000);
+}, 10000);

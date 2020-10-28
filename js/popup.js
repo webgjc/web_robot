@@ -473,10 +473,10 @@ function process_set_argv(process, kv) {
 }
 
 // 运行
-function process_run(process, tab_id, that, save_run) {
+function process_run(process, tab_id, that, save_run, my_robot, case_name) {
     that.html("运行中");
     let bg = chrome.extension.getBackgroundPage();
-    bg.dom_check_run(process, tab_id);
+    bg.dom_check_run(process, tab_id, my_robot, case_name, false);
     setTimeout(() => {
         that.html(save_run);
     }, 1000 * process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b)));
@@ -1210,7 +1210,7 @@ $(document).ready(function () {
                         process_argv(
                             my_robot[case_name]["case_process"],
                             (process) => {
-                                process_run(process, tab_id, that, save_run);
+                                process_run(process, tab_id, that, save_run, my_robot, case_name);
                             }
                         );
                     } else if (

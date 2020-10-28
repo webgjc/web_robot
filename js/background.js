@@ -290,7 +290,7 @@ function compare_time(time) {
 }
 
 // dom检查自旋运行
-function dom_check_run(process, tab_id, myrobot, index) {
+function dom_check_run(process, tab_id, myrobot, index, timer) {
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
     let args = {};
@@ -335,20 +335,20 @@ function dom_check_run(process, tab_id, myrobot, index) {
                 clearInterval(dom_itvl);
             }
         }
-        if (count == 5) {
+        if (count == 50) {
             clearInterval(dom_itvl);
             chrome.tabs.sendMessage(tab_id, {
                 type: "show_msg",
                 msg: `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
             });
-            if (myrobot[index].fail_rerun) {
+            if (myrobot[index].fail_rerun != null && myrobot[index].fail_rerun && timer) {
                 setTimeout(function () {
                     if (timer_rerun_count[index] == null) {
                         myrobot[index].last_runtime = 0;
                         set_my_robot(myrobot);
                         timer_rerun_count[index] = 1;
                     }
-                    if (timer_rerun_count[index] <= 10) {
+                    if (timer_rerun_count[index] <= 9) {
                         timer_rerun_count[index] += 1;
                         myrobot[index].last_runtime = 0;
                         set_my_robot(myrobot);
@@ -375,8 +375,12 @@ function async_run(myrobot, i) {
             currentWindow: true,
         },
         function (tabs) {
+            if (tabs[0] == undefined) {
+                console.log("页面连接失败");
+                return;
+            }
             if (myrobot[i].case_type === "process") {
-                dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i);
+                dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i, true);
                 myrobot[i].last_runtime = new Date().getTime();
                 set_my_robot(myrobot);
             }

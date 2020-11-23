@@ -603,9 +603,9 @@ function process_set_argv(process, kv) {
 // 运行
 function process_run(process, tab_id, that, save_run, my_robot, case_name) {
     that.html("运行中");
-    // let bg = chrome.extension.getBackgroundPage();
-    // bg.dom_check_run(process, tab_id, my_robot, case_name, false);
-    dom_check_run(process, tab_id);
+    let bg = chrome.extension.getBackgroundPage();
+    bg.dom_check_run(process, tab_id, my_robot, case_name, false);
+    // dom_check_run(process, tab_id);
     setTimeout(() => {
         that.html(save_run);
     }, 1000 * process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b)));

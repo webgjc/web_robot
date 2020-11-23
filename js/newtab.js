@@ -124,42 +124,98 @@ function sleep(s) {
 //     document.getElementById(`grid-${id}`).style.height = h;
 // }
 
-function exec_run_item(process_item, tab_id, name) {
+function exec_run_item(process_item, tab_id, name, grid) {
     if (process_item.opera === "onlyshow") {
         chrome.tabs.sendMessage(tab_id, {
             name: name,
             type: "onlyshow",
             tag: process_item.tag,
-            n: process_item.n
+            n: process_item.n,
+            grid: grid
         }, (msg) => {
             // resetwh(msg.data.w, msg.data.h, name);
         })
     } else {
         chrome.tabs.sendMessage(tab_id, {
             name: name,
-            type: "execute",
+            type: "execute_frame",
             code: jscode(process_item)
         })
     }
 }
 
-// 运行流程事务
-async function exec_run(process, tab_id, name) {
-    for (let i = 0; i < process.length; i++) {
-        await sleep(process[i].wait);
-        await exec_run_item(process[i], tab_id, name);
+
+// dom检查自旋运行
+function dom_check_run(process, tab_id, name, grid) {
+    // console.log("dom check run")
+    let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
+    let now_index = 0; // 当前运行process
+    let args = {}; // 可取参数列表（包括取值导入）
+    let count = 0;
+    if (process.length === 0) {
+        callback();
+        return;
     }
+    let dom_itvl = setInterval(function () {
+        // console.log("status: " + run_status);
+        if (run_status == 0 && !process[now_index].check) {
+            run_status = 1;
+        }
+        if (run_status == 0) {
+            count += 1;
+            chrome.tabs.sendMessage(
+                tab_id,
+                {
+                    type: "get_dom_frame",
+                    name: name,
+                    tag: process[now_index].tag,
+                    n: process[now_index].n,
+                },
+                function (msg) {
+                    console.log(msg)
+                    if (msg.type == "get_dom_frame" && msg.dom) {
+                        run_status = 1;
+                        count = 0;
+                    }
+                }
+            );
+        } else if (run_status == 1) {
+            run_status = 2;
+            setTimeout(function () {
+                exec_run_item(process[now_index], tab_id, name, grid);
+                now_index += 1;
+                run_status = 0;
+            }, process[now_index].wait * 1000);
+            if (process.length - 1 === now_index) {
+                clearInterval(dom_itvl);
+            }
+        }
+        if (count == 50) {
+            clearInterval(dom_itvl);
+            console.log(
+                `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
+            );
+        }
+    }, 200);
 }
+
+// 运行流程事务
+// async function exec_run(process, tab_id, name, grid) {
+//     for (let i = 0; i < process.length; i++) {
+//         await sleep(process[i].wait);
+//         await exec_run_item(process[i], tab_id, name, grid);
+//     }
+// }
 
 chrome.tabs.getCurrent(tab => {
     get_my_robot(my_robot => {
         let process = [];
         let names = [];
         let mygrid = my_robot.SETTING_DATA.DASHBOARD_GRID || [];
-        let mygridids = [];
+        let mygridmap = {};
 
         for (let i = 0; i < mygrid.length; i++) {
-            mygridids.push(mygrid[i].id);
+            mygridmap[mygrid[i].id] = mygrid[i];
         }
 
         let grid = GridStack.init({ column: 12 });
@@ -167,7 +223,7 @@ chrome.tabs.getCurrent(tab => {
 
         for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
             let key = my_robot.SETTING_DATA.KEYS[i];
-            if (mygridids.indexOf(`frame-${key}`) != -1) {
+            if (mygridmap[`frame-${key}`]) {
                 process.push(my_robot[key].case_process.slice(1))
                 names.push(`frame-${key}`);
             } else {
@@ -179,7 +235,7 @@ chrome.tabs.getCurrent(tab => {
         }
 
         for (let i = 0; i < names.length; i++) {
-            exec_run(process[i], tab.id, names[i]);
+            dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
         }
 
         grid.on("dragstop resizestop", (e, el) => {

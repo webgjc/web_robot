@@ -660,8 +660,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         dom.parentNode.style.position = "fixed";
         dom.parentNode.style.left = "0px";
         dom.parentNode.style.top = "0px";
-        dom.parentNode.style.width = dom.clientWidth;
-        dom.parentNode.style.height = dom.clientHeight;
+        dom.parentNode.style.minHeight = "auto";
+        dom.parentNode.style.minWidth = "auto";
+        if (msg.grid) {
+            dom.parentNode.style.width = msg.grid.width * 118.5 + "px";
+            dom.parentNode.style.height = msg.grid.height * 118.5 + "px";
+        }
         dom.parentNode.style.marginLeft = "0px";
         dom.parentNode.style.marginTop = "0px";
         dom.parentNode.style.paddingLeft = "0px";
@@ -678,9 +682,14 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                 w: dom.clientWidth
             },
         });
-    } else if (msg.type === "execute" && window.name === msg.name) {
+    } else if (msg.type === "execute_frame" && window.name === msg.name) {
         console.log(msg)
         new Function(msg.code)();
+    } else if (msg.type === "get_dom_frame" && window.name === msg.name) {
+        sendResponse({
+            type: msg.type,
+            dom: posidom !== undefined,
+        });
     }
 });
 

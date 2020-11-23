@@ -3,6 +3,7 @@ import json
 from flask import Flask
 from flask import request
 from clientexec import WebClientExec
+from crawler import CrawlerData
 
 
 app = Flask(__name__)
@@ -33,6 +34,22 @@ def controller_listen():
 def controller_recover():
     case_name = request.args.get('case_name')
     os.system(PYTHON_ENV + " py/controller.py recover " + case_name + " 2>&1 &")
+    return "success"
+
+
+@app.route("/crawler/", methods=["POST"])
+def controller_save():
+    data = json.loads(request.get_data(as_text=True))
+    print(data)
+    cd = CrawlerData(data["case_name"])
+    if data["opera"] == "clear":
+        cd.clear()
+    elif data["opera"] == "summary":
+        cd.summary()
+    elif data["opera"] == "save":
+        cd.save(data["data"])
+    else:
+        return "fail"
     return "success"
 
 

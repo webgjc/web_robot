@@ -17,6 +17,7 @@ function set_my_robot(new_robot, callback) {
     );
 }
 
+// 画背景
 function robot_make_select_canvas(dom) {
     myrobot_scroll_position(dom);
     let canvas = document.createElement("div");
@@ -35,6 +36,7 @@ function robot_make_select_canvas(dom) {
     }, 1000);
 }
 
+// 获取绝对坐标
 function myrobot_getAbsPoint(dom) {
     let x = dom.offsetLeft;
     let y = dom.offsetTop;
@@ -49,6 +51,7 @@ function myrobot_getAbsPoint(dom) {
     };
 }
 
+// 根据节点自动定位
 function myrobot_scroll_position(dom) {
     let domposi = myrobot_getAbsPoint(dom);
     if (
@@ -80,6 +83,7 @@ function myrobot_scroll_position(dom) {
 //     return names.join(" > ");
 // }
 
+// 初级根据节点获取选择器
 function myrobot_get_selector(dom) {
     let selector;
     if (dom.id) {
@@ -98,6 +102,7 @@ function myrobot_get_selector(dom) {
     return null;
 }
 
+// 根据节点获取选择器
 function dom_to_selector(doc, dom) {
     let names = [];
     let dombak = dom;
@@ -130,6 +135,8 @@ function dom_to_selector(doc, dom) {
     }
 }
 
+
+// 未使用（根据节点获取选择器）
 function getCssSelectorShort(el) {
     let path = [],
         parent;
@@ -151,6 +158,7 @@ function getCssSelectorShort(el) {
     return `${path.join(" > ")}`.toLowerCase();
 }
 
+// 阻塞鼠标按下事件
 function myrobot_set_body_event(case_name) {
     document.body.addEventListener(
         "mousedown",
@@ -179,6 +187,7 @@ function myrobot_set_body_event(case_name) {
     );
 }
 
+// 创建事件定义
 function myrobot_create_event_input(selectorn, case_name) {
     let operas = [
         "click",
@@ -239,6 +248,8 @@ function myrobot_create_event_input(selectorn, case_name) {
     });
 }
 
+
+// 创建popup窗口
 function make_robot_window(x, y) {
     x = Math.min(window.innerWidth - 300, x);
     y = Math.min(window.innerHeight - 320, y);
@@ -249,6 +260,8 @@ function make_robot_window(x, y) {
     document.body.appendChild(ifr);
 }
 
+
+// 提示
 let tipCount = 0;
 function tip(info) {
     info = info || '';
@@ -268,6 +281,18 @@ function tip(info) {
     }, 4000);
 }
 
+function dom_only_show(dom) {
+    if (dom == document.body) {
+        return;
+    } else {
+        for (let i = 0; i < dom.parentNode.children.length; i++) {
+            if (dom.parentNode.children[i] != dom) {
+                dom.parentNode.children[i].style.display = "None";
+            }
+        }
+        dom_only_show(dom.parentNode);
+    }
+}
 
 // make_robot_window();
 
@@ -499,8 +524,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             type: msg.type,
             data: posidom.innerText,
         });
+    } else if (msg.type === "get_custom_value") {
+        sendResponse({
+            type: msg.type,
+            data: new Function("return " + msg.value)(),
+        });
     } else if (msg.type == "get_dom") {
-        console.log(123);
         sendResponse({
             type: msg.type,
             dom: posidom !== undefined,
@@ -577,7 +606,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         window.location.reload();
         RDATA.recording = false;
     } else if (msg.type === "direct_add_event") {
-        console.log(123);
         let last_dom;
         let last_dom_border;
         let last_dom_boxshadow;
@@ -612,6 +640,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                 let selector = dom_to_selector(document, e.target);
                 get_my_robot((data) => {
                     data["SETTING_DATA"]["WEB_ADD_CASE"] = msg.case_name;
+                    data["SETTING_DATA"]["WEB_ADD_CRAWLER_KEY"] = msg.crawler_key;
                     data["SETTING_DATA"]["WEB_ADD_EVENT"] = {
                         tag: selector[0],
                         n: selector[1],
@@ -625,6 +654,33 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         );
     } else if (msg.type === "show_msg") {
         tip(msg.msg);
+    } else if (msg.type === "onlyshow" && window.name === msg.name) {
+        let dom = posidom;
+        dom_only_show(dom);
+        dom.parentNode.style.position = "fixed";
+        dom.parentNode.style.left = "0px";
+        dom.parentNode.style.top = "0px";
+        dom.parentNode.style.width = dom.clientWidth;
+        dom.parentNode.style.height = dom.clientHeight;
+        dom.parentNode.style.marginLeft = "0px";
+        dom.parentNode.style.marginTop = "0px";
+        dom.parentNode.style.paddingLeft = "0px";
+        dom.parentNode.style.paddingTop = "0px";
+        dom.parentNode.style.overflow = "scroll";
+        dom.style.marginLeft = "0px";
+        dom.style.marginTop = "0px";
+        dom.style.paddingLeft = "0px";
+        dom.style.paddingTop = "0px";
+        sendResponse({
+            type: msg.type,
+            data: {
+                h: dom.clientHeight,
+                w: dom.clientWidth
+            },
+        });
+    } else if (msg.type === "execute" && window.name === msg.name) {
+        console.log(msg)
+        new Function(msg.code)();
     }
 });
 

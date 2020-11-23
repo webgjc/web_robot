@@ -15,6 +15,7 @@
 
         body {
             min-width: 300px;
+            min-height: 200px;
         }
 
         .container {
@@ -145,16 +146,29 @@
             padding: 0px;
             text-align: center;
         }
+
+        .crawler_process {
+            margin: 20px !important;
+        }
+
+        .data_tr,
+        .data_td {
+            min-width: 60px;
+            max-width: 100px;
+            word-break: break-all;
+        }
+
+        .crawler_data_table {
+            border-top: solid 1px #000;
+        }
     </style>
 </head>
 
 <body>
     <section class="container">
+
+        <!-- 主页 -->
         <div class="cases_view" id="case_view" style="display: block">
-            <!-- <div class="header">
-            <span class="h5">用例：</span>
-            <a href="#"><span class="h5">添加用例</span></a>
-        </div> -->
             <table class="bordered centered">
                 <thead>
                     <tr>
@@ -179,6 +193,7 @@
                     <div class="input-field">
                         <select id="select_case_type">
                             <option value="process" selected>流程事务</option>
+                            <option value="crawler">爬虫事务</option>
                             <option value="sourcecode">源码事务</option>
                             <option value="control">受控事务</option>
                         </select>
@@ -213,6 +228,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- 流程页 -->
         <div id="process_view" style="display: none;">
             <ul class="collection" id="process_list">
             </ul>
@@ -227,6 +244,8 @@
                 <a class="waves-effect waves-teal btn-flat" href="#" id="add_process_web">页面添加事件</a>
             </div>
         </div>
+
+        <!-- 新增流程页 -->
         <div id="new_process" style="display: none">
             <div class="chose_tag">
                 <div class="input-field" style="margin-top: 0px;">
@@ -239,7 +258,6 @@
             <div class="tag_select">
                 <div class="chose_class_id" style="display: none;">
                     <div class="input-field col s12" style="margin-top: 0px;">
-                        <!--                    <input class="select_class_id" type="text" placeholder="class(.)/id(#)" style="display: none" />-->
                         <input class="query_selecter" type="text" placeholder="query selecter" />
                     </div>
                 </div>
@@ -253,6 +271,9 @@
                 </div>
                 <div class="input-field col s12" id="set_value" style="display: none">
                     <input placeholder="设值/${自定义参数}" id="ssv" type="text">
+                </div>
+                <div class="input-field col s12" id="set_expression" style="display: none">
+                    <input placeholder="表达式" id="expression" type="text">
                 </div>
                 <div class="input-field col s12">
                     <input id="num_wait" type="number" class="wait" value="1">
@@ -268,6 +289,54 @@
                 </div>
             </div>
         </div>
+
+        <!-- 爬虫配置页 -->
+        <div id="crawler_view" style="display: none;">
+            <div class="collection" style="border: none;">
+                <a href="#!" class="collection-item crawler_process" id="crawler_init">初始化流程</a>
+                <a href="#!" class="collection-item crawler_process" id="crawler_fetch">爬取数据流程</a>
+                <a href="#!" class="collection-item crawler_process" id="crawler_next"
+                    style="border-bottom: 1px solid #e0e0e0;">爬虫下一步流程</a>
+            </div>
+            <div class="input-field col s12">
+                <input id="crawler_times" type="number" value="10">
+                <label for="crawler_times">总共运行次数</label>
+            </div>
+            <div class="switch" style="margin-bottom: 30px;">
+                <label>
+                    发送数据：关
+                    <input type="checkbox" id="send_data_cb">
+                    <span class="lever"></span>
+                    开
+                </label>
+            </div>
+            <div id="send_config" style="display: none;">
+                <div class="input-field col s12">
+                    <input id="crawler_data_api" type="text" value="http://127.0.0.1:12580/crawler/">
+                    <label for="crawler_data_api">数据发送API地址</label>
+                </div>
+                <div class="input-field col s12">
+                    <input id="send_freq" type="number" value="1">
+                    <label for="send_freq">每隔几轮发送一次</label>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <a class="waves-effect waves-teal btn-flat" href="#" id="crawler_submit">确认</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="crawler_back">返回</a>
+            </div>
+        </div>
+
+        <!-- 爬虫数据页 -->
+        <div id="crawler_data_view" style="display: none; max-width: 400px; max-height: 500px; overflow: scroll;">
+            <div style="text-align: center;">
+                <span><b>样例数据展示</b> </span>
+                <a href="#" id="crawler_back">返回主页</a>
+            </div>
+            <table class="crawler_data_table striped">
+            </table>
+        </div>
+
+        <!-- 源码事务配置页 -->
         <div id="sourcecode_view" style="display: none;">
             <div class="input-field col s12">
                 <input id="sourcecode_url" type="text" value=".*">
@@ -280,6 +349,8 @@
             <a class="waves-effect waves-teal btn-flat" href="#" id="edit_source">修改代码</a>
             <a class="waves-effect waves-teal btn-flat source_back" href="#">返回主页</a>
         </div>
+
+        <!-- 受控事务配置页 -->
         <div id="control_view" style="display: none;">
             <div class="input-field col s12">
                 <input id="control_url" type="text">
@@ -288,12 +359,16 @@
                 <a class="waves-effect waves-teal btn-flat" href="#" id="record_opera">录制操作</a>
             </div>
         </div>
+
+        <!-- 填写参数modal -->
         <div id="model3" class="modal">
             <div id="argv_input" class="row">
             </div>
             <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit"
                 style="width: 100%; text-align: center;">确认</a>
         </div>
+
+        <!-- 定时运行modal -->
         <div id="timer_run_model" class="modal modal-fixed-footer">
             <div class="modal-content">
                 <div class="input-field">

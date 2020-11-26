@@ -63,7 +63,6 @@ function jscode(process) {
         } else {
             exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`;
         }
-        exec_code += `console.log(robot_node);\n`;
         exec_code += `function myrobot_getAbsPoin(dom) {
             let x = dom.offsetLeft;
             let y = dom.offsetTop;
@@ -131,7 +130,9 @@ function exec_run_item(process_item, tab_id, name, grid) {
             type: "onlyshow",
             tag: process_item.tag,
             n: process_item.n,
-            grid: grid
+            grid: grid,
+            width: document.getElementById(name).clientWidth + "px",
+            height: document.getElementById(name).clientHeight + "px"
         }, (msg) => {
             // resetwh(msg.data.w, msg.data.h, name);
         })
@@ -172,7 +173,7 @@ function dom_check_run(process, tab_id, name, grid) {
                     n: process[now_index].n,
                 },
                 function (msg) {
-                    console.log(msg)
+                    // console.log(msg)
                     if (msg.type == "get_dom_frame" && msg.dom) {
                         run_status = 1;
                         count = 0;
@@ -207,6 +208,12 @@ function dom_check_run(process, tab_id, name, grid) {
 //     }
 // }
 
+function fetch_html(url, cb) {
+    fetch(url)
+        .then(resp => resp.text())
+        .then(data => cb && cb(data));
+}
+
 chrome.tabs.getCurrent(tab => {
     get_my_robot(my_robot => {
         let process = [];
@@ -219,7 +226,32 @@ chrome.tabs.getCurrent(tab => {
         }
 
         let grid = GridStack.init({ column: 12 });
+
+        // fetch html 也可以实现 x-frame-origin 限制，但会缺少js事件，目前使用backgroud修改response头实现
+        // for (let i = 0; i < mygrid.length; i++) {
+        // let frame = document.createElement("iframe");
+        // frame.onload = function () {
+        //     fetch_html("https://www.zhihu.com/hot", data => {
+        //         let ed = frame.contentWindow.document;
+        //         ed.open();
+        //         ed.write(data);
+        //         ed.close();
+        //         ed.contentEditable = true;
+        //         ed.designMode = 'on';
+        //         mygrid[i].content = frame.outerHTML;
+        //         if (i == mygrid.length - 1) {
+        //             grid.load(mygrid);
+        //             document.getElementById("reframe").style.display = "none";
+        //         }
+        //     })
+        // }
+        // document.getElementById("reframe").appendChild(frame);
+        // mygrid[i].content = `<iframe name="${mygrid[i].id}" id="${mygrid[i].id}"></iframe>`
+        // console.log(mygrid)
+        // }
+
         grid.load(mygrid);
+
 
         for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
             let key = my_robot.SETTING_DATA.KEYS[i];
@@ -229,7 +261,7 @@ chrome.tabs.getCurrent(tab => {
             } else {
                 if (my_robot[key].add_dashboard) {
                     let grid_contain = `<iframe src="${my_robot[key].case_process[0].value}" name="frame-${key}" id="frame-${key}"></iframe>`;
-                    grid.addWidget({ width: 2, content: grid_contain, id: `frame-${key}` });
+                    grid.addWidget({ width: 2, content: grid_contain, id: `frame-${key}`, url: my_robot[key].case_process[0].value });
                 }
             }
         }
@@ -239,18 +271,8 @@ chrome.tabs.getCurrent(tab => {
         }
 
         grid.on("dragstop resizestop", (e, el) => {
-            console.log(grid.save())
             my_robot.SETTING_DATA.DASHBOARD_GRID = grid.save();
             set_my_robot(my_robot);
         })
     })
 })
-
-// grid.on('change', function (event, items) {
-//     // $("#frame").css({
-//     //     width: items[0].width * 53.4 + "px",
-//     //     height: items[0].height * 53.4 + "px"
-//     // })
-//     console.log(items[0].width, items[0].height)
-// });
-

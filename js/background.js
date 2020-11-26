@@ -426,3 +426,24 @@ setInterval(function () {
         timer_run_robot(my_robot);
     });
 }, 10000);
+
+
+// 干掉请求中的frame限制
+chrome.webRequest.onHeadersReceived.addListener(
+    function (details) {
+        // console.log(details.url)
+        // console.log(details.responseHeaders);
+        for (var i = 0; i < details.responseHeaders.length; i++) {
+            // console.log(details.responseHeaders[i])
+            if (details.responseHeaders[i].name === 'x-frame-options') {
+                details.responseHeaders[i].value = "";
+                // console.log('Removing "' + details.responseHeaders[i].name + '" header.');
+                // details.responseHeaders.splice(i, 1);
+                // i--;
+            }
+        }
+        return { responseHeaders: details.responseHeaders };
+    },
+    { urls: ["<all_urls>"] },
+    ['blocking', 'responseHeaders', 'extraHeaders']
+);

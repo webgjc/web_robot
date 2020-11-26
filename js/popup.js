@@ -605,7 +605,6 @@ function process_run(process, tab_id, that, save_run, my_robot, case_name) {
     that.html("运行中");
     let bg = chrome.extension.getBackgroundPage();
     bg.dom_check_run(process, tab_id, my_robot, case_name, false);
-    // dom_check_run(process, tab_id);
     setTimeout(() => {
         that.html(save_run);
     }, 1000 * process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b)));
@@ -635,6 +634,17 @@ function process_argv(process, callback) {
         });
     } else {
         callback(process);
+    }
+}
+
+function delete_dashboard(my_robot, case_name) {
+    if (my_robot.SETTING_DATA.DASHBOARD_GRID) {
+        for (let i = 0; i < my_robot.SETTING_DATA.DASHBOARD_GRID.length; i++) {
+            if (my_robot.SETTING_DATA.DASHBOARD_GRID[i].id === `frame-${case_name}`) {
+                my_robot.SETTING_DATA.DASHBOARD_GRID.splice(i, 1);
+                i--;
+            }
+        }
     }
 }
 
@@ -779,6 +789,7 @@ $(document).ready(function () {
             var case_name = $(this).parent().parent().attr("id");
             if (confirm(`确认删除 ${case_name}`)) {
                 get_my_robot((my_robot) => {
+                    delete_dashboard(my_robot, case_name);
                     delete my_robot[case_name];
                     my_robot[SETTING_DATA]["KEYS"].splice(
                         my_robot[SETTING_DATA]["KEYS"].indexOf(case_name),
@@ -885,12 +896,8 @@ $(document).ready(function () {
             case_name = $(this).parent().parent().attr("id");
             get_my_robot(my_robot => {
                 my_robot[case_name].add_dashboard = !my_robot[case_name].add_dashboard;
-                if (!my_robot[case_name].add_dashboard && my_robot.SETTING_DATA.DASHBOARD_GRID) {
-                    for (let i = 0; i < my_robot.SETTING_DATA.DASHBOARD_GRID.length; i++) {
-                        if (my_robot.SETTING_DATA.DASHBOARD_GRID[i].id === `frame-${case_name}`) {
-                            my_robot.SETTING_DATA.DASHBOARD_GRID.splice(i, 1);
-                        }
-                    }
+                if (!my_robot[case_name].add_dashboard) {
+                    delete_dashboard(my_robot, case_name);
                 }
                 set_my_robot(my_robot, refresh_cases);
             })

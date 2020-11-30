@@ -1209,12 +1209,12 @@ $(document).ready(function () {
                                 check: true
                             }
                         ];
-                        let name;
-                        if (tab.title) {
-                            name = tab.title.replaceAll(" ", "") + "_" + getCurrentDateTime();
-                        } else {
-                            name = "看板" + "_" + getCurrentDateTime();
-                        }
+                        let name = "看板" + "_" + getCurrentDateTime();
+                        // if (tab.title) {
+                        //     name = tab.title.replaceAll(" ", "") + "_" + getCurrentDateTime();
+                        // } else {
+                        //     name = "看板" + "_" + getCurrentDateTime();
+                        // }
                         get_my_robot(my_robot => {
                             my_robot[name] = {
                                 case_name: name,

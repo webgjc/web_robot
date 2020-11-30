@@ -214,65 +214,161 @@ function fetch_html(url, cb) {
         .then(data => cb && cb(data));
 }
 
-chrome.tabs.getCurrent(tab => {
-    get_my_robot(my_robot => {
-        let process = [];
-        let names = [];
-        let mygrid = my_robot.SETTING_DATA.DASHBOARD_GRID || [];
-        let mygridmap = {};
+$(document).ready(function () {
 
-        for (let i = 0; i < mygrid.length; i++) {
-            mygridmap[mygrid[i].id] = mygrid[i];
+    let grid = GridStack.init({
+        alwaysShowResizeHandle: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+        ),
+        resizable: {
+            handles: 'e, se, s, sw, w'
+        },
+        column: 12,
+        float: true
+    });
+
+    $("body").mousemove(e => {
+        if (e.clientY < 10) {
+            $("#opera").show();
         }
+    });
 
-        let grid = GridStack.init({ column: 12 });
+    $("#opera").mouseleave(e => {
+        if ($("#handgrid").text() === "排版") {
+            $("#opera").hide();
+        }
+    });
 
-        // fetch html 也可以实现 x-frame-origin 限制，但会缺少js事件，目前使用backgroud修改response头实现
-        // for (let i = 0; i < mygrid.length; i++) {
-        // let frame = document.createElement("iframe");
-        // frame.onload = function () {
-        //     fetch_html("https://www.zhihu.com/hot", data => {
-        //         let ed = frame.contentWindow.document;
-        //         ed.open();
-        //         ed.write(data);
-        //         ed.close();
-        //         ed.contentEditable = true;
-        //         ed.designMode = 'on';
-        //         mygrid[i].content = frame.outerHTML;
-        //         if (i == mygrid.length - 1) {
-        //             grid.load(mygrid);
-        //             document.getElementById("reframe").style.display = "none";
-        //         }
-        //     })
-        // }
-        // document.getElementById("reframe").appendChild(frame);
-        // mygrid[i].content = `<iframe name="${mygrid[i].id}" id="${mygrid[i].id}"></iframe>`
-        // console.log(mygrid)
-        // }
+    chrome.tabs.getCurrent(tab => {
+        get_my_robot(my_robot => {
+            let process = [];
+            let names = [];
+            let mygrid = my_robot.SETTING_DATA.DASHBOARD_GRID || [];
+            // mygrid = []
+            let mygridmap = {};
+            grid.enableMove(false);
+            grid.enableResize(false);
+            grid.load(mygrid);
 
-        grid.load(mygrid);
+            for (let i = 0; i < mygrid.length; i++) {
+                mygridmap[mygrid[i].id] = mygrid[i];
+            }
 
-
-        for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
-            let key = my_robot.SETTING_DATA.KEYS[i];
-            if (mygridmap[`frame-${key}`]) {
-                process.push(my_robot[key].case_process.slice(1))
-                names.push(`frame-${key}`);
-            } else {
-                if (my_robot[key].add_dashboard) {
-                    let grid_contain = `<iframe src="${my_robot[key].case_process[0].value}" name="frame-${key}" id="frame-${key}"></iframe>`;
-                    grid.addWidget({ width: 2, content: grid_contain, id: `frame-${key}`, url: my_robot[key].case_process[0].value });
+            for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
+                let key = my_robot.SETTING_DATA.KEYS[i];
+                let tmpid = `frame-${key}`;
+                if (mygridmap[tmpid]) {
+                    process.push(my_robot[key].case_process.slice(1))
+                    names.push(tmpid);
+                } else {
+                    if (my_robot[key].add_dashboard) {
+                        let grid_contain = `<iframe src="${my_robot[key].case_process[0].value}" name="${tmpid}" id="${tmpid}"></iframe>`;
+                        let newgrid = {
+                            width: 3,
+                            height: 3,
+                            content: grid_contain,
+                            id: tmpid,
+                            url: my_robot[key].case_process[0].value
+                        };
+                        grid.addWidget(newgrid);
+                        mygridmap[tmpid] = newgrid;
+                        process.push(my_robot[key].case_process.slice(1))
+                        names.push(tmpid);
+                    }
                 }
             }
-        }
 
-        for (let i = 0; i < names.length; i++) {
-            dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
-        }
+            for (let i = 0; i < names.length; i++) {
+                dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
+            }
 
-        grid.on("dragstop resizestop", (e, el) => {
-            my_robot.SETTING_DATA.DASHBOARD_GRID = grid.save();
-            set_my_robot(my_robot);
+            // grid.on("dragstop resizestop", (e, el) => {
+            //     my_robot.SETTING_DATA.DASHBOARD_GRID = grid.save();
+            //     set_my_robot(my_robot);
+            // });
+
+            $("#handgrid").click(e => {
+                if ($("#handgrid").text() == "排版") {
+                    $("#handgrid").html("保存");
+                    let editgrid = [];
+                    let tmpgridmap = JSON.parse(JSON.stringify(mygridmap))
+                    for (let i = 0; i < names.length; i++) {
+                        tmpgridmap[names[i]].content = `<i class="fa fa-close close-panel" aria-hidden="true" id="panel-${i}"></i>`;
+                        tmpgridmap[names[i]].content += `<div style="text-align: center">${names[i].slice(6)}</div>`
+                        tmpgridmap[names[i]].id = `panel-${i}`;
+                        editgrid.push(tmpgridmap[names[i]]);
+                    }
+                    grid.load(editgrid, true);
+                    grid.enableMove(true);
+                    grid.enableResize(true);
+                } else {
+                    $("#handgrid").html("排版");
+                    let editgrid = grid.save();
+                    let tmpkeys = [];
+                    console.log(editgrid)
+                    for (let i = 0; i < editgrid.length; i++) {
+                        let idx = parseInt(editgrid[i].id.slice(6));
+                        tmpkeys.push(names[idx]);
+                        mygridmap[names[idx]].x = editgrid[i].x;
+                        mygridmap[names[idx]].y = editgrid[i].y;
+                        mygridmap[names[idx]].width = editgrid[i].width;
+                        mygridmap[names[idx]].height = editgrid[i].height;
+                    }
+                    let tmpgrid = [];
+                    for (let i = 0; i < tmpkeys.length; i++) {
+                        tmpgrid.push(mygridmap[tmpkeys[i]]);
+                    }
+                    my_robot.SETTING_DATA.DASHBOARD_GRID = tmpgrid;
+                    set_my_robot(my_robot, () => {
+                        window.location.reload();
+                    });
+                }
+            });
+
+            $(".grid-stack").on("click", ".close-panel", e => {
+                let thisgrid = grid.save();
+                for (let i = 0; i < thisgrid.length; i++) {
+                    if (thisgrid[i].id === e.target.id) {
+                        thisgrid.splice(i, 1);
+                        break;
+                    }
+                }
+                grid.load(thisgrid, true);
+                console.log(my_robot)
+                console.log(names[parseInt(e.target.id.slice(6))])
+                my_robot[names[parseInt(e.target.id.slice(6))].slice(6)].add_dashboard = false;
+                names.splice(parseInt(e.target.id.slice(6)), 1);
+            });
+
+            $("#reset").click(e => {
+                my_robot.SETTING_DATA.DASHBOARD_GRID = [];
+                set_my_robot(my_robot, () => {
+                    window.location.reload();
+                })
+            })
         })
     })
 })
+
+// fetch html 也可以实现突破 x-frame-origin 限制，但会缺少js事件，目前使用backgroud修改response头实现
+// for (let i = 0; i < mygrid.length; i++) {
+// let frame = document.createElement("iframe");
+// frame.onload = function () {
+//     fetch_html("https://www.zhihu.com/hot", data => {
+//         let ed = frame.contentWindow.document;
+//         ed.open();
+//         ed.write(data);
+//         ed.close();
+//         ed.contentEditable = true;
+//         ed.designMode = 'on';
+//         mygrid[i].content = frame.outerHTML;
+//         if (i == mygrid.length - 1) {
+//             grid.load(mygrid);
+//             document.getElementById("reframe").style.display = "none";
+//         }
+//     })
+// }
+// document.getElementById("reframe").appendChild(frame);
+// mygrid[i].content = `<iframe name="${mygrid[i].id}" id="${mygrid[i].id}"></iframe>`
+// console.log(mygrid)
+// }

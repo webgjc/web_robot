@@ -169,19 +169,34 @@
 
         <!-- 主页 -->
         <div class="cases_view" id="case_view" style="display: block">
-            <table class="bordered centered">
-                <thead>
-                    <tr>
-                        <th>事务名</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="cases">
-                </tbody>
-            </table>
+            <div class="shiwu">
+                <table class="bordered centered">
+                    <thead>
+                        <tr>
+                            <th>事务名</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cases">
+                    </tbody>
+                </table>
+                <div class="case-btn-wrapper">
+                    <a class="waves-effect waves-teal btn-flat add_btn" href="#add-transaction-modal">添加事务</a>
+                    <a class="waves-effect waves-teal btn-flat" href="#load-transaction-modal">导入事务</a>
+                </div>
+            </div>
             <div class="case-btn-wrapper">
-                <a class="waves-effect waves-teal btn-flat add_btn" href="#add-transaction-modal">添加事务</a>
-                <a class="waves-effect waves-teal btn-flat" href="#load-transaction-modal">导入事务</a>
+                <div class="switch" style="margin-bottom: 10px;">
+                    <label>
+                        简单看板模式：关
+                        <input type="checkbox" id="dashboard">
+                        <span class="lever"></span>
+                        开
+                    </label>
+                </div>
+            </div>
+            <div class="case-btn-wrapper" id="add_dashboard_case_view">
+                <a class="waves-effect waves-teal btn-flat" id="add_dashboard_case">页面添加看板</a>
             </div>
 
             <div id="add-transaction-modal" class="modal modal-fixed-footer">

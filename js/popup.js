@@ -79,11 +79,13 @@ function get_my_robot(callback) {
         RECORD_CASE: "录制事务名",
         WEB_ADD_CASE: "页面添加事务名",
         WEB_ADD_CRAWLER_KEY: "爬虫KEY",
+        WEB_ADD_DASHBOARD: true,
         WEB_ADD_EVENT: {
             tag: "标签",
             n: "1"
         },
-        DASHBOARD_GRID: []
+        DASHBOARD_GRID: [],
+        SIMPLE_DASHBOARD(简单看板模式): true;
     }
 }
  */
@@ -648,6 +650,43 @@ function delete_dashboard(my_robot, case_name) {
     }
 }
 
+function render_select_tag(selectors) {
+    let options = "";
+    for (let i = 0; i < selectors.length; i++) {
+        options += `<a href='#' class='collection-item tag_spec'>${selectors[i]}</a>`;
+    }
+    $("#tag_list").html(options);
+    connect((port) => {
+        $(".tag_spec").mouseover(function () {
+            port.postMessage({
+                type: "select_query_selecter",
+                content: $(this).text().split("&")[0],
+                n: parseInt($(this).text().split("&")[1]),
+            });
+        });
+    })
+}
+
+function formatZero(n) {
+    if (n >= 0 && n <= 9) {
+        return "0" + n;
+    } else {
+        return n;
+    }
+}
+
+function getCurrentDateTime() {
+    var date = new Date();
+    var year = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var seconds = date.getSeconds();
+    return year + "-" + formatZero(month) + "-" + formatZero(day) + formatZero(hours) + ":" + formatZero(minutes) + ":" + formatZero(seconds);
+}
+
+
 // 主要
 $(document).ready(function () {
     // chrome.tabs.create({
@@ -683,6 +722,7 @@ $(document).ready(function () {
     let edit_process_n = -1;
     let init_select = 1;
     let crawler_key = undefined;
+    let direct_add_dashboard = false;
 
     // 获取当前流程
     function get_now_process(my_case, callback) {
@@ -713,6 +753,12 @@ $(document).ready(function () {
             set_my_robot(data);
         }
         refresh_cases();
+        $("#dashboard").prop("checked", data.SETTING_DATA.SIMPLE_DASHBOARD);
+        if (data.SETTING_DATA.SIMPLE_DASHBOARD) {
+            $(".shiwu").hide();
+        } else {
+            $("#add_dashboard_case_view").hide();
+        }
         if (data[SETTING_DATA][RECORD_CASE]) {
             case_name = data[SETTING_DATA][RECORD_CASE];
             $("#case_view").hide();
@@ -728,18 +774,35 @@ $(document).ready(function () {
             $("#case_view").hide();
             $("#process_view").hide();
             $("#new_process").show();
-            $(".chose_tag").hide();
-            $(".chose_opera").show();
+            $(".chose_tag").show();
+            $(".chose_opera").hide();
+            $(".tag_select").css("margin-top", "40px");
+            $("#tag_list").css("margin-top", "-20px");
             init_process_opera(tag_types, operas, operas_alias);
             case_name = data[SETTING_DATA][WEB_ADD_CASE];
             crawler_key = data[SETTING_DATA][WEB_ADD_CRAWLER_KEY];
-            $("#tag_list").css("margin-top", "0px").html(
-                `<div id='seldn' class='collection-item' data="${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}">
-                        <a href='#' id='hasseled'>已选: ${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}</a>
-                    </div>`
-            );
+            // $("#tag_list").css("margin-top", "0px").html(
+            //     `<div id='seldn' class='collection-item' data="${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}">
+            //             <a href='#' id='hasseled'>已选: ${data[SETTING_DATA][WEB_ADD_EVENT].tag}&${data[SETTING_DATA][WEB_ADD_EVENT].n}</a>
+            //         </div>`
+            // );
+            render_select_tag(data[SETTING_DATA][WEB_ADD_EVENT])
             data[SETTING_DATA][WEB_ADD_CASE] = undefined;
             set_my_robot(data);
+        }
+        if (data.SETTING_DATA.WEB_ADD_DASHBOARD) {
+            $("#case_view").hide();
+            $("#process_view").hide();
+            $("#new_process").show();
+            $(".chose_tag").show();
+            $(".chose_opera").hide();
+            $(".tag_select").css("margin-top", "40px");
+            $("#tag_list").css("margin-top", "-20px");
+            init_process_opera(tag_types, operas, operas_alias);
+            render_select_tag(data.SETTING_DATA.WEB_ADD_EVENT);
+            data.SETTING_DATA.WEB_ADD_DASHBOARD = undefined;
+            set_my_robot(data);
+            direct_add_dashboard = true;
         }
     });
 
@@ -1126,20 +1189,56 @@ $(document).ready(function () {
     // 选择一个筛选后的元素
     $("#tag_list")
         .on("click", ".tag_spec", function () {
-            $("body").css("width", "250px");
-            $(".tag_select").css("margin-top", "0px");
-            $("#tag_list")
-                .css("margin-top", "0px")
-                .html(
-                    `<div id='seldn' class='collection-item' data="${$(
-                        this
-                    ).text()}">
-                        <a href='#' id='hasseled'>已选: ${$(this).text()}</a>
-                    </div>`
-                );
-            $(".chose_tag").hide();
-            $(".chose_opera").show();
-            $(".chose_class_id").hide();
+            if (direct_add_dashboard) {
+                if (confirm("确认添加到看板")) {
+                    exectab((tab_id, tab) => {
+                        let case_process = [
+                            {
+                                n: 0,
+                                opera: "pagejump",
+                                tag: "body",
+                                value: tab.url,
+                                wait: 0,
+                                check: true
+                            },
+                            {
+                                n: $(this).text().split("&")[1],
+                                opera: "onlyshow",
+                                tag: $(this).text().split("&")[0],
+                                wait: 0.5,
+                                check: true
+                            }
+                        ];
+                        let name = tab.title.replaceAll(" ", "") + "_" + getCurrentDateTime();
+                        get_my_robot(my_robot => {
+                            my_robot[name] = {
+                                case_name: name,
+                                case_process: case_process,
+                                case_type: "process",
+                                add_dashboard: true
+                            };
+                            my_robot[SETTING_DATA]["KEYS"].push(name);
+                            set_my_robot(my_robot, () => {
+                                chrome.tabs.sendMessage(tab_id, {
+                                    type: "close_robot_window"
+                                });
+                            });
+                        })
+                    })
+                }
+            } else {
+                $("body").css("width", "250px");
+                $(".tag_select").css("margin-top", "0px");
+                $("#tag_list")
+                    .css("margin-top", "0px")
+                    .html(`<div id='seldn' class='collection-item' data="${$(this).text()}">
+                            <a href='#' id='hasseled'>已选: ${$(this).text()}</a>
+                        </div>`
+                    );
+                $(".chose_tag").hide();
+                $(".chose_opera").show();
+                $(".chose_class_id").hide();
+            }
         })
         // 返回到筛选器
         .on("click", "#hasseled", function () {
@@ -1295,6 +1394,15 @@ $(document).ready(function () {
             window.close();
         });
     });
+
+    $("#add_dashboard_case").click(function () {
+        exectab((tab_id) => {
+            chrome.tabs.sendMessage(tab_id, {
+                type: "direct_add_dashboard"
+            });
+            window.close();
+        });
+    })
 
     // 连接当前页面
     exectab((tab_id, tab) => {
@@ -1498,7 +1606,7 @@ $(document).ready(function () {
         } else {
             $("#send_config").hide();
         }
-    })
+    });
 
     $("#crawler_submit").click(function (e) {
         get_my_robot(my_robot => {
@@ -1506,8 +1614,21 @@ $(document).ready(function () {
             my_robot[case_name].crawler.send = $("#send_data_cb").prop("checked");
             my_robot[case_name].crawler.api = $("#crawler_data_api").val();
             my_robot[case_name].crawler.freq = parseInt($("#send_freq").val());
-            console.log(my_robot[case_name]);
             set_my_robot(my_robot);
+        })
+    });
+
+    $("#dashboard").change(function () {
+        get_my_robot(my_robot => {
+            my_robot.SETTING_DATA.SIMPLE_DASHBOARD = $(this).prop("checked");
+            set_my_robot(my_robot, () => {
+                if (my_robot.SETTING_DATA.SIMPLE_DASHBOARD) {
+                    alert("简易看板模式已打开，请重新打开插件使用");
+                } else {
+                    alert("简易看板模式已关闭，请重新打开插件使用");
+                }
+                window.close();
+            });
         })
     })
 });

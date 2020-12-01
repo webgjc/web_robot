@@ -232,7 +232,8 @@ $(document).ready(function () {
     });
 
     $("body").mousemove(e => {
-        if (e.clientY < 10) {
+        let sh = e.clientX / window.innerWidth;
+        if (e.clientY < 10 && sh > 0.4 && sh < 0.6) {
             $("#opera").show();
         }
     });
@@ -310,7 +311,6 @@ $(document).ready(function () {
                     $("#handgrid").html("排版");
                     let editgrid = grid.save();
                     let tmpkeys = [];
-                    console.log(editgrid)
                     for (let i = 0; i < editgrid.length; i++) {
                         let idx = parseInt(editgrid[i].id.slice(6));
                         tmpkeys.push(names[idx]);
@@ -340,7 +340,7 @@ $(document).ready(function () {
                 }
                 grid.load(thisgrid, true);
                 my_robot[names[parseInt(e.target.id.slice(6))].slice(6)].add_dashboard = false;
-                names.splice(parseInt(e.target.id.slice(6)), 1);
+                // names.splice(parseInt(e.target.id.slice(6)), 1);
             });
 
             $("#reset").click(e => {

@@ -740,6 +740,7 @@ $(document).ready(function () {
             new_data[SETTING_DATA] = {};
             new_data[SETTING_DATA]["KEYS"] = [];
             set_my_robot(new_data);
+            $("#add_dashboard_case_view").hide();
             return;
         }
         if (data[SETTING_DATA]["KEYS"] === undefined) {

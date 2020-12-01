@@ -6,7 +6,7 @@
 ## 详细说明
 
 请见博客   
-[看板教程](http://blog.ganjiacheng.cn/article/article_31_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT%E4%B9%8B%E6%88%91%E7%9A%84%E7%9C%8B%E6%9D%BF/)
+[看板教程](http://blog.ganjiacheng.cn/article/article_31_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT%E4%B9%8B%E6%88%91%E7%9A%84%E7%9C%8B%E6%9D%BF/)  
 [使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
 [持续更新教程](http://ganjiacheng.cn/article/article_21_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT/)
 

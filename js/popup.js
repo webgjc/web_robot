@@ -1210,6 +1210,11 @@ $(document).ready(function () {
                             }
                         ];
                         let name = "看板" + "_" + getCurrentDateTime();
+                        try {
+                            name = tab.title.replaceAll(" ", "") + "_" + getCurrentDateTime();
+                        } catch (e) {
+                            console.log(e);
+                        }
                         // if (tab.title) {
                         //     name = tab.title.replaceAll(" ", "") + "_" + getCurrentDateTime();
                         // } else {

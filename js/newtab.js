@@ -223,8 +223,12 @@ $(document).ready(function () {
         resizable: {
             handles: 'e, se, s, sw, w'
         },
-        column: 12,
-        float: true
+        column: 100,
+        cellHeight: 'auto',
+        float: true,
+        enableMove: true,
+        enableResize: true,
+        margin: 2
     });
 
     $("body").mousemove(e => {
@@ -249,6 +253,7 @@ $(document).ready(function () {
             grid.enableMove(false);
             grid.enableResize(false);
             grid.load(mygrid);
+            grid.commit();
 
             for (let i = 0; i < mygrid.length; i++) {
                 mygridmap[mygrid[i].id] = mygrid[i];
@@ -264,8 +269,8 @@ $(document).ready(function () {
                     if (my_robot[key].add_dashboard) {
                         let grid_contain = `<iframe src="${my_robot[key].case_process[0].value}" name="${tmpid}" id="${tmpid}"></iframe>`;
                         let newgrid = {
-                            width: 3,
-                            height: 3,
+                            w: 20,
+                            h: 20,
                             content: grid_contain,
                             id: tmpid,
                             url: my_robot[key].case_process[0].value
@@ -311,8 +316,8 @@ $(document).ready(function () {
                         tmpkeys.push(names[idx]);
                         mygridmap[names[idx]].x = editgrid[i].x;
                         mygridmap[names[idx]].y = editgrid[i].y;
-                        mygridmap[names[idx]].width = editgrid[i].width;
-                        mygridmap[names[idx]].height = editgrid[i].height;
+                        mygridmap[names[idx]].w = editgrid[i].w;
+                        mygridmap[names[idx]].h = editgrid[i].h;
                     }
                     let tmpgrid = [];
                     for (let i = 0; i < tmpkeys.length; i++) {
@@ -334,8 +339,6 @@ $(document).ready(function () {
                     }
                 }
                 grid.load(thisgrid, true);
-                console.log(my_robot)
-                console.log(names[parseInt(e.target.id.slice(6))])
                 my_robot[names[parseInt(e.target.id.slice(6))].slice(6)].add_dashboard = false;
                 names.splice(parseInt(e.target.id.slice(6)), 1);
             });

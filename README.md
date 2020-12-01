@@ -4,7 +4,9 @@
 ![图片](https://github.com/webgjc/web_robot/blob/master/images/robot_pic.jpg?raw=true)
 
 ## 详细说明
+
 请见博客   
+[看板教程](http://blog.ganjiacheng.cn/article/article_31_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT%E4%B9%8B%E6%88%91%E7%9A%84%E7%9C%8B%E6%9D%BF/)
 [使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
 [持续更新教程](http://ganjiacheng.cn/article/article_21_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT/)
 
@@ -27,6 +29,7 @@
 15. 页面添加事件中优秀的可视化圈选
 16. 支持值选择器
 17. 支持dom自旋检查
+18. 自定义看板，看板简易模式
 
 
 ## 核心部分--事务和运行机制说明
@@ -224,6 +227,11 @@ V1.9.0（2020.10.26）
 
 V1.9.1（2020.10.27）
 1. 定时运行增加可配置的失败重试
+
+V2.0.0 (2020.12.01)
+1. 新增唯一展示事件
+2. 新增简易看板模式
+3. 增加看板，看板配置
 
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)

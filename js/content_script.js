@@ -17,6 +17,7 @@ function set_my_robot(new_robot, callback) {
     );
 }
 
+// 画背景
 function robot_make_select_canvas(dom) {
     myrobot_scroll_position(dom);
     let canvas = document.createElement("div");
@@ -26,7 +27,7 @@ function robot_make_select_canvas(dom) {
     canvas.style.height = dom.offsetHeight + 4 + "px";
     canvas.style.position = "fixed";
     canvas.style.opacity = "0.5";
-    canvas.style.zIndex = 9999;
+    canvas.style.zIndex = 999;
     canvas.style.left = parseInt(dom.getBoundingClientRect().left) - 2 + "px";
     canvas.style.top = parseInt(dom.getBoundingClientRect().top) - 2 + "px";
     document.body.appendChild(canvas);
@@ -35,6 +36,7 @@ function robot_make_select_canvas(dom) {
     }, 1000);
 }
 
+// 获取绝对坐标
 function myrobot_getAbsPoint(dom) {
     let x = dom.offsetLeft;
     let y = dom.offsetTop;
@@ -49,6 +51,7 @@ function myrobot_getAbsPoint(dom) {
     };
 }
 
+// 根据节点自动定位
 function myrobot_scroll_position(dom) {
     let domposi = myrobot_getAbsPoint(dom);
     if (
@@ -80,6 +83,7 @@ function myrobot_scroll_position(dom) {
 //     return names.join(" > ");
 // }
 
+// 初级根据节点获取选择器
 function myrobot_get_selector(dom) {
     let selector;
     if (dom.id) {
@@ -98,11 +102,12 @@ function myrobot_get_selector(dom) {
     return null;
 }
 
+// 根据节点获取选择器
 function dom_to_selector(doc, dom) {
     let names = [];
     let dombak = dom;
     do {
-        if (!dom && !dom.parentElement) break;
+        if (!dom || !dom.parentElement) break;
         if (dom.id && isNaN(Number(dom.id[0]))) {
             names.unshift(`${dom.tagName}#${dom.id}`);
             break;
@@ -130,6 +135,8 @@ function dom_to_selector(doc, dom) {
     }
 }
 
+
+// 未使用（根据节点获取选择器）
 function getCssSelectorShort(el) {
     let path = [],
         parent;
@@ -151,6 +158,7 @@ function getCssSelectorShort(el) {
     return `${path.join(" > ")}`.toLowerCase();
 }
 
+// 阻塞鼠标按下事件
 function myrobot_set_body_event(case_name) {
     document.body.addEventListener(
         "mousedown",
@@ -179,6 +187,7 @@ function myrobot_set_body_event(case_name) {
     );
 }
 
+// 创建事件定义
 function myrobot_create_event_input(selectorn, case_name) {
     let operas = [
         "click",
@@ -239,16 +248,25 @@ function myrobot_create_event_input(selectorn, case_name) {
     });
 }
 
+
+// 创建popup窗口
 function make_robot_window(x, y) {
     x = Math.min(window.innerWidth - 300, x);
     y = Math.min(window.innerHeight - 320, y);
     let ifr = document.createElement("iframe");
     ifr.src = chrome.extension.getURL("html/popup.html");
-    ifr.style.cssText = `z-index: 99999; position: fixed; top: ${y}px; left: ${x}px; background: #fff; border: solid 1px #ccc; min-height: 320px; min-width: 300px;`;
+    ifr.style.cssText = `z-index: 9999; position: fixed; top: ${y}px; left: ${x}px; background: #fff; border: solid 1px #ccc; min-height: 320px; min-width: 300px;`;
     ifr.id = "robot_iframe";
     document.body.appendChild(ifr);
 }
 
+// 关闭popup窗口
+function close_robot_window() {
+    document.getElementById("robot_iframe").remove();
+}
+
+
+// 提示
 let tipCount = 0;
 function tip(info) {
     info = info || '';
@@ -268,6 +286,66 @@ function tip(info) {
     }, 4000);
 }
 
+function dom_only_show(dom) {
+    if (dom == document.body) {
+        return;
+    } else {
+        for (let i = 0; i < dom.parentNode.children.length; i++) {
+            if (dom.parentNode.children[i] != dom) {
+                dom.parentNode.children[i].style.display = "None";
+            }
+        }
+        dom_only_show(dom.parentNode);
+    }
+}
+
+function direct_select_dom(cb) {
+    let last_dom;
+    let last_dom_border;
+    let last_dom_boxshadow;
+    let last_dom_zindex;
+    document.onmouseover = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (e.target.id === "robot_frame" || e.target.id === "robot_select") return;
+        let tmp = e.target.style.border;
+        let tmp1 = e.target.style.boxShadow;
+        let tmp2 = e.target.style.zIndex;
+        e.target.style.border = "solid 2px #ffa3a3";
+        e.target.style.boxShadow = "0px 0px 8px 8px #ffa3a3";
+        e.target.style.zIndex = 999;
+        if (last_dom !== undefined) {
+            last_dom.style.border = last_dom_border;
+            last_dom.style.boxShadow = last_dom_boxshadow;
+            last_dom.style.zIndex = last_dom_zindex;
+        }
+        last_dom = e.target;
+        last_dom_border = tmp;
+        last_dom_boxshadow = tmp1;
+        last_dom_zindex = tmp2;
+    };
+    document.addEventListener(
+        "click",
+        function (e) {
+            if (document.getElementById("robot_iframe")) {
+                document.getElementById("robot_iframe").remove();
+            }
+            e.stopPropagation();
+            e.preventDefault();
+            let dom = e.target;
+            let selectors = [];
+            while (dom.parentElement.parentElement) {
+                if (dom.clientWidth > 0 && dom.clientHeight > 0) {
+                    let selector = dom_to_selector(document, dom)
+                    selectors.push(`${selector[0]}&${selector[1]}`);
+                }
+                dom = dom.parentElement;
+            }
+            cb && cb(selectors, e);
+        },
+        true
+    );
+}
 
 // make_robot_window();
 
@@ -499,8 +577,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             type: msg.type,
             data: posidom.innerText,
         });
+    } else if (msg.type === "get_custom_value") {
+        sendResponse({
+            type: msg.type,
+            data: new Function("return " + msg.value)(),
+        });
     } else if (msg.type == "get_dom") {
-        console.log(123);
         sendResponse({
             type: msg.type,
             dom: posidom !== undefined,
@@ -577,54 +659,66 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         window.location.reload();
         RDATA.recording = false;
     } else if (msg.type === "direct_add_event") {
-        console.log(123);
-        let last_dom;
-        let last_dom_border;
-        let last_dom_boxshadow;
-        let last_dom_zindex;
-        document.onmouseover = (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            let tmp = e.target.style.border;
-            let tmp1 = e.target.style.boxShadow;
-            let tmp2 = e.target.style.zIndex;
-            e.target.style.border = "solid 2px #ffa3a3";
-            e.target.style.boxShadow = "0px 0px 8px 8px #ffa3a3";
-            e.target.style.zIndex = 999;
-            if (last_dom !== undefined) {
-                last_dom.style.border = last_dom_border;
-                last_dom.style.boxShadow = last_dom_boxshadow;
-                last_dom.style.zIndex = last_dom_zindex;
-            }
-            last_dom = e.target;
-            last_dom_border = tmp;
-            last_dom_boxshadow = tmp1;
-            last_dom_zindex = tmp2;
-        };
-        document.addEventListener(
-            "click",
-            function (e) {
-                if (document.getElementById("robot_iframe")) {
-                    document.getElementById("robot_iframe").remove();
-                }
-                e.stopPropagation();
-                e.preventDefault();
-                let selector = dom_to_selector(document, e.target);
-                get_my_robot((data) => {
-                    data["SETTING_DATA"]["WEB_ADD_CASE"] = msg.case_name;
-                    data["SETTING_DATA"]["WEB_ADD_EVENT"] = {
-                        tag: selector[0],
-                        n: selector[1],
-                    };
-                    set_my_robot(data, () => {
-                        make_robot_window(e.x, e.y);
-                    });
+        direct_select_dom(function (selectors, e) {
+            get_my_robot((data) => {
+                data["SETTING_DATA"]["WEB_ADD_CASE"] = msg.case_name;
+                data["SETTING_DATA"]["WEB_ADD_CRAWLER_KEY"] = msg.crawler_key;
+                data["SETTING_DATA"]["WEB_ADD_EVENT"] = selectors;
+                set_my_robot(data, () => {
+                    make_robot_window(e.x, e.y);
                 });
-            },
-            true
-        );
+            });
+        })
     } else if (msg.type === "show_msg") {
         tip(msg.msg);
+    } else if (msg.type === "onlyshow" && window.name === msg.name) {
+        let dom = posidom;
+        dom.style.width = dom.clientWidth + "px";
+        dom.style.height = dom.clientHeight + "px";
+        dom_only_show(dom);
+        dom.parentNode.style.position = "fixed";
+        dom.parentNode.style.left = "0px";
+        dom.parentNode.style.top = "0px";
+        dom.parentNode.style.minHeight = "auto";
+        dom.parentNode.style.minWidth = "auto";
+        dom.parentNode.style.width = msg.width;
+        dom.parentNode.style.height = msg.height;
+        dom.parentNode.style.marginLeft = "0px";
+        dom.parentNode.style.marginTop = "0px";
+        dom.parentNode.style.paddingLeft = "0px";
+        dom.parentNode.style.paddingTop = "0px";
+        dom.parentNode.style.overflow = "scroll";
+        dom.style.marginLeft = "0px";
+        dom.style.marginTop = "0px";
+        dom.style.paddingLeft = "0px";
+        dom.style.paddingTop = "0px";
+        sendResponse({
+            type: msg.type,
+            data: {
+                h: dom.clientHeight,
+                w: dom.clientWidth
+            },
+        });
+    } else if (msg.type === "execute_frame" && window.name === msg.name) {
+        // console.log(msg)
+        new Function(msg.code)();
+    } else if (msg.type === "get_dom_frame" && window.name === msg.name) {
+        sendResponse({
+            type: msg.type,
+            dom: posidom !== undefined,
+        });
+    } else if (msg.type === "direct_add_dashboard") {
+        direct_select_dom(function (selectors, e) {
+            get_my_robot((data) => {
+                data["SETTING_DATA"]["WEB_ADD_DASHBOARD"] = true;
+                data["SETTING_DATA"]["WEB_ADD_EVENT"] = selectors;
+                set_my_robot(data, () => {
+                    make_robot_window(e.x, e.y);
+                });
+            });
+        })
+    } else if (msg.type === "close_robot_window") {
+        close_robot_window();
     }
 });
 

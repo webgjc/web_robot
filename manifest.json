@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Web Robot",
-    "version": "1.9.1",
+    "version": "2.0.0",
     "description": "网页自动化操作机器人, 网页自动化流程的定义与运行，有助于自动化测试和自动化脚本的执行，帮助web开发者提高效率，降低页面的重复劳动。",
     "browser_action": {
         "default_popup": "html/popup.html",
@@ -28,15 +28,21 @@
             ],
             "css": [
                 "css/custom.css"
-            ]
+            ],
+            "all_frames": true
         }
     ],
     "permissions": [
+        "webRequest",
+        "webRequestBlocking",
         "storage",
         "<all_urls>",
         "tabs"
     ],
     "web_accessible_resources": [
         "html/popup.html"
-    ]
+    ],
+    "chrome_url_overrides": {
+        "newtab": "html/newtab.html"
+    }
 }

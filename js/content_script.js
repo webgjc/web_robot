@@ -286,6 +286,7 @@ function tip(info) {
     }, 4000);
 }
 
+// dom唯一展示
 function dom_only_show(dom) {
     if (dom == document.body) {
         return;
@@ -299,6 +300,7 @@ function dom_only_show(dom) {
     }
 }
 
+// 直接选择dom，圈选
 function direct_select_dom(cb) {
     let last_dom;
     let last_dom_border;
@@ -348,7 +350,7 @@ function direct_select_dom(cb) {
 }
 
 // make_robot_window();
-
+// 处理长连接（尽量使用消息）
 chrome.runtime.onConnect.addListener(function (port) {
     if (port.name === "robot") {
         port.onMessage.addListener(function (msg) {
@@ -511,6 +513,7 @@ let RDATA = {
     ivr_time: 0,
 };
 
+// 处理消息
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     const tag_types = [
         "自由选择器",
@@ -536,6 +539,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     ];
     let posidom;
 
+    // 获取到真实dom元素    
     if (tag_types.indexOf(msg.tag) === -1 && msg.tag) {
         if (msg.tag.indexOf("{") !== -1 && msg.tag.indexOf("}") !== -1) {
             let doms = document.querySelectorAll(
@@ -559,6 +563,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         posidom = document.getElementsByTagName(msg.tag)[msg.n];
     }
     if (msg.type === "get_position") {
+        // 获取位置信息
         myrobot_scroll_position(posidom);
         sendResponse({
             type: msg.type,
@@ -573,21 +578,25 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                 (window.outerHeight - window.innerHeight),
         });
     } else if (msg.type === "get_value") {
+        // 获取值
         sendResponse({
             type: msg.type,
             data: posidom.innerText,
         });
     } else if (msg.type === "get_custom_value") {
+        // 获取自定义属性
         sendResponse({
             type: msg.type,
             data: new Function("return " + msg.value)(),
         });
     } else if (msg.type == "get_dom") {
+        // 获取dom存不存在
         sendResponse({
             type: msg.type,
             dom: posidom !== undefined,
         });
     } else if (msg.type === "start_recording") {
+        // 开始直接事件记录
         RDATA.recording = true;
         RDATA.time_wait = 0;
         RDATA.recording_data = [];
@@ -649,6 +658,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             RDATA.first_recording = false;
         }
     } else if (msg.type === "end_recording") {
+        // 结束事件记录
         chrome.runtime.sendMessage({
             type: "ADD_EVENT",
             case_name: RDATA.case_name,
@@ -659,6 +669,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         window.location.reload();
         RDATA.recording = false;
     } else if (msg.type === "direct_add_event") {
+        // 浏览器直接添加事件
         direct_select_dom(function (selectors, e) {
             get_my_robot((data) => {
                 data["SETTING_DATA"]["WEB_ADD_CASE"] = msg.case_name;
@@ -670,8 +681,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             });
         })
     } else if (msg.type === "show_msg") {
+        // 展示信息
         tip(msg.msg);
     } else if (msg.type === "onlyshow" && window.name === msg.name) {
+        // 唯一展示、看板功能
         let dom = posidom;
         dom.style.width = dom.clientWidth + "px";
         dom.style.height = dom.clientHeight + "px";
@@ -700,14 +713,17 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             },
         });
     } else if (msg.type === "execute_frame" && window.name === msg.name) {
+        // 运行frame（看板）
         // console.log(msg)
         new Function(msg.code)();
     } else if (msg.type === "get_dom_frame" && window.name === msg.name) {
+        // 获取frame元素（看板）
         sendResponse({
             type: msg.type,
             dom: posidom !== undefined,
         });
     } else if (msg.type === "direct_add_dashboard") {
+        // 直接添加看板
         direct_select_dom(function (selectors, e) {
             get_my_robot((data) => {
                 data["SETTING_DATA"]["WEB_ADD_DASHBOARD"] = true;
@@ -718,10 +734,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             });
         })
     } else if (msg.type === "close_robot_window") {
+        // 关闭注入robot frame
         close_robot_window();
     }
 });
 
+// 源码注入
 window.onload = function () {
     get_my_robot((my_robot) => {
         for (let i in my_robot) {

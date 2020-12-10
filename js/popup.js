@@ -240,7 +240,7 @@ function refresh_cases() {
                 let i = my_robot[SETTING_DATA]["KEYS"][n];
                 if (my_robot.hasOwnProperty(i)) {
                     if (i === SETTING_DATA) continue;
-                    let tr = `<tr id=${i}><td><a href="#" class="case_name">${i}</a></td><td>`;
+                    let tr = `<tr id=${i}><td><a href="#" class="case_name">${i}</a></td><td style="min-width: 170px">`;
                     if (
                         my_robot[i]["case_type"] === "process" ||
                         my_robot[i]["case_type"] === "sourcecode"
@@ -260,7 +260,7 @@ function refresh_cases() {
                     if (my_robot[i]["case_type"] === "process") {
                         tr += '<a href="#" class="lun_case">轮播</a> ';
                         if (judge_add_dashboard(my_robot[i].case_process)) {
-                            tr += `<a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
+                            tr += `<br /><a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
                         }
                     }
                     if (my_robot[i]["case_type"] === "crawler") {
@@ -1406,6 +1406,7 @@ $(document).ready(function () {
         });
     });
 
+    // 直接添加看板
     $("#add_dashboard_case").click(function () {
         exectab((tab_id) => {
             chrome.tabs.sendMessage(tab_id, {
@@ -1611,6 +1612,7 @@ $(document).ready(function () {
         refresh_process(case_name, crawler_key);
     });
 
+    // 是否发送数据开关
     $("#send_data_cb").change(function () {
         if ($(this).prop("checked")) {
             $("#send_config").show();
@@ -1619,6 +1621,7 @@ $(document).ready(function () {
         }
     });
 
+    // 爬虫确认
     $("#crawler_submit").click(function (e) {
         get_my_robot(my_robot => {
             my_robot[case_name].crawler.times = parseInt($("#crawler_times").val());
@@ -1629,6 +1632,7 @@ $(document).ready(function () {
         })
     });
 
+    // 建议看板模式开关
     $("#dashboard").change(function () {
         get_my_robot(my_robot => {
             my_robot.SETTING_DATA.SIMPLE_DASHBOARD = $(this).prop("checked");

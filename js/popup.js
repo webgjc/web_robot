@@ -1645,6 +1645,10 @@ $(document).ready(function () {
                 window.close();
             });
         })
+    });
+
+    $("#dashboard_switch").click(function () {
+        alert("请至项目跟目录下运行: bash main.sh 查看具体方法");
     })
 });
 

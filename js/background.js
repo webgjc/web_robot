@@ -435,7 +435,7 @@ chrome.webRequest.onHeadersReceived.addListener(
         // console.log(details.responseHeaders);
         for (var i = 0; i < details.responseHeaders.length; i++) {
             // console.log(details.responseHeaders[i])
-            if (details.responseHeaders[i].name === 'x-frame-options') {
+            if (details.responseHeaders[i].name.toLowerCase() === 'x-frame-options') {
                 details.responseHeaders[i].value = "";
                 // console.log('Removing "' + details.responseHeaders[i].name + '" header.');
                 // details.responseHeaders.splice(i, 1);

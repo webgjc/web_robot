@@ -225,7 +225,7 @@ $(document).ready(function () {
         },
         column: 100,
         cellHeight: 'auto',
-        float: true,
+        // float: true,
         enableMove: true,
         enableResize: true,
         margin: 2

@@ -150,6 +150,19 @@ function exec_run_item(process_item, tab_id, args) {
                 code: jscode(process_item)
             });
         });
+    } else if (process_item.opera === "getcustomvalue") {
+        chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "get_custom_value",
+                value: process_item.expr
+            },
+            function (msg) {
+                if (msg.type === "get_custom_value") {
+                    args[process_item.value] = msg.data;
+                }
+            }
+        );
     } else if (process_item.opera === "value") {
         if (args[process_item.value] !== undefined) {
             process_item.value = args[process_item.value];
@@ -161,6 +174,8 @@ function exec_run_item(process_item, tab_id, args) {
         chrome.tabs.create({
             url: process_item.value
         });
+    } else if (process_item.opera === "closepage") {
+        chrome.tabs.remove(tab_id);
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item)

@@ -309,9 +309,14 @@ function refresh_process_com(data) {
                 <div class="col s6 ">操作：${data[i]["opera"]}</div> \
                 <div class="col s6 ">等待：${data[i]["wait"]}秒</div> \
             </div> \
+            ${data[i]["value"] && `
             <div class="row "> \
                 <div class="col s12 ">赋值：${data[i]["value"]}</div> \
             </div> \
+            `}
+            ${data[i]["expr"] && `<div class="row "> \
+                <div class="col s12 ">表达式：${data[i]["expr"]}</div> \
+            </div>`}
             <div class="row "> \
                 <a href="# "> \
                     <div class="col pc" id="process_test_run" >测试</div> \
@@ -1290,6 +1295,8 @@ $(document).ready(function () {
         }
         if ($(this).val() === "getcustomvalue") {
             $("#set_expression").show();
+        } else {
+            $("#set_expression").hide();
         }
     });
 
@@ -1468,6 +1475,12 @@ $(document).ready(function () {
                             $("#set_value").show();
                         } else {
                             $("#set_value").hide();
+                        }
+                        if (the_process.expr) {
+                            $("#set_expression").show();
+                            $("#expression").val(the_process.expr);
+                        } else {
+                            $("#set_expression").hide();
                         }
                         $("#ssv").val(the_process.value);
                         $("#sel_opera").val(the_process.opera);

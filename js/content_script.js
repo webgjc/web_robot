@@ -79,7 +79,7 @@ function myrobot_scroll_position(dom) {
 //         names.unshift(el.tagName + ":nth-child(" + index + ")");
 //         el = el.parentElement;
 //     } while (el !== null);
-//
+
 //     return names.join(" > ");
 // }
 
@@ -302,49 +302,62 @@ function dom_only_show(dom) {
 
 // 直接选择dom，圈选
 function direct_select_dom(cb) {
-    let last_dom;
-    let last_dom_border;
+    let last_dom; // 上个元素 
+    let last_dom_border;  // 记录之前的一些css样式
     let last_dom_boxshadow;
     let last_dom_zindex;
+    // 监听鼠标移入
     document.onmouseover = (e) => {
+        // 阻止事件冒泡和阻止默认事件
         e.stopPropagation();
         e.preventDefault();
         if (e.target.id === "robot_frame" || e.target.id === "robot_select") return;
+        // 存一下样式
         let tmp = e.target.style.border;
         let tmp1 = e.target.style.boxShadow;
         let tmp2 = e.target.style.zIndex;
+        // 当前选中的元素设置为选中样式
         e.target.style.border = "solid 2px #ffa3a3";
         e.target.style.boxShadow = "0px 0px 8px 8px #ffa3a3";
         e.target.style.zIndex = 999;
+        // 将老元素样式还原
         if (last_dom !== undefined) {
             last_dom.style.border = last_dom_border;
             last_dom.style.boxShadow = last_dom_boxshadow;
             last_dom.style.zIndex = last_dom_zindex;
         }
+        // 当前元素设为老元素
         last_dom = e.target;
         last_dom_border = tmp;
         last_dom_boxshadow = tmp1;
         last_dom_zindex = tmp2;
     };
+    // 重写点击事件
     document.addEventListener(
         "click",
         function (e) {
             if (document.getElementById("robot_iframe")) {
                 document.getElementById("robot_iframe").remove();
             }
+            // 阻止原事件和事件冒泡
             e.stopPropagation();
             e.preventDefault();
+            // 这边为获取这个元素和他父元素的所有的选择器
             let dom = e.target;
             let selectors = [];
             while (dom.parentElement.parentElement) {
                 if (dom.clientWidth > 0 && dom.clientHeight > 0) {
+                    // 通过dom转选择器的转换函数
                     let selector = dom_to_selector(document, dom)
                     selectors.push(`${selector[0]}&${selector[1]}`);
                 }
+                // 遍历所有父节点
                 dom = dom.parentElement;
             }
+            // 回调
             cb && cb(selectors, e);
         },
+        // 关键，在事件捕获阶段就执行，而不是冒泡阶段
         true
     );
 }

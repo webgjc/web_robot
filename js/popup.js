@@ -1478,10 +1478,10 @@ $(document).ready(function () {
                         }
                         if (the_process.expr) {
                             $("#set_expression").show();
-                            $("#expression").val(the_process.expr);
                         } else {
                             $("#set_expression").hide();
                         }
+                        $("#expression").val(the_process.expr);
                         $("#ssv").val(the_process.value);
                         $("#sel_opera").val(the_process.opera);
                         $("#sel_opera option").attr("selected", false);

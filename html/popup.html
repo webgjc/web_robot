@@ -211,7 +211,8 @@
                     <div class="input-field">
                         <select id="select_case_type">
                             <option value="process" selected>流程事务</option>
-                            <!-- <option value="crawler">爬虫事务</option> -->
+                            <!-- <option value="crawler">线性爬虫事务</option> -->
+                            <option value="paral_crawler">并发爬虫事务</option>
                             <option value="sourcecode">源码事务</option>
                             <option value="control">受控事务</option>
                         </select>
@@ -340,6 +341,55 @@
             </div>
             <div style="text-align: center;">
                 <a class="waves-effect waves-teal btn-flat" href="#" id="crawler_submit">确认</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="crawler_back">返回</a>
+            </div>
+        </div>
+
+        <!-- 并发爬虫 -->
+        <div id="paral_crawler_view" style="display: none;">
+            <div class="switch" style="margin-top: 10px; margin-bottom: 20px;">
+                <label>
+                    URL配置：自配
+                    <input type="checkbox" id="paral_crawler_url_config">
+                    <span class="lever"></span>
+                    API地址
+                </label>
+            </div>
+            <div class="input-field col s12" id="url_textarea_box">
+                <textarea id="url_textarea" class="materialize-textarea"></textarea>
+                <label for="url_textarea">批量url地址（一行一个）</label>
+            </div>
+            <div class="input-field col s12" style="display: none;" id="paral_crawler_url_api_box">
+                <input id="paral_crawler_url_api" type="text" value="http://127.0.0.1:12580/crawler/url/">
+                <label for="paral_crawler_url_api">地址接收api地址</label>
+            </div>
+            <div style="margin-bottom: 40px;">
+                <a href="#!" class="collection-item crawler_process" id="crawler_fetch">爬取数据流程</a>
+            </div>
+            <div class="input-field col s12">
+                <input id="crawler_cc" type="number" value="3">
+                <label for="crawler_cc">并发数</label>
+            </div>
+            <div class="switch" style="margin-bottom: 30px;">
+                <label>
+                    发送数据：关
+                    <input type="checkbox" id="paral_crawler_send_data_cb">
+                    <span class="lever"></span>
+                    开
+                </label>
+            </div>
+            <div id="paral_send_config" style="display: none;">
+                <div class="input-field col s12">
+                    <input id="paral_crawler_data_api" type="text" value="http://127.0.0.1:12580/crawler/">
+                    <label for="paral_crawler_data_api">数据发送API地址</label>
+                </div>
+                <div class="input-field col s12">
+                    <input id="paral_send_freq" type="number" value="1">
+                    <label for="paral_send_freq">每隔几轮发送一次</label>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <a class="waves-effect waves-teal btn-flat" href="#" id="paral_crawler_submit">确认</a>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="crawler_back">返回</a>
             </div>
         </div>

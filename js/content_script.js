@@ -735,6 +735,16 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             type: msg.type,
             dom: posidom !== undefined,
         });
+    } else if (msg.type === "get_value_frame" && window.name === msg.name) {
+        sendResponse({
+            type: msg.type,
+            data: posidom.innerText,
+        });
+    } else if (msg.type === "get_custom_value_frame" && window.name === msg.name) {
+        sendResponse({
+            type: msg.type,
+            data: new Function("return " + msg.value)(),
+        });
     } else if (msg.type === "direct_add_dashboard") {
         // 直接添加看板
         direct_select_dom(function (selectors, e) {

@@ -63,6 +63,17 @@ function get_my_robot(callback) {
             send(是否发送数据): false,
             api(发送数据api): "",
             freq(发送数据频率): 10
+        },
+        paral_crawler: {
+            urls（自配url）: [],
+            apicb（是否使用api url）: false,
+            urlapi（url api地址）: "",
+            fetch（取数流程）: [],
+            cc（并发）: 3,
+            data（数据）: [],
+            send（是否发送结果数据）: false,
+            api（发送目标api）: "",
+            freq（发送频率）: 10
         }
         case_sourcecode(源码事务的js源码): "",
         sourcecode_url(源码主入正则匹配地址): "",
@@ -263,7 +274,7 @@ function refresh_cases() {
                             tr += `<br /><a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
                         }
                     }
-                    if (my_robot[i]["case_type"] === "crawler") {
+                    if (my_robot[i]["case_type"] === "crawler" || my_robot[i]["case_type"] === "paral_crawler") {
                         tr += '<a href="#" class="crawler_run">运行</a> ';
                         tr += '<a href="#" class="crawler_show_data">查看数据</a> ';
                     }
@@ -290,7 +301,11 @@ function refresh_process(case_name, crawler_key) {
         if (crawler_key == undefined) {
             refresh_process_com(my_robot[case_name]["case_process"]);
         } else {
-            refresh_process_com(my_robot[case_name]["crawler"][crawler_key]);
+            if (my_robot[case_name]["crawler"]) {
+                refresh_process_com(my_robot[case_name]["crawler"][crawler_key]);
+            } else {
+                refresh_process_com(my_robot[case_name]["paral_crawler"][crawler_key]);
+            }
         }
     })
 }
@@ -513,6 +528,12 @@ function crawler_send_data(case_name, crawler, opera, data, callback) {
 function crawler_run(case_name, tab_id) {
     console.log("crawler start");
     get_my_robot(my_robot => {
+        if (my_robot[case_name].case_type === "paral_crawler") {
+            chrome.tabs.create({
+                url: "chrome://newtab?case=" + case_name
+            });
+            return;
+        }
         crawler_send_data(case_name, my_robot[case_name].crawler, "clear");
         let lock = false; // 进入一个爬虫过程锁住
         let this_key = "init";  // 当前流程
@@ -734,7 +755,11 @@ $(document).ready(function () {
         if (crawler_key === undefined) {
             callback(my_case["case_process"]);
         } else {
-            callback(my_case["crawler"][crawler_key]);
+            if (my_case["crawler"]) {
+                callback(my_case["crawler"][crawler_key]);
+            } else {
+                callback(my_case["paral_crawler"][crawler_key]);
+            }
         }
     }
 
@@ -850,6 +875,25 @@ $(document).ready(function () {
                     } else {
                         $("#send_config").hide();
                     }
+                } else if (my_robot[case_name]["case_type"] === "paral_crawler") {
+                    let crawler = my_robot[case_name].paral_crawler;
+                    $("#paral_crawler_view").show();
+                    $("#paral_crawler_url_config").prop("checked", crawler.apicb);
+                    if (!crawler.apicb) {
+                        $("#url_textarea").val(crawler.urls.join("\n"));
+                    } else {
+                        $("#paral_crawler_url_api").val(crawler.urlapi);
+                    }
+                    $("#crawler_cc").val(crawler.cc);
+                    $("#paral_crawler_send_data_cb").prop("checked", crawler.send);
+                    if (crawler.send) {
+                        $("#paral_send_config").show();
+                        $("#paral_crawler_data_api").val(crawler.api);
+                        $("#paral_send_freq").val(crawler.freq);
+                    } else {
+                        $("#paral_send_config").hide();
+                    }
+                    Materialize.updateTextFields();
                 }
             });
         })
@@ -1028,6 +1072,19 @@ $(document).ready(function () {
                     api: "",
                 }
             }
+            if ($("#select_case_type").val() === "paral_crawler") {
+                my_robot[new_case_name]["paral_crawler"] = {
+                    urls: [],
+                    apicb: false,
+                    urlapi: null,
+                    fetch: [],
+                    cc: 3,
+                    data: [],
+                    send: false,
+                    api: "",
+                    freq: 10
+                }
+            }
             my_robot[SETTING_DATA]["KEYS"].push(new_case_name);
             set_my_robot(my_robot, refresh_cases);
         });
@@ -1057,6 +1114,7 @@ $(document).ready(function () {
         $("#new_process").hide();
         $("#case_view").show();
         $("#crawler_view").hide();
+        $("#paral_crawler_view").hide();
         $("#crawler_data_view").hide();
     });
 
@@ -1593,20 +1651,26 @@ $(document).ready(function () {
                 $("#crawler_data_view").show();
                 case_name = $(this).parent().parent().attr("id");
                 get_my_robot(my_robot => {
-                    // console.log(my_robot[case_name].crawler.data)
+                    let crawler;
+                    if (my_robot[case_name].crawler) {
+                        crawler = my_robot[case_name].crawler;
+                    } else {
+                        crawler = my_robot[case_name].paral_crawler;
+                    }
                     let table_html = "";
-                    let titles = my_robot[case_name].crawler.fetch
+                    let titles = crawler.fetch
                         .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
                         .map(i => i.value);
+                    titles.unshift("primary_key");
                     table_html += `
                     <thead>
                         <tr>
-                            ${titles.map(t => `<th class="data_tr">${t}</th>`).join()}
+                            ${titles.map(t => `<th class="data_tr">${t === "primary_key" ? "主键" : t}</th>`).join()}
                         </tr>
                     </thead>`;
                     table_html += `
                     <tbody>
-                        ${my_robot[case_name].crawler.data.map(d => `
+                        ${crawler.data.map(d => `
                             <tr>
                                 ${titles.map(t => `<td class="data_td">${d[t]}</td>`).join()}
                             </tr>
@@ -1620,6 +1684,7 @@ $(document).ready(function () {
     // 打开爬虫流程配置
     $(".crawler_process").click(function () {
         $("#crawler_view").hide();
+        $("#paral_crawler_view").hide();
         $("#process_view").show();
         crawler_key = $(this).attr("id").split("_")[1];
         refresh_process(case_name, crawler_key);
@@ -1633,6 +1698,23 @@ $(document).ready(function () {
             $("#send_config").hide();
         }
     });
+    $("#paral_crawler_send_data_cb").change(function () {
+        if ($(this).prop("checked")) {
+            $("#paral_send_config").show();
+        } else {
+            $("#paral_send_config").hide();
+        }
+    });
+
+    $("#paral_crawler_url_config").change(function () {
+        if ($(this).prop("checked")) {
+            $("#url_textarea_box").hide();
+            $("#paral_crawler_url_api_box").show();
+        } else {
+            $("#url_textarea_box").show();
+            $("#paral_crawler_url_api_box").hide();
+        }
+    })
 
     // 爬虫确认
     $("#crawler_submit").click(function (e) {
@@ -1644,6 +1726,22 @@ $(document).ready(function () {
             set_my_robot(my_robot);
         })
     });
+    $("#paral_crawler_submit").click(function (e) {
+        get_my_robot(my_robot => {
+            let crawler = my_robot[case_name].paral_crawler;
+            crawler.apicb = $("#paral_crawler_url_config").prop("checked");
+            crawler.urls = $("#url_textarea").val().split("\n");
+            crawler.urlapi = $("#paral_crawler_url_api").val();
+            crawler.cc = parseInt($("#crawler_cc").val());
+            crawler.send = $("#paral_crawler_send_data_cb").prop("checked");
+            crawler.api = $("#paral_crawler_data_api").val();
+            crawler.freq = parseInt($("#paral_send_freq").val());
+            set_my_robot(my_robot, () => {
+                $("#paral_crawler_view").hide();
+                $("#case_view").show();
+            });
+        })
+    })
 
     // 建议看板模式开关
     $("#dashboard").change(function () {

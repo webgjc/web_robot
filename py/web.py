@@ -40,7 +40,6 @@ def controller_recover():
 @app.route("/crawler/", methods=["POST"])
 def controller_save():
     data = json.loads(request.get_data(as_text=True))
-    print(data)
     cd = CrawlerData(data["case_name"])
     if data["opera"] == "clear":
         cd.clear()
@@ -51,6 +50,14 @@ def controller_save():
     else:
         return "fail"
     return "success"
+
+
+urls = open("py/urls.txt", "r")
+
+# 外部爬虫url输入用例demo
+@app.route("/crawler/url/", methods=["GET"])
+def controller_crawler_url():
+    return urls.readline().strip()
 
 
 if __name__ == "__main__":

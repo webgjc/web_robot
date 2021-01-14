@@ -113,6 +113,7 @@ function sleep(s) {
     });
 }
 
+// chrome://newtab/?case=rwe
 // function resetwh(w, h, name) {
 //     let id = name.split("-")[1];
 //     w = w + "px";
@@ -123,7 +124,7 @@ function sleep(s) {
 //     document.getElementById(`grid-${id}`).style.height = h;
 // }
 
-function exec_run_item(process_item, tab_id, name, grid) {
+function exec_run_item(process_item, tab_id, name, grid, node, args, cb) {
     if (process_item.opera === "onlyshow") {
         chrome.tabs.sendMessage(tab_id, {
             name: name,
@@ -136,6 +137,34 @@ function exec_run_item(process_item, tab_id, name, grid) {
         }, (msg) => {
             // resetwh(msg.data.w, msg.data.h, name);
         })
+    } else if (process_item.opera === "getvalue") {
+        chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "get_value_frame",
+                name: name,
+                tag: process_item.tag,
+                n: process_item.n,
+            },
+            function (msg) {
+                args[process_item.value] = msg.data
+                cb && cb(name, args, node);
+            }
+        );
+    } else if (process_item.opera === "getcustomvalue") {
+        chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "get_custom_value_frame",
+                name: name,
+                value: process_item.expr
+            },
+            function (msg) {
+                console.log(msg)
+                args[process_item.value] = msg.data
+                cb && cb(name, args, node);
+            }
+        );
     } else {
         chrome.tabs.sendMessage(tab_id, {
             name: name,
@@ -147,7 +176,7 @@ function exec_run_item(process_item, tab_id, name, grid) {
 
 
 // dom检查自旋运行
-function dom_check_run(process, tab_id, name, grid) {
+function dom_check_run(process, tab_id, name, grid, node, cb) {
     // console.log("dom check run")
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
@@ -158,7 +187,6 @@ function dom_check_run(process, tab_id, name, grid) {
         return;
     }
     let dom_itvl = setInterval(function () {
-        // console.log("status: " + run_status);
         if (run_status == 0 && !process[now_index].check) {
             run_status = 1;
         }
@@ -181,15 +209,14 @@ function dom_check_run(process, tab_id, name, grid) {
                 }
             );
         } else if (run_status == 1) {
-            run_status = 2;
-            setTimeout(function () {
-                exec_run_item(process[now_index], tab_id, name, grid);
-                now_index += 1;
-                run_status = 0;
-            }, process[now_index].wait * 1000);
             if (process.length - 1 === now_index) {
                 clearInterval(dom_itvl);
+                exec_run_item(process[now_index], tab_id, name, grid, node, args, cb);
+            } else {
+                exec_run_item(process[now_index], tab_id, name, grid, node, args);
             }
+            now_index += 1;
+            run_status = 0;
         }
         if (count == 50) {
             clearInterval(dom_itvl);
@@ -213,6 +240,110 @@ function fetch_html(url, cb) {
         .then(resp => resp.text())
         .then(data => cb && cb(data));
 }
+
+function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == variable) { return pair[1]; }
+    }
+    return (false);
+}
+
+function get_crawler_url(crawler, index, cb) {
+    if (crawler.apicb) {
+        fetch(crawler.urlapi)
+            .then(resp => resp.text())
+            .then(url => cb && cb(url));
+    } else {
+        cb && cb(crawler.urls[index]);
+    }
+}
+
+
+function crawler_run(grid, crawler, tab, cb) {
+    let size = crawler.apicb ?
+        crawler.cc : Math.min(crawler.cc, crawler.urls.length);
+    let arr = [];
+    let index = 0;
+    let queue = [];
+    let result = [];
+    let queue_status = {};
+    let queue_url = {};
+    let names = [];
+    for (let i = 0; i < size; i++) {
+        get_crawler_url(crawler, i, function (url) {
+            arr.push({
+                w: 25,
+                h: 25,
+                content: `<iframe src="${url}" name="crawler-${i}"></iframe>`,
+                id: `crawler-${i}`,
+                url: url
+            });
+            index++;
+            queue.push(`crawler-${i}`);
+            names.push(`crawler-${i}`);
+            queue_url[`crawler-${i}`] = url;
+            queue_status[`crawler-${i}`] = 0;
+        })
+    }
+    grid.load(arr);
+    let nodes = grid.el.children;
+    let timer = setInterval(function () {
+        while (queue.length > 0 && index <= crawler.urls.length) {
+            let name = queue.shift();
+            queue_status[name] = 1;
+            dom_check_run(crawler.fetch, tab.id, name, null, nodes[parseInt(name.split("-")[1])], (name, data, node) => {
+                queue_status[name] = 0;
+                get_crawler_url(crawler, index, function (url) {
+
+                })
+                let tmp = $.extend({
+                    "primary_key": queue_url[name]
+                }, data);
+                if (index < crawler.urls.length) {
+                    result.push(tmp);
+                    grid.update(node, {
+                        content: `<iframe src="${crawler.urls[index]}" name="${name}"></iframe>`,
+                        url: crawler.urls[index]
+                    })
+                    queue_url[name] = crawler.urls[index]
+                    queue.push(name);
+                    index++;
+                } else {
+                    result.push(tmp);
+                    for (let i = 0; i < names.length; i++) {
+                        if (queue_status[names[i]] == 1) {
+                            return;
+                        }
+                    }
+                    clearInterval(timer);
+                    cb && cb(result);
+                }
+            });
+        }
+    }, 200)
+    return;
+}
+
+
+function crawler_send_data(case_name, crawler, opera, data, callback) {
+    if (crawler.send) {
+        data = {
+            case_name: case_name,
+            opera: opera,
+            data: data != null ? data.slice(0, crawler.freq) : null
+        }
+        fetch(crawler.api, {
+            method: "POST",
+            body: JSON.stringify(data),
+        }).then(() => {
+            callback && callback();
+        });
+    }
+}
+
 
 $(document).ready(function () {
 
@@ -255,6 +386,17 @@ $(document).ready(function () {
             grid.enableResize(false);
             grid.load(mygrid);
             grid.commit();
+
+            if (getQueryVariable("case")) {
+                let crawler = my_robot[getQueryVariable("case")].paral_crawler;
+                crawler_run(grid, crawler, tab, (result) => {
+                    crawler.data = result;
+                    set_my_robot(my_robot, () => {
+                        window.close();
+                    })
+                });
+                return;
+            }
 
             for (let i = 0; i < mygrid.length; i++) {
                 mygridmap[mygrid[i].id] = mygrid[i];

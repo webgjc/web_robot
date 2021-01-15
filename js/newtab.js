@@ -1,3 +1,10 @@
+/**
+ * 功能：
+ * 1、浏览器默认主页覆盖，用作看板功能
+ * 2、并发爬虫使用主页iframe实现
+ */
+
+
 const tag_types = [
     "自由选择器",
     "a",
@@ -160,7 +167,6 @@ function exec_run_item(process_item, tab_id, name, grid, node, args, cb) {
                 value: process_item.expr
             },
             function (msg) {
-                console.log(msg)
                 args[process_item.value] = msg.data
                 cb && cb(name, args, node);
             }
@@ -241,7 +247,8 @@ function fetch_html(url, cb) {
         .then(data => cb && cb(data));
 }
 
-function getQueryVariable(variable) {
+// 获取url地址参数
+function get_query_variable(variable) {
     var query = window.location.search.substring(1);
     var vars = query.split("&");
     for (var i = 0; i < vars.length; i++) {
@@ -251,20 +258,43 @@ function getQueryVariable(variable) {
     return (false);
 }
 
-function get_crawler_url(crawler, index, cb) {
+// 获取爬虫地址
+function get_crawler_url(crawler, urls, index, cb) {
     if (crawler.apicb) {
         fetch(crawler.urlapi)
             .then(resp => resp.text())
             .then(url => cb && cb(url));
     } else {
-        cb && cb(crawler.urls[index]);
+        cb && cb(urls[index]);
     }
 }
 
+// 处理批量的url配置
+function deal_batch_url(crawler) {
+    let res_url = [];
+    for (let i = 0; i < crawler.urls.length; i++) {
+        let match_part = crawler.urls[i].match("\{(.*?)\}");
+        if (match_part != null) {
+            let start_end = match_part[1].split("-").map(j => parseInt(j));
+            for (let k = start_end[0]; k <= start_end[1]; k++) {
+                res_url.push(crawler.urls[i].replace(match_part[0], k));
+            }
+        } else {
+            res_url.push(crawler.urls[i]);
+        }
+    }
+    return res_url;
+}
 
-function crawler_run(grid, crawler, tab, cb) {
+// 并发爬虫运行
+function crawler_run(the_case, grid, crawler, tab, cb) {
+
+    // 处理批量url
+    let urls = deal_batch_url(crawler);
+
+    // 并发数
     let size = crawler.apicb ?
-        crawler.cc : Math.min(crawler.cc, crawler.urls.length);
+        crawler.cc : Math.min(crawler.cc, urls.length);
     let arr = [];
     let index = 0;
     let queue = [];
@@ -272,8 +302,13 @@ function crawler_run(grid, crawler, tab, cb) {
     let queue_status = {};
     let queue_url = {};
     let names = [];
+
+    // 发送数据初始化
+    crawler_send_data(the_case, crawler, "clear", result);
+
+    // 运行容器iframe初始化
     for (let i = 0; i < size; i++) {
-        get_crawler_url(crawler, i, function (url) {
+        get_crawler_url(crawler, urls, i, function (url) {
             arr.push({
                 w: 25,
                 h: 25,
@@ -286,41 +321,51 @@ function crawler_run(grid, crawler, tab, cb) {
             names.push(`crawler-${i}`);
             queue_url[`crawler-${i}`] = url;
             queue_status[`crawler-${i}`] = 0;
+            if (i == size - 1) {
+                grid.load(arr);
+            }
         })
     }
-    grid.load(arr);
     let nodes = grid.el.children;
+
+    // 定时器检查队列中是否有空余容器准备运行
     let timer = setInterval(function () {
-        while (queue.length > 0 && index <= crawler.urls.length) {
+        while (queue.length > 0) {
             let name = queue.shift();
             queue_status[name] = 1;
-            dom_check_run(crawler.fetch, tab.id, name, null, nodes[parseInt(name.split("-")[1])], (name, data, node) => {
-                queue_status[name] = 0;
-                get_crawler_url(crawler, index, function (url) {
 
-                })
-                let tmp = $.extend({
-                    "primary_key": queue_url[name]
-                }, data);
-                if (index < crawler.urls.length) {
-                    result.push(tmp);
-                    grid.update(node, {
-                        content: `<iframe src="${crawler.urls[index]}" name="${name}"></iframe>`,
-                        url: crawler.urls[index]
-                    })
-                    queue_url[name] = crawler.urls[index]
-                    queue.push(name);
-                    index++;
-                } else {
-                    result.push(tmp);
-                    for (let i = 0; i < names.length; i++) {
-                        if (queue_status[names[i]] == 1) {
-                            return;
+            // 运行
+            dom_check_run(crawler.fetch, tab.id, name, null, nodes[parseInt(name.split("-")[1])], (name, data, node) => {
+                // 处理得到的数据，和为容器准备下一个url
+                get_crawler_url(crawler, urls, index, function (url) {
+                    queue_status[name] = 0;
+                    let tmp = $.extend({
+                        "primary_key": queue_url[name]
+                    }, data);
+                    if ((!crawler.apicb && index < urls.length) || (crawler.apicb && url != "")) {
+                        result.push(tmp);
+                        grid.update(node, {
+                            content: `<iframe src="${url}" name="${name}"></iframe>`,
+                            url: url
+                        })
+                        queue_url[name] = url
+                        queue.push(name);
+                        index++;
+                        crawler_send_data(the_case, crawler, "save", result);
+                    } else {
+                        result.push(tmp);
+                        for (let i = 0; i < names.length; i++) {
+                            if (queue_status[names[i]] == 1) {
+                                return;
+                            }
                         }
+                        crawler_send_data(the_case, crawler, "saveAll", result);
+                        crawler_send_data(the_case, crawler, "summary", result, () => {
+                            clearInterval(timer);
+                            cb && cb(result);
+                        });
                     }
-                    clearInterval(timer);
-                    cb && cb(result);
-                }
+                })
             });
         }
     }, 200)
@@ -328,19 +373,34 @@ function crawler_run(grid, crawler, tab, cb) {
 }
 
 
+// 发送数据到客户端/自定义云端
 function crawler_send_data(case_name, crawler, opera, data, callback) {
+    console.log(case_name, crawler, opera, data)
     if (crawler.send) {
-        data = {
-            case_name: case_name,
-            opera: opera,
-            data: data != null ? data.slice(0, crawler.freq) : null
+        let pd = null;
+        if (opera === "saveAll") {
+            pd = data;
+            opera = "save";
+        } else {
+            if (data.length >= crawler.freq) {
+                pd = data.splice(0, crawler.freq);
+            }
         }
-        fetch(crawler.api, {
-            method: "POST",
-            body: JSON.stringify(data),
-        }).then(() => {
-            callback && callback();
-        });
+        if ((opera == "save" && pd != null) || opera != "save") {
+            let tmp = {
+                case_name: case_name,
+                opera: opera,
+                data: pd
+            }
+            fetch(crawler.api, {
+                method: "POST",
+                body: JSON.stringify(tmp),
+            }).then(() => {
+                callback && callback();
+            });
+        }
+    } else {
+        callback && callback();
     }
 }
 
@@ -375,21 +435,29 @@ $(document).ready(function () {
         }
     });
 
+    // 主要入口
     chrome.tabs.getCurrent(tab => {
         get_my_robot(my_robot => {
             let process = [];
             let names = [];
             let mygrid = my_robot.SETTING_DATA.DASHBOARD_GRID || [];
-            // mygrid = []
             let mygridmap = {};
+            let the_case = get_query_variable("case");
+
             grid.enableMove(false);
             grid.enableResize(false);
             grid.load(mygrid);
             grid.commit();
 
-            if (getQueryVariable("case")) {
-                let crawler = my_robot[getQueryVariable("case")].paral_crawler;
-                crawler_run(grid, crawler, tab, (result) => {
+            if (the_case) {
+                let crawler = my_robot[the_case].paral_crawler;
+                if (!crawler.apicb && crawler.urls.length == 0) {
+                    crawler.data = [];
+                    set_my_robot(my_robot, () => {
+                        window.close();
+                    })
+                }
+                crawler_run(the_case, grid, crawler, tab, (result) => {
                     crawler.data = result;
                     set_my_robot(my_robot, () => {
                         window.close();

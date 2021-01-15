@@ -52,12 +52,18 @@ def controller_save():
     return "success"
 
 
-urls = open("py/urls.txt", "r")
+urls = open("py/urls.txt", "r").readlines()
+n = 0
 
 # 外部爬虫url输入用例demo
 @app.route("/crawler/url/", methods=["GET"])
 def controller_crawler_url():
-    return urls.readline().strip()
+    import random
+    global n
+    n += 1
+    if n >= 50:
+        return ""
+    return urls[random.randint(0, 10)].strip()
 
 
 if __name__ == "__main__":

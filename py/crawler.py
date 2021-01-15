@@ -21,6 +21,7 @@ class CrawlerData(object):
 
     def save(self, data):
         with open("{}/{}".format(self.case_path, int(time.time()*1000)), "w") as f:
+            print(data)
             f.write(json.dumps(data))
 
     def summary(self):

@@ -30,7 +30,7 @@
         /* cases_view start */
         .cases_view {
             overflow-y: auto;
-            height: 320px;
+            height: 380px;
         }
 
         .case-btn-wrapper {
@@ -52,7 +52,7 @@
 
         /* process_view start */
         #process_view {
-            height: 320px;
+            height: 380px;
             overflow-y: auto;
             max-width: 300px;
         }
@@ -64,7 +64,7 @@
         }
 
         #new_process {
-            height: 320px;
+            height: 380px;
             position: relative;
         }
 
@@ -160,6 +160,10 @@
 
         .crawler_data_table {
             border-top: solid 1px #000;
+        }
+
+        .dropdown-content {
+            min-height: 200px;
         }
     </style>
 </head>
@@ -357,7 +361,7 @@
             </div>
             <div class="input-field col s12" id="url_textarea_box">
                 <textarea id="url_textarea" class="materialize-textarea"></textarea>
-                <label for="url_textarea">批量url地址（一行一个）</label>
+                <label for="url_textarea">批量url地址（一行一个) ,可批量配置如{0-10}</label>
             </div>
             <div class="input-field col s12" style="display: none;" id="paral_crawler_url_api_box">
                 <input id="paral_crawler_url_api" type="text" value="http://127.0.0.1:12580/crawler/url/">

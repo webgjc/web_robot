@@ -528,6 +528,7 @@ function crawler_send_data(case_name, crawler, opera, data, callback) {
 function crawler_run(case_name, tab_id) {
     console.log("crawler start");
     get_my_robot(my_robot => {
+        // 并发爬虫使用newtab.js实现
         if (my_robot[case_name].case_type === "paral_crawler") {
             chrome.tabs.create({
                 url: "chrome://newtab?case=" + case_name
@@ -881,8 +882,12 @@ $(document).ready(function () {
                     $("#paral_crawler_url_config").prop("checked", crawler.apicb);
                     if (!crawler.apicb) {
                         $("#url_textarea").val(crawler.urls.join("\n"));
+                        $("#url_textarea_box").show();
+                        $("#paral_crawler_url_api_box").hide();
                     } else {
                         $("#paral_crawler_url_api").val(crawler.urlapi);
+                        $("#url_textarea_box").hide();
+                        $("#paral_crawler_url_api_box").show();
                     }
                     $("#crawler_cc").val(crawler.cc);
                     $("#paral_crawler_send_data_cb").prop("checked", crawler.send);
@@ -1730,7 +1735,7 @@ $(document).ready(function () {
         get_my_robot(my_robot => {
             let crawler = my_robot[case_name].paral_crawler;
             crawler.apicb = $("#paral_crawler_url_config").prop("checked");
-            crawler.urls = $("#url_textarea").val().split("\n");
+            crawler.urls = $("#url_textarea").val().length > 0 ? $("#url_textarea").val().split("\n") : [];
             crawler.urlapi = $("#paral_crawler_url_api").val();
             crawler.cc = parseInt($("#crawler_cc").val());
             crawler.send = $("#paral_crawler_send_data_cb").prop("checked");

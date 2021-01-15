@@ -134,6 +134,11 @@
 {"case_name":"test","case_process":[{"check":true,"n":"0","opera":"newpage","tag":"body","value":"https://www.baidu.com/","wait":"0.1"},{"check":true,"n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0.1"},{"check":true,"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"01"}],"case_sourcecode":"","case_type":"process","control_url":"","last_runtime":1603672211550,"runtime":"4:00","sourcecode_url":".*"}
 ```
 
+- 并发爬虫事务用例(爬取百度搜索前10页的每页前三条结果)
+```json
+{"case_name":"爬虫用例","case_process":[],"case_sourcecode":"","case_type":"paral_crawler","control_url":"","paral_crawler":{"api":"http://127.0.0.1:12580/crawler/","apicb":false,"cc":5,"data":[],"fetch":[{"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","tag":"body","value":"时间","wait":"0"},{"check":true,"expr":"","n":"0","opera":"getvalue","tag":"h3","value":"标题1","wait":"0"},{"check":true,"expr":"","n":"1","opera":"getvalue","tag":"h3","value":"标题2","wait":"0"},{"check":true,"expr":"","n":"2","opera":"getvalue","tag":"h3","value":"标题3","wait":"0"}],"freq":1,"send":false,"urlapi":"http://127.0.0.1:12580/crawler/url/","urls":["https://www.baidu.com/s?wd=test&pn={0-10}0"]},"sourcecode_url":".*"}
+```
+
 
 - 演示1
 

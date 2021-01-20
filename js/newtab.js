@@ -189,7 +189,7 @@ function dom_check_run(process, tab_id, name, grid, node, cb) {
     let args = {}; // 可取参数列表（包括取值导入）
     let count = 0;
     if (process.length === 0) {
-        callback();
+        cb && cb(name, args, node);
         return;
     }
     let dom_itvl = setInterval(function () {
@@ -249,10 +249,10 @@ function fetch_html(url, cb) {
 
 // 获取url地址参数
 function get_query_variable(variable) {
-    var query = window.location.search.substring(1);
-    var vars = query.split("&");
+    let query = window.location.search.substring(1);
+    let vars = query.split("&");
     for (var i = 0; i < vars.length; i++) {
-        var pair = vars[i].split("=");
+        let pair = vars[i].split("=");
         if (pair[0] == variable) { return decodeURI(pair[1]); }
     }
     return (false);
@@ -444,11 +444,6 @@ $(document).ready(function () {
             let mygridmap = {};
             let the_case = get_query_variable("case");
 
-            grid.enableMove(false);
-            grid.enableResize(false);
-            grid.load(mygrid);
-            grid.commit();
-
             if (the_case) {
                 let crawler = my_robot[the_case].paral_crawler;
                 if (!crawler.apicb && crawler.urls.length == 0) {
@@ -460,24 +455,39 @@ $(document).ready(function () {
                 crawler_run(the_case, grid, crawler, tab, (result) => {
                     crawler.data = result;
                     set_my_robot(my_robot, () => {
-                        window.close();
+                        chrome.notifications.create(null, {
+                            type: "basic",
+                            iconUrl: "/images/robot.png",
+                            title: "爬虫运行完毕通知",
+                            message: `${the_case} 运行完毕`
+                        }, () => {
+                            window.close();
+                        })
                     })
                 });
                 return;
             }
 
+            grid.enableMove(false);
+            grid.enableResize(false);
+            grid.load(mygrid.filter(g => my_robot[g.id.slice(6)].case_type === "process"));
+            grid.commit();
+
             for (let i = 0; i < mygrid.length; i++) {
                 mygridmap[mygrid[i].id] = mygrid[i];
             }
 
+            console.log(mygridmap)
+
             for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
                 let key = my_robot.SETTING_DATA.KEYS[i];
                 let tmpid = `frame-${key}`;
-                if (mygridmap[tmpid]) {
-                    process.push(my_robot[key].case_process.slice(1))
-                    names.push(tmpid);
-                } else {
-                    if (my_robot[key].add_dashboard) {
+
+                if (my_robot[key].add_dashboard && my_robot[key].case_type === "process") {
+                    if (mygridmap[tmpid]) {
+                        process.push(my_robot[key].case_process.slice(1))
+                        names.push(tmpid);
+                    } else {
                         let grid_contain = `<iframe src="${my_robot[key].case_process[0].value}" name="${tmpid}" id="${tmpid}"></iframe>`;
                         let newgrid = {
                             w: 20,
@@ -491,11 +501,48 @@ $(document).ready(function () {
                         process.push(my_robot[key].case_process.slice(1))
                         names.push(tmpid);
                     }
+                } else if (my_robot[key].add_dashboard && my_robot[key].case_type === "paral_crawler") {
+                    let titles = my_robot[key].paral_crawler.fetch
+                        .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
+                        .map(i => i.value);
+                    let grid_contain = `
+                        <div style="background-color: white;"><table>
+                                <thead>
+                                    <tr>
+                                        ${titles.map(t => `<th class="data_tr">${t === "primary_key" ? "主键" : t}</th>`).join("\n")}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${my_robot[key].paral_crawler.data.map(d => `
+                                        <tr>
+                                            ${titles.map(t => `<td class="data_td">${d[t]}</td>`).join("\n")}
+                                        </tr>
+                                    `).join("\n")}
+                                </tbody>
+                            </table>
+                        </div>`;
+                    console.log(mygridmap[tmpid])
+                    let newgrid = {
+                        w: mygridmap[tmpid] == null ? 20 : mygridmap[tmpid].w,
+                        h: mygridmap[tmpid] == null ? 20 : mygridmap[tmpid].h,
+                        x: mygridmap[tmpid] == null ? null : mygridmap[tmpid].x,
+                        y: mygridmap[tmpid] == null ? null : mygridmap[tmpid].y,
+                        content: grid_contain,
+                        id: tmpid
+                    };
+                    grid.addWidget(newgrid);
+                    mygridmap[tmpid] = newgrid;
+                    process.push(null);
+                    names.push(tmpid);
                 }
             }
 
+
+
             for (let i = 0; i < names.length; i++) {
-                dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
+                if (process[i] != null) {
+                    dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
+                }
             }
 
             // grid.on("dragstop resizestop", (e, el) => {
@@ -504,6 +551,7 @@ $(document).ready(function () {
             // });
 
             $("#handgrid").click(e => {
+                console.log(names)
                 if ($("#handgrid").text() == "排版") {
                     $("#handgrid").html("保存");
                     let editgrid = [];
@@ -520,6 +568,7 @@ $(document).ready(function () {
                 } else {
                     $("#handgrid").html("排版");
                     let editgrid = grid.save();
+                    console.log(editgrid)
                     let tmpkeys = [];
                     for (let i = 0; i < editgrid.length; i++) {
                         let idx = parseInt(editgrid[i].id.slice(6));

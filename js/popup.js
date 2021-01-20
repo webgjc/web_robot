@@ -73,17 +73,18 @@ function get_my_robot(callback) {
             data（数据）: [],
             send（是否发送结果数据）: false,
             api（发送目标api）: "",
-            freq（发送频率）: 10
+            freq（发送频率）: 10,
+            bg_run（后台运行）: false
         }
         case_sourcecode(源码事务的js源码): "",
         sourcecode_url(源码主入正则匹配地址): "",
         start_inject(开启注入): false,
         control_url(受控地址): "",
-        case_type(事务类型): "prcess(流程事务)/sourcecode(源码事务)",
+        case_type(事务类型): "process(流程事务)/sourcecode(源码事务)",
         last_runtime(上次运行时间): 1591616590387,
         runtime(定时时间): null / 10(分钟);
         fail_rerun(失败重试): true;
-        add_dashboard(添加到看板): true;
+        c(添加到看板): true;
     },
     SETTING_DATA: {
         KEYS: [],
@@ -276,7 +277,9 @@ function refresh_cases() {
                     }
                     if (my_robot[i]["case_type"] === "crawler" || my_robot[i]["case_type"] === "paral_crawler") {
                         tr += '<a href="#" class="crawler_run">运行</a> ';
+                        tr += '<a href="#" class="timer_run">定时运行</a> ';
                         tr += '<a href="#" class="crawler_show_data">查看数据</a> ';
+                        tr += `<br /><a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
                     }
                     tr += "<br />";
                     tr += '<a href="#" class="rename_case">重命名</a> ';
@@ -528,11 +531,18 @@ function crawler_send_data(case_name, crawler, opera, data, callback) {
 function crawler_run(case_name, tab_id) {
     console.log("crawler start");
     get_my_robot(my_robot => {
-        // 并发爬虫使用newtab.js实现
+        // 并发爬虫在newtab.js中实现
         if (my_robot[case_name].case_type === "paral_crawler") {
-            chrome.tabs.create({
-                url: "chrome://newtab?case=" + case_name
-            });
+            if (!my_robot[case_name].paral_crawler.bg_run) {
+                chrome.tabs.create({
+                    url: "chrome://newtab?case=" + case_name
+                });
+            } else {
+                chrome.windows.create({
+                    url: "chrome://newtab?case=" + case_name,
+                    state: "minimized"
+                })
+            }
             return;
         }
         crawler_send_data(case_name, my_robot[case_name].crawler, "clear");
@@ -666,6 +676,7 @@ function process_argv(process, callback) {
     }
 }
 
+// 从dashboard配置中删除
 function delete_dashboard(my_robot, case_name) {
     if (my_robot.SETTING_DATA.DASHBOARD_GRID) {
         for (let i = 0; i < my_robot.SETTING_DATA.DASHBOARD_GRID.length; i++) {
@@ -677,6 +688,7 @@ function delete_dashboard(my_robot, case_name) {
     }
 }
 
+// 刷新标签选择器
 function render_select_tag(selectors) {
     let options = "";
     for (let i = 0; i < selectors.length; i++) {
@@ -694,6 +706,7 @@ function render_select_tag(selectors) {
     })
 }
 
+// 日期补零
 function formatZero(n) {
     if (n >= 0 && n <= 9) {
         return "0" + n;
@@ -702,6 +715,8 @@ function formatZero(n) {
     }
 }
 
+
+// 获取当前日期
 function getCurrentDateTime() {
     var date = new Date();
     var year = date.getFullYear();
@@ -891,6 +906,7 @@ $(document).ready(function () {
                     }
                     $("#crawler_cc").val(crawler.cc);
                     $("#paral_crawler_send_data_cb").prop("checked", crawler.send);
+                    $("#paral_crawler_bg_run").prop("checked", crawler.bg_run);
                     if (crawler.send) {
                         $("#paral_send_config").show();
                         $("#paral_crawler_data_api").val(crawler.api);
@@ -1647,8 +1663,14 @@ $(document).ready(function () {
             })
             // 运行爬虫
             .on("click", ".crawler_run", function () {
+                let that = $(this).parent();
+                let that_html = $(this).parent().html();
                 case_name = $(this).parent().parent().attr("id");
                 crawler_run(case_name, tab_id);
+                that.html("运行中");
+                setTimeout(function () {
+                    that.html(that_html);
+                }, 1000);
             })
             // 展示数据
             .on("click", ".crawler_show_data", function () {
@@ -1670,16 +1692,16 @@ $(document).ready(function () {
                     table_html += `
                     <thead>
                         <tr>
-                            ${titles.map(t => `<th class="data_tr">${t === "primary_key" ? "主键" : t}</th>`).join()}
+                            ${titles.map(t => `<th class="data_tr">${t === "primary_key" ? "主键" : t}</th>`).join("\n")}
                         </tr>
                     </thead>`;
                     table_html += `
                     <tbody>
                         ${crawler.data.map(d => `
                             <tr>
-                                ${titles.map(t => `<td class="data_td">${d[t]}</td>`).join()}
+                                ${titles.map(t => `<td class="data_td">${d[t]}</td>`).join("\n")}
                             </tr>
-                        `).join()}
+                        `).join("\n")}
                     </tbody>`;
                     $(".crawler_data_table").html(table_html);
                 })
@@ -1739,6 +1761,7 @@ $(document).ready(function () {
             crawler.urlapi = $("#paral_crawler_url_api").val();
             crawler.cc = parseInt($("#crawler_cc").val());
             crawler.send = $("#paral_crawler_send_data_cb").prop("checked");
+            crawler.bg_run = $("#paral_crawler_bg_run").prop("checked");
             crawler.api = $("#paral_crawler_data_api").val();
             crawler.freq = parseInt($("#paral_send_freq").val());
             set_my_robot(my_robot, () => {

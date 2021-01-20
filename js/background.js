@@ -135,6 +135,7 @@ function sleep(s) {
     });
 }
 
+// 运行一个流程事务
 function exec_run_item(process_item, tab_id, args) {
     console.log(`start run ${JSON.stringify(process_item)}`);
     if (process_item.opera === "getvalue") {
@@ -209,6 +210,7 @@ function set_my_robot(new_robot, cb) {
     );
 }
 
+// 客户端发送数据
 function post_client_run(msg, process) {
     let postdata = {
         x: msg.x,
@@ -383,36 +385,46 @@ function dom_check_run(process, tab_id, myrobot, index, timer) {
     }, 200);
 }
 
+// 运行一个事务
 function async_run(myrobot, i) {
-    chrome.tabs.query(
-        {
-            active: true,
-            currentWindow: true,
-        },
-        function (tabs) {
-            if (tabs[0] == undefined) {
-                console.log("页面连接失败");
-                return;
+    if (myrobot[i].case_type === "process") {
+        chrome.tabs.query(
+            {
+                active: true,
+                currentWindow: true,
+            },
+            function (tabs) {
+                if (tabs[0] == undefined) {
+                    console.log("页面连接失败");
+                    return;
+                }
+                if (myrobot[i].case_type === "process") {
+                    dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i, true);
+                    myrobot[i].last_runtime = new Date().getTime();
+                    set_my_robot(myrobot);
+                }
+                if (myrobot[i].case_type === "sourcecode") {
+                    sourcecode_run(
+                        myrobot[i].case_sourcecode,
+                        myrobot[i].sourcecode_url,
+                        tabs[0]
+                    );
+                    myrobot[i].last_runtime = new Date().getTime();
+                    set_my_robot(myrobot);
+                }
             }
-            if (myrobot[i].case_type === "process") {
-                dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i, true);
-                myrobot[i].last_runtime = new Date().getTime();
-                set_my_robot(myrobot);
-            }
-            if (myrobot[i].case_type === "sourcecode") {
-                sourcecode_run(
-                    myrobot[i].case_sourcecode,
-                    myrobot[i].sourcecode_url,
-                    tabs[0]
-                );
-                myrobot[i].last_runtime = new Date().getTime();
-                set_my_robot(myrobot);
-            }
-        }
-    );
+        );
+    } else {
+        chrome.windows.create({
+            url: "chrome://newtab?case=" + i,
+            state: "minimized"
+        })
+        myrobot[i].last_runtime = new Date().getTime();
+        set_my_robot(myrobot);
+    }
 }
 
-
+// 运行每个定时事务，且更新运行时间
 function timer_run_robot(myrobot) {
     for (let i in myrobot) {
         if (myrobot[i].runtime && myrobot.hasOwnProperty(i)) {
@@ -435,11 +447,27 @@ function timer_run_robot(myrobot) {
     }
 }
 
+// 检查网络情况
+async function check_network(callback) {
+    let network_check_url = "https://www.baidu.com/";
+    return fetch(network_check_url)
+        .then(resp => {
+            if (resp.status == 200) {
+                callback && callback();
+            } else {
+                console.log("network not working");
+            }
+        })
+}
+
+
 // 开启定时运行检查
 setInterval(function () {
-    get_my_robot((my_robot) => {
-        timer_run_robot(my_robot);
-    });
+    check_network(() => {
+        get_my_robot((my_robot) => {
+            timer_run_robot(my_robot);
+        });
+    })
 }, 10000);
 
 

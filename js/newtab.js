@@ -506,7 +506,7 @@ $(document).ready(function () {
                         .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
                         .map(i => i.value);
                     let grid_contain = `
-                        <div style="background-color: white;"><table>
+                        <div style="background-color: white;overflow: scroll;"><table>
                                 <thead>
                                     <tr>
                                         ${titles.map(t => `<th class="data_tr">${t === "primary_key" ? "主键" : t}</th>`).join("\n")}

@@ -332,9 +332,9 @@ function refresh_process_com(data) {
                 <div class="col s12 ">赋值：${data[i]["value"]}</div> \
             </div> \
             `}
-            ${data[i]["expr"] && `<div class="row "> \
+            ${data[i]["expr"] != null && data[i]["expr"] != "" ? `<div class="row "> \
                 <div class="col s12 ">表达式：${data[i]["expr"]}</div> \
-            </div>`}
+            </div>` : ``}
             <div class="row "> \
                 <a href="# "> \
                     <div class="col pc" id="process_test_run" >测试</div> \

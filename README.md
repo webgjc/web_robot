@@ -1,7 +1,7 @@
 # web_robot
 自动化网页操作机器人
 
-![图片](https://github.com/webgjc/web_robot/blob/master/images/robot_pic.jpg?raw=true)
+![图片](http://blog.ganjiacheng.cn/img/mypost/2021/1-1.jpg)
 
 ## 详细说明
 

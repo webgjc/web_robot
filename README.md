@@ -142,6 +142,11 @@
 {"case_name":"爬虫用例","case_process":[],"case_sourcecode":"","case_type":"paral_crawler","control_url":"","paral_crawler":{"api":"http://127.0.0.1:12580/crawler/","apicb":false,"cc":5,"data":[],"fetch":[{"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","tag":"body","value":"时间","wait":"0"},{"check":true,"expr":"","n":"0","opera":"getvalue","tag":"h3","value":"标题1","wait":"0"},{"check":true,"expr":"","n":"1","opera":"getvalue","tag":"h3","value":"标题2","wait":"0"},{"check":true,"expr":"","n":"2","opera":"getvalue","tag":"h3","value":"标题3","wait":"0"}],"freq":1,"send":false,"urlapi":"http://127.0.0.1:12580/crawler/url/","urls":["https://www.baidu.com/s?wd=test&pn={0-10}0"]},"sourcecode_url":".*"}
 ```
 
+- 后台运行流程事务 + 消息通知用例
+```json
+{"case_name":"后台运行+消息发送","case_process":[{"bgopen":true,"check":false,"expr":"","n":"0","opera":"newpage","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"0"},{"check":true,"expr":"","n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0"},{"check":true,"expr":"","n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"0"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","tag":"DIV#content_left > DIV.result-op.c-container.xpath-log > DIV.op_weather4_twoicon_container_div > DIV.op_weather4_twoicon > A.op_weather4_twoicon_today.OP_LOG_LINK","value":"key","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"sendmessage","sysmsg":true,"tag":"DIV#wrapper_wrapper","value":"天气：${key}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","fail_rerun":false,"last_runtime":1611820796375,"runtime":"","sourcecode_url":".*"}
+```
+
 
 - 演示1
 

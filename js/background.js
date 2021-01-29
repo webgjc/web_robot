@@ -135,6 +135,15 @@ function sleep(s) {
     });
 }
 
+// 参数替换
+function replace_args(s, args) {
+    let keys = Object.keys(args);
+    for(let i = 0; i < keys.length; i++) {
+        s = s.replace("${" + keys[i] + "}", args[keys[i]] || "");
+    }
+    return s;
+}
+
 // 运行一个流程事务
 function exec_run_item(process_item, tab_id, args) {
     console.log(`start run ${JSON.stringify(process_item)}`);
@@ -177,6 +186,18 @@ function exec_run_item(process_item, tab_id, args) {
         });
     } else if (process_item.opera === "closepage") {
         chrome.tabs.remove(tab_id);
+    } else if (process_item.opera === "sendmessage") {
+        let msg = replace_args(process_item.value, args);
+        if(process_item.sysmsg) {
+            chrome.notifications.create(null, {
+                type: "basic",
+                iconUrl: "/images/robot.png",
+                title: "事件通知",
+                message: msg
+            });
+        } else {
+            alert(msg);
+        }
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item)
@@ -388,6 +409,15 @@ function dom_check_run(process, tab_id, myrobot, index, timer) {
 // 运行一个事务
 function async_run(myrobot, i) {
     if (myrobot[i].case_type === "process") {
+        if(myrobot[i].case_process.length > 0 && myrobot[i].case_process[0].bgopen) {
+            chrome.windows.create({
+                url: chrome.extension.getURL("html/newtab.html") + "?case=" + i,
+                state: "minimized"
+            });
+            myrobot[i].last_runtime = new Date().getTime();
+            set_my_robot(myrobot);
+            return;
+        }
         chrome.tabs.query(
             {
                 active: true,

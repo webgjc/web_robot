@@ -51,7 +51,9 @@ function get_my_robot(callback) {
                 value(设值): "",
                 expr(表达式): "",
                 wait(前置等待时间): 1,
-                check(dom检查): true
+                bgopen(后台打开): false,
+                check(dom检查): true,
+                sysmsg(系统消息): false
             }
         ],
         crawler(爬虫事务定义): {
@@ -388,6 +390,15 @@ function sleep(s) {
     });
 }
 
+// 替换参数
+function replace_args(s, args) {
+    let keys = Object.keys(args);
+    for(let i = 0; i < keys.length; i++) {
+        s = s.replace("${" + keys[i] + "}", args[keys[i]] || "");
+    }
+    return s;
+}
+
 // 运行每个事件
 async function exec_run_item(process_item, tab_id, args) {
     // console.log(`start run ${JSON.stringify(process_item)}`);
@@ -431,6 +442,18 @@ async function exec_run_item(process_item, tab_id, args) {
         });
     } else if (process_item.opera === "closepage") {
         chrome.tabs.remove(tab_id);
+    } else if (process_item.opera === "sendmessage") {
+        let msg = replace_args(process_item.value, args);
+        if(process_item.sysmsg) {
+            chrome.notifications.create(null, {
+                type: "basic",
+                iconUrl: "/images/robot.png",
+                title: "事件通知",
+                message: msg
+            });
+        } else {
+            alert(msg);
+        }
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item)
@@ -535,11 +558,11 @@ function crawler_run(case_name, tab_id) {
         if (my_robot[case_name].case_type === "paral_crawler") {
             if (!my_robot[case_name].paral_crawler.bg_run) {
                 chrome.tabs.create({
-                    url: "chrome://newtab?case=" + case_name
+                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name
                 });
             } else {
                 chrome.windows.create({
-                    url: "chrome://newtab?case=" + case_name,
+                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name,
                     state: "minimized"
                 })
             }
@@ -641,12 +664,20 @@ function process_set_argv(process, kv) {
 
 // 运行
 function process_run(process, tab_id, that, save_run, my_robot, case_name) {
+    if(process.length > 0 && process[0].bgopen) {
+        chrome.windows.create({
+            url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name,
+            state: "minimized"
+        });
+        return;
+    }
     that.html("运行中");
     let bg = chrome.extension.getBackgroundPage();
     bg.dom_check_run(process, tab_id, my_robot, case_name, false);
+    let t = process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b));
     setTimeout(() => {
         that.html(save_run);
-    }, 1000 * process.map(p => p.wait).reduce((a, b) => parseFloat(a) + parseFloat(b)));
+    }, 1000 * Math.max(t, 1));
 }
 
 // 运行前参数设置
@@ -747,6 +778,7 @@ $(document).ready(function () {
         "getcustomvalue",
         "closepage",
         "onlyshow",
+        "sendmessage"
     ];
     const operas_alias = [
         "点击",
@@ -759,6 +791,7 @@ $(document).ready(function () {
         "自定义取值",
         "关闭页面",
         "唯一展示",
+        "发送通知"
     ];
     let case_name = "";
     let edit_process_n = -1;
@@ -1366,7 +1399,8 @@ $(document).ready(function () {
             $(this).val() === "pagejump" ||
             $(this).val() === "getvalue" ||
             $(this).val() === "newpage" ||
-            $(this).val() === "getcustomvalue"
+            $(this).val() === "getcustomvalue" || 
+            $(this).val() === "sendmessage"
         ) {
             $("#set_value").show();
         } else {
@@ -1376,6 +1410,16 @@ $(document).ready(function () {
             $("#set_expression").show();
         } else {
             $("#set_expression").hide();
+        }
+        if($(this).val() === "newpage") {
+            $("#background_open_box").show();
+        } else {
+            $("#background_open_box").hide();
+        }
+        if($(this).val() === "sendmessage") {
+            $("#system_message_box").show();
+        } else {
+            $("#system_message_box").hide();
         }
     });
 
@@ -1389,7 +1433,9 @@ $(document).ready(function () {
             value: $("#ssv").val(),
             expr: $("#expression").val(),
             wait: $("#num_wait").val(),
-            check: $("#dom_check").prop("checked")
+            check: $("#dom_check").prop("checked"),
+            bgopen: $("#background_open").prop("checked"),
+            sysmsg: $("#system_message").prop("checked")
         };
         get_my_robot((my_robot) => {
             if ($(this).text() === "保存") {
@@ -1560,6 +1606,16 @@ $(document).ready(function () {
                         } else {
                             $("#set_expression").hide();
                         }
+                        if (the_process.opera === "newpage") {
+                            $("#background_open_box").show();
+                        } else {
+                            $("#background_open_box").hide();
+                        }
+                        if (the_process.opera === "sendmessage") {
+                            $("#system_message_box").show();
+                        } else {
+                            $("#system_message_box").hide();
+                        }
                         $("#expression").val(the_process.expr);
                         $("#ssv").val(the_process.value);
                         $("#sel_opera").val(the_process.opera);
@@ -1571,6 +1627,8 @@ $(document).ready(function () {
                         $("select").material_select();
                         $("#num_wait").val(the_process.wait);
                         $("#dom_check").prop("checked", the_process.check == null ? false : the_process.check);
+                        $("#background_open").prop("checked", the_process.bgopen == null ? false : the_process.bgopen);
+                        $("#system_message").prop("checked", the_process.sysmsg == null ? false : the_process.sysmsg);
                         $("#process_add").text("保存");
                         $("#tag_list").html(
                             `<div id='seldn' class='collection-item' data="${select_tag}"><a href='#' id='hasseled'>已选: ${select_tag}</a></div>`

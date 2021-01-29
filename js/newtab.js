@@ -142,7 +142,7 @@ function exec_run_item(process_item, tab_id, name, grid, node, args, cb) {
             width: document.getElementById(name).clientWidth + "px",
             height: document.getElementById(name).clientHeight + "px"
         }, (msg) => {
-            // resetwh(msg.data.w, msg.data.h, name);
+            document.getElementById(name).style.opacity=1;
         })
     } else if (process_item.opera === "getvalue") {
         chrome.tabs.sendMessage(
@@ -241,11 +241,11 @@ function dom_check_run(process, tab_id, name, grid, node, cb) {
 //     }
 // }
 
-function fetch_html(url, cb) {
-    fetch(url)
-        .then(resp => resp.text())
-        .then(data => cb && cb(data));
-}
+// function fetch_html(url, cb) {
+//     fetch(url)
+//         .then(resp => resp.text())
+//         .then(data => cb && cb(data));
+// }
 
 // 获取url地址参数
 function get_query_variable(variable) {
@@ -407,6 +407,7 @@ function crawler_send_data(case_name, crawler, opera, data, callback) {
 
 $(document).ready(function () {
 
+    // 初始化布局插件
     let grid = GridStack.init({
         alwaysShowResizeHandle: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
             navigator.userAgent
@@ -422,13 +423,13 @@ $(document).ready(function () {
         margin: 2
     });
 
+    // 设置操作板显隐
     $("body").mousemove(e => {
         let sh = e.clientX / window.innerWidth;
         if (e.clientY < 10 && sh > 0.4 && sh < 0.6) {
             $("#opera").show();
         }
     });
-
     $("#opera").mouseleave(e => {
         if ($("#handgrid").text() === "排版") {
             $("#opera").hide();
@@ -444,7 +445,27 @@ $(document).ready(function () {
             let mygridmap = {};
             let the_case = get_query_variable("case");
 
-            if (the_case) {
+            // 流程事务
+            if(the_case && my_robot[the_case].case_type === "process") {
+                let bg = chrome.extension.getBackgroundPage();
+                let process = my_robot[the_case].case_process;
+                if(process[process.length-1].opera !== "closepage") {
+                    process.push({
+                        tag: "body",
+                        n: "0",
+                        opera: "closepage",
+                        check: false
+                    })
+                }
+                bg.dom_check_run(my_robot[the_case]["case_process"], tab.id, my_robot, the_case, false);
+                setTimeout(() => {
+                    window.close();
+                }, 500);
+                return;
+            }
+
+            // 爬虫事务
+            if (the_case && my_robot[the_case].case_type === "paral_crawler") {
                 let crawler = my_robot[the_case].paral_crawler;
                 if (!crawler.apicb && crawler.urls.length == 0) {
                     crawler.data = [];
@@ -466,23 +487,27 @@ $(document).ready(function () {
                     })
                 });
                 return;
-            }
+            } 
 
+
+            // 我的看板
             grid.enableMove(false);
             grid.enableResize(false);
+            // 加载过去已保存在看板的元素
             grid.load(mygrid.filter(g => my_robot[g.id.slice(6)].case_type === "process"));
             grid.commit();
+            $("iframe").css("opacity", "0.01");
 
             for (let i = 0; i < mygrid.length; i++) {
                 mygridmap[mygrid[i].id] = mygrid[i];
             }
 
-            console.log(mygridmap)
-
+            // 加载新加到看板中的元素
             for (let i = 0; i < my_robot.SETTING_DATA.KEYS.length; i++) {
                 let key = my_robot.SETTING_DATA.KEYS[i];
                 let tmpid = `frame-${key}`;
 
+                // 流程事务添加到看板
                 if (my_robot[key].add_dashboard && my_robot[key].case_type === "process") {
                     if (mygridmap[tmpid]) {
                         process.push(my_robot[key].case_process.slice(1))
@@ -501,6 +526,8 @@ $(document).ready(function () {
                         process.push(my_robot[key].case_process.slice(1))
                         names.push(tmpid);
                     }
+
+                // 并发爬虫事务添加到看板
                 } else if (my_robot[key].add_dashboard && my_robot[key].case_type === "paral_crawler") {
                     let titles = my_robot[key].paral_crawler.fetch
                         .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
@@ -538,7 +565,7 @@ $(document).ready(function () {
             }
 
 
-
+            // 运行看板中的流程事务
             for (let i = 0; i < names.length; i++) {
                 if (process[i] != null) {
                     dom_check_run(process[i], tab.id, names[i], mygridmap[names[i]]);
@@ -550,8 +577,8 @@ $(document).ready(function () {
             //     set_my_robot(my_robot);
             // });
 
+            // 看板编辑
             $("#handgrid").click(e => {
-                console.log(names)
                 if ($("#handgrid").text() == "排版") {
                     $("#handgrid").html("保存");
                     let editgrid = [];
@@ -589,6 +616,7 @@ $(document).ready(function () {
                 }
             });
 
+            // 删除一个看板元素
             $(".grid-stack").on("click", ".close-panel", e => {
                 let thisgrid = grid.save();
                 for (let i = 0; i < thisgrid.length; i++) {
@@ -602,6 +630,7 @@ $(document).ready(function () {
                 // names.splice(parseInt(e.target.id.slice(6)), 1);
             });
 
+            // 重置所有看板元素
             $("#reset").click(e => {
                 my_robot.SETTING_DATA.DASHBOARD_GRID = [];
                 set_my_robot(my_robot, () => {

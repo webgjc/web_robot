@@ -299,8 +299,20 @@
                     <input placeholder="表达式" id="expression" type="text">
                 </div>
                 <div class="input-field col s12">
-                    <input id="num_wait" type="number" class="wait" value="1">
+                    <input id="num_wait" type="number" class="wait" value="0">
                     <label for="num_wait">执行前等待时间</label>
+                </div>
+                <div class="input-field col s12" 
+                    style="display: none;margin-top: -10px;margin-bottom: 10px;" 
+                    id="background_open_box">
+                    <input type="checkbox" class="filled-in" id="background_open" />
+                    <label for="background_open">后台打开</label>
+                </div>
+                <div class="input-field col s12" 
+                    style="display: none;margin-top: -10px;margin-bottom: 10px;" 
+                    id="system_message_box">
+                    <input type="checkbox" class="filled-in" id="system_message" checked="checked" />
+                    <label for="system_message">系统通知</label>
                 </div>
                 <div class="input-field col s12" style="margin-top: -10px;">
                     <input type="checkbox" class="filled-in" id="dom_check" checked="checked" />

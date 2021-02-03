@@ -640,7 +640,7 @@ function process_get_argv(process) {
     keys = [];
     for (let i = 0; i < process.length; i++) {
         let value = process[i].value;
-        if (value.startsWith("${") && value.endsWith("}")) {
+        if (value.startsWith("${") && value.endsWith("}") && process[i].opera !== "sendmessage") {
             let tmp = value.slice(2, -1);
             if (keys.indexOf(tmp) === -1) {
                 keys.push(tmp);

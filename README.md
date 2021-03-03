@@ -147,6 +147,11 @@
 {"case_name":"后台运行+消息发送","case_process":[{"bgopen":true,"check":false,"expr":"","n":"0","opera":"newpage","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"0"},{"check":true,"expr":"","n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0"},{"check":true,"expr":"","n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"0"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","tag":"DIV#content_left > DIV.result-op.c-container.xpath-log > DIV.op_weather4_twoicon_container_div > DIV.op_weather4_twoicon > A.op_weather4_twoicon_today.OP_LOG_LINK","value":"key","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"sendmessage","sysmsg":true,"tag":"DIV#wrapper_wrapper","value":"天气：${key}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","fail_rerun":false,"last_runtime":1611820796375,"runtime":"","sourcecode_url":".*"}
 ```
 
+- 线性爬虫 + 列表数据解析
+```json
+{"add_dashboard":false,"case_name":"线性爬虫","case_process":[],"case_sourcecode":"","case_type":"serial_crawler","control_url":"","serial_crawler":{"api":"http://127.0.0.1:12580/crawler/","data": null,"fetch":[{"bgopen":false,"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","parser":"text_parser","sysmsg":true,"tag":"body","value":"key","wait":"0.5"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","parser":"list_parser","sysmsg":true,"tag":".post-title","value":"titles","wait":"0"}],"freq":10,"init":[{"bgopen":false,"check":false,"expr":"","n":"0","opera":"pagejump","parser":"text_parser","sysmsg":true,"tag":"body","value":"https://coding-pages-bucket-3440936-7810273-13586-512516-1300444322.cos-website.ap-shanghai.myqcloud.com/","wait":"0"}],"next":[{"bgopen":false,"check":true,"expr":"","n":"0","opera":"click","parser":"text_parser","sysmsg":true,"tag":"li.next>a","value":"","wait":"0"}],"send":false,"times":5},"sourcecode_url":".*"}
+```
+
 
 - 演示1
 
@@ -261,8 +266,8 @@ V2.3.0 (2021.01.29)
 2. 新增消息通知事件(增加系统通知与浏览器通知)
 3. 优化看板元素不展示中间过程
 
-V2.3.0 (2021.03.03)
-1. 优化新增线性爬虫
+V2.4.0 (2021.03.03)
+1. 新增优化后的线性爬虫
 2. 增加取值事件的数据解析
 
 

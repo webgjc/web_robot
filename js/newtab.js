@@ -528,8 +528,10 @@ $(document).ready(function () {
                     }
 
                 // 并发爬虫事务添加到看板
-                } else if (my_robot[key].add_dashboard && my_robot[key].case_type === "paral_crawler") {
-                    let titles = my_robot[key].paral_crawler.fetch
+                } else if (my_robot[key].add_dashboard && 
+                    (my_robot[key].case_type === "paral_crawler" || my_robot[key].case_type === "serial_crawler")) {
+                    let crawler = my_robot[key].paral_crawler || my_robot[key].serial_crawler;
+                    let titles = crawler.fetch
                         .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
                         .map(i => i.value);
                     let grid_contain = `
@@ -540,7 +542,7 @@ $(document).ready(function () {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${my_robot[key].paral_crawler.data.map(d => `
+                                    ${crawler.data.map(d => `
                                         <tr>
                                             ${titles.map(t => `<td class="data_td">${d[t]}</td>`).join("\n")}
                                         </tr>

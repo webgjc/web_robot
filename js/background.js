@@ -12,7 +12,10 @@ const tag_types = [
     "span",
     "td",
     "textarea",
+    "table",
+    "th",
     "tr",
+    "td",
     "ul",
     "h1",
     "h2",
@@ -105,6 +108,16 @@ function sourcecode_run(sourcecode, sourcecode_url, tab) {
     }
 }
 
+// 发送通知
+function notify(title, msg) {
+    chrome.notifications.create(null, {
+        type: "basic",
+        iconUrl: "/images/robot.png",
+        title: title || "",
+        message: msg || ""
+    });
+}
+
 // 运行
 // function execute(the_case, tab_id) {
 //     var process_wait = 0;
@@ -145,21 +158,26 @@ function replace_args(s, args) {
 }
 
 // 运行一个流程事务
-function exec_run_item(process_item, tab_id, args) {
-    console.log(`start run ${JSON.stringify(process_item)}`);
+async function exec_run_item(process_item, tab_id, args, cb) {
+    // console.log(`start run ${JSON.stringify(process_item)}`);
+    let test = process_item.test;
     if (process_item.opera === "getvalue") {
-        chrome.tabs.sendMessage(tab_id, {
-            type: "get_value",
-            tag: process_item.tag,
-            n: process_item.n,
-        }, function (msg) {
-            if (msg.type === "get_value") {
-                args[process_item.value] = msg.data;
+        await chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "get_value",
+                tag: process_item.tag,
+                n: process_item.n,
+                parser: process_item.parser
+            },
+            function (msg) {
+                if (msg.type === "get_value") {
+                    args[process_item.value] = msg.data;
+                    test && alert(msg.data);
+                    cb && cb();
+                }
             }
-            chrome.tabs.executeScript(tab_id, {
-                code: jscode(process_item)
-            });
-        });
+        );
     } else if (process_item.opera === "getcustomvalue") {
         chrome.tabs.sendMessage(
             tab_id,
@@ -168,8 +186,11 @@ function exec_run_item(process_item, tab_id, args) {
                 value: process_item.expr
             },
             function (msg) {
+                console.log(msg);
                 if (msg.type === "get_custom_value") {
                     args[process_item.value] = msg.data;
+                    test && alert(msg.data);
+                    cb && cb();
                 }
             }
         );
@@ -178,32 +199,33 @@ function exec_run_item(process_item, tab_id, args) {
             process_item.value = args[process_item.value];
         }
         chrome.tabs.executeScript(tab_id, {
-            code: jscode(process_item)
+            code: jscode(process_item),
         });
+        cb && cb();
     } else if (process_item.opera === "newpage") {
         chrome.tabs.create({
             url: process_item.value
         });
+        cb && cb();
     } else if (process_item.opera === "closepage") {
         chrome.tabs.remove(tab_id);
+        cb && cb();
     } else if (process_item.opera === "sendmessage") {
         let msg = replace_args(process_item.value, args);
         if(process_item.sysmsg) {
-            chrome.notifications.create(null, {
-                type: "basic",
-                iconUrl: "/images/robot.png",
-                title: "事件通知",
-                message: msg
-            });
+            notify("事件通知", msg);
         } else {
             alert(msg);
         }
+        cb && cb();
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item)
         });
+        cb && cb();
     }
 }
+
 
 // 运行流程事务
 async function exec_run(process, tab_id) {
@@ -328,7 +350,7 @@ function compare_time(time) {
 }
 
 // dom检查自旋运行
-function dom_check_run(process, tab_id, myrobot, index, timer) {
+function dom_check_run(process, tab_id, myrobot, index, timer, data, cb) {
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
     let args = {};
@@ -357,14 +379,20 @@ function dom_check_run(process, tab_id, myrobot, index, timer) {
         } else if (run_status == 1) {
             run_status = 2;
             setTimeout(function () {
-                exec_run_item(process[now_index], tab_id, args);
-                if (process[now_index].opera === "newpage") {
+                // exec_run_item(process[now_index], tab_id, args);
+                if (process[now_index].opera === "newpage" || process[now_index].opera === "closepage") {
                     chrome.tabs.query({
                         active: true,
                         currentWindow: true
                     }, async function (tabs) {
-                        tab_id = tabs[0].id
+                        tab_id = tabs[0].id;
                     });
+                } 
+                if (process.length - 1 === now_index) {
+                    data != null && data.push(args);
+                    exec_run_item(process[now_index], tab_id, args, cb);
+                } else {
+                    exec_run_item(process[now_index], tab_id, args);
                 }
                 now_index += 1;
                 run_status = 0;
@@ -375,9 +403,11 @@ function dom_check_run(process, tab_id, myrobot, index, timer) {
         }
         if (count == 50) {
             clearInterval(dom_itvl);
-            chrome.tabs.sendMessage(tab_id, {
-                type: "show_msg",
-                msg: `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
+            chrome.notifications.create(null, {
+                type: "basic",
+                iconUrl: "/images/robot.png",
+                title: "dom检查失败",
+                message: `元素不存在，${process[now_index].tag}, ${process[now_index].n}`
             });
             if (myrobot[index].fail_rerun != null && myrobot[index].fail_rerun && timer) {
                 setTimeout(function () {
@@ -406,52 +436,138 @@ function dom_check_run(process, tab_id, myrobot, index, timer) {
     }, 200);
 }
 
-// 运行一个事务
-function async_run(myrobot, i) {
-    if (myrobot[i].case_type === "process") {
-        if(myrobot[i].case_process.length > 0 && myrobot[i].case_process[0].bgopen) {
-            chrome.windows.create({
-                url: chrome.extension.getURL("html/newtab.html") + "?case=" + i,
-                state: "minimized"
-            });
-            myrobot[i].last_runtime = new Date().getTime();
-            set_my_robot(myrobot);
+// 发送数据
+function crawler_send_data(case_name, crawler, opera, data, callback) {
+    if (crawler.send) {
+        data = {
+            case_name: case_name,
+            opera: opera,
+            data: data != null ? data.slice(0, crawler.freq) : null
+        }
+        fetch(crawler.api, {
+            method: "POST",
+            body: JSON.stringify(data),
+        }).then(() => {
+            callback && callback();
+        });
+    }
+}
+
+
+// 爬虫运行
+function crawler_run(case_name, tab_id) {
+    console.log("crawler start");
+    get_my_robot(my_robot => {
+        // 并发爬虫在newtab.js中实现
+        if (my_robot[case_name].case_type === "paral_crawler") {
+            if (!my_robot[case_name].paral_crawler.bg_run) {
+                chrome.tabs.create({
+                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name
+                });
+            } else {
+                chrome.windows.create({
+                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name,
+                    state: "minimized"
+                })
+            }
             return;
         }
-        chrome.tabs.query(
-            {
-                active: true,
-                currentWindow: true,
-            },
-            function (tabs) {
-                if (tabs[0] == undefined) {
-                    console.log("页面连接失败");
-                    return;
-                }
-                if (myrobot[i].case_type === "process") {
-                    dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i, true);
-                    myrobot[i].last_runtime = new Date().getTime();
-                    set_my_robot(myrobot);
-                }
-                if (myrobot[i].case_type === "sourcecode") {
-                    sourcecode_run(
-                        myrobot[i].case_sourcecode,
-                        myrobot[i].sourcecode_url,
-                        tabs[0]
-                    );
-                    myrobot[i].last_runtime = new Date().getTime();
-                    set_my_robot(myrobot);
-                }
+        crawler_send_data(case_name, my_robot[case_name].serial_crawler, "clear");
+        let lock = false; // 进入一个爬虫过程锁住
+        let this_key = "init";  // 当前流程
+        let data = [];
+        let run_times = 0;
+        let titles = my_robot[case_name].serial_crawler.fetch
+            .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
+            .map(i => i.value);
+        if(titles.indexOf("key") === -1) {
+            alert("请确认存在定义值为key的取值事件");
+            return;
+        }
+        let timer = setInterval(function () {
+            if (!lock) {
+                // console.log(this_key)
+                lock = true;
+                console.log(this_key);
+                dom_check_run(my_robot[case_name]["serial_crawler"][this_key], tab_id, my_robot, case_name, false,
+                    this_key == "fetch" ? data : null, function () {
+                        if (data.length > 1
+                            && data[data.length - 1]["key"] === data[data.length - 2]["key"]) {
+                            console.log("重复取值");
+                            data.pop();
+                            this_key = "fetch";
+                        } else {
+                            if (this_key == "init") {
+                                this_key = "fetch";
+                            } else if (this_key == "fetch") {
+                                // console.log(data);
+                                run_times += 1;
+                                if (run_times >= my_robot[case_name].serial_crawler.times) {
+                                    console.log("================")
+                                    console.log(JSON.stringify(data));
+                                    clearInterval(timer);
+                                    setTimeout(() => {
+                                        my_robot[case_name].serial_crawler.data = data;
+                                        set_my_robot(my_robot);
+                                        crawler_send_data(case_name, my_robot[case_name].serial_crawler, "summary");
+                                        notify("爬虫运行完毕", `单线程爬虫事务 ${case_name} 运行完毕`);
+                                    }, 200);
+                                }
+                                if (data.length >= my_robot[case_name].serial_crawler.freq && my_robot[case_name].serial_crawler.send) {
+                                    crawler_send_data(case_name, my_robot[case_name].serial_crawler, "save", data);
+                                    data.splice(0, my_robot[case_name].serial_crawler.freq);
+                                }
+                                this_key = "next";
+                            } else if (this_key == "next") {
+                                this_key = "fetch";
+                            }
+                        }
+                        lock = false;
+                    }
+                );
             }
-        );
-    } else {
+        }, 200);
+    })
+}
+
+// 运行一个事务
+function async_run(myrobot, i) {
+    if(myrobot[i].case_process.length > 0 && myrobot[i].case_process[0].bgopen && 
+        (myrobot[i].case_type === "serial_crawler" || myrobot[i].case_type === "paral_crawler")) {
         chrome.windows.create({
-            url: "chrome://newtab?case=" + i,
+            url: chrome.extension.getURL("html/newtab.html") + "?case=" + i,
             state: "minimized"
-        })
+        });
         myrobot[i].last_runtime = new Date().getTime();
         set_my_robot(myrobot);
+        return;
     }
+    chrome.tabs.query(
+        {
+            active: true,
+            currentWindow: true,
+        },
+        function (tabs) {
+            if (tabs[0] == undefined) {
+                console.log("页面连接失败");
+                return;
+            }
+            if (myrobot[i].case_type === "process") {
+                dom_check_run(myrobot[i].case_process, tabs[0].id, myrobot, i, true, null, null);
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
+            if (myrobot[i].case_type === "sourcecode") {
+                sourcecode_run(
+                    myrobot[i].case_sourcecode,
+                    myrobot[i].sourcecode_url,
+                    tabs[0]
+                );
+                myrobot[i].last_runtime = new Date().getTime();
+                set_my_robot(myrobot);
+            }
+        }
+    );
 }
 
 // 运行每个定时事务，且更新运行时间

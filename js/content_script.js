@@ -362,6 +362,156 @@ function direct_select_dom(cb) {
     );
 }
 
+function table_parser(dom) {
+    let thead = dom.getElementsByTagName("thead")[0]
+    if(!thead) {
+        let data = []
+        let tbody = dom.getElementsByTagName("tbody")[0];
+        if(!tbody) {
+            return "解析失败,无tbody";
+        }
+        let trs = tbody.getElementsByTagName("tr");
+        for(let i=0;i<trs.length;i++) {
+            let tds = trs[i].getElementsByTagName("td");
+            let line = []
+            for(let j=0;j<tds.length;j++) {
+                line.push(tds[j].innerText);
+            }
+            data.push(line);
+        }
+        return data;
+    } else {
+        let ths = thead.getElementsByTagName("th");
+        if(!ths) {
+            return "解析失败,无th";
+        }
+        let keys = [];
+        for(let i=0;i<ths.length;i++) {
+            keys.push(ths[i].innerText)
+        }
+        let tbody = dom.getElementsByTagName("tbody")[0];
+        if(!tbody) {
+            return "解析失败,无tbody";
+        }
+        let trs = tbody.getElementsByTagName("tr");
+        let data = [];
+        for(let i=0;i<trs.length;i++) {
+            let tds = trs[i].getElementsByTagName("td");
+            let line = {}
+            for(let j=0;j<tds.length;j++) {
+                line[keys[j]] = tds[j].innerText;
+            }
+            data.push(line);
+        }
+        return JSON.stringify(data);
+    }
+}
+
+function list_parser(dom) {
+    /**
+     * 检查是否存在list形，使用dom+class相等判断
+     */
+    function doms_check_list(doms) {
+        if(doms.length < 3) {
+            return [];
+        }
+        let ct = {};
+        for(let i=0; i < doms.length; i++) {
+            if(doms[i].tagName == "HR" || doms[i].tagName == "BR") {
+                continue;
+            }
+            let tmp_key = `${doms[i].tagName}+${doms[i].classList.value}`;
+            if(ct[tmp_key] == undefined) {
+                ct[tmp_key] = [doms[i]];
+            } else {
+                ct[tmp_key].push(doms[i]);
+            }
+        }
+        let c = 0;
+        let max_key;
+        for(let i in ct) {
+            if(ct[i].length > c) {
+                max_key = i;
+                c = ct[i].length;
+            }
+        }
+        if(c >= 3) {
+            // console.log(ct)
+            return ct[max_key];
+        } else {
+            return [];
+        }
+    }
+    
+    /**
+     * 获取dom在兄弟中的位置
+     */
+    function get_node_posotion(dom) {
+        let nodes = dom.parentNode.children;
+        for(let i=0; i < nodes.length; i++) {
+            if(nodes[i] === dom) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    /**
+     * dom递归发现list
+     */
+    function find_list_brother_nodes(dom) {
+        let node = dom.parentNode;
+        let node_position = [];
+        node_position.push(get_node_posotion(dom));
+        while(true) {
+            let tmp_list = doms_check_list(node.children);
+            // console.log(tmp_list)
+            if(node == document.body) {
+                break
+            }
+            if(tmp_list.length != 0) {
+                // console.log(node_position)
+                // console.log(tmp_list)
+                node_position.pop();
+                node_position.reverse();
+                let res_nodes = [];
+                for(let i=0; i < tmp_list.length; i++) {
+                    let tmp_node = tmp_list[i];
+                    let flag = true;
+                    for(let j=0; j < node_position.length; j++) {
+                        if(tmp_node == null) {
+                            flag = false;
+                            break;
+                        }
+                        tmp_node = tmp_node.children[node_position[j]];
+                    }
+                    flag && res_nodes.push(tmp_node.innerText);
+                }
+                return JSON.stringify(res_nodes);
+            } else {
+                node_position.push(get_node_posotion(node));
+                node = node.parentNode;
+            }
+        }   
+        return "解析失败";
+    }
+
+    return find_list_brother_nodes(dom);
+}
+
+// 处理取值解析
+function deal_parser(dom, parser) {
+    if(parser === "text_parser") {
+        return dom.innerText;
+    } else if(parser === "html_parser") {
+        return dom.innerHTML;
+    } else if(parser === "table_parser") {  
+        return table_parser(dom);
+    } else if(parser === "list_parser") {
+        return list_parser(dom);
+    }
+}
+
 // make_robot_window();
 // 处理长连接（尽量使用消息）
 chrome.runtime.onConnect.addListener(function (port) {
@@ -594,7 +744,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         // 获取值
         sendResponse({
             type: msg.type,
-            data: posidom.innerText,
+            data: deal_parser(posidom, msg.parser)
         });
     } else if (msg.type === "get_custom_value") {
         // 获取自定义属性
@@ -738,7 +888,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     } else if (msg.type === "get_value_frame" && window.name === msg.name) {
         sendResponse({
             type: msg.type,
-            data: posidom.innerText,
+            data: deal_parser(posidom, msg.parser)
         });
     } else if (msg.type === "get_custom_value_frame" && window.name === msg.name) {
         sendResponse({

@@ -154,7 +154,7 @@
         .data_tr,
         .data_td {
             min-width: 60px;
-            max-width: 100px;
+            /* max-width: 100px; */
             word-break: break-all;
         }
 
@@ -163,7 +163,7 @@
         }
 
         .dropdown-content {
-            min-height: 200px;
+            min-height: 250px;
         }
     </style>
 </head>
@@ -215,8 +215,8 @@
                     <div class="input-field">
                         <select id="select_case_type">
                             <option value="process" selected>流程事务</option>
-                            <!-- <option value="crawler">线性爬虫事务</option> -->
                             <option value="paral_crawler">并发爬虫事务</option>
+                            <option value="serial_crawler">线性爬虫事务</option>
                             <option value="sourcecode">源码事务</option>
                             <option value="control">受控事务</option>
                         </select>
@@ -295,6 +295,14 @@
                 <div class="input-field col s12" id="set_value" style="display: none">
                     <input placeholder="设值/${自定义参数}" id="ssv" type="text">
                 </div>
+                <div class="input-field" id="set_value_parser" style="display: none;">
+                    <select id="select_value_parser">
+                        <option value="text_parser" selected>默认文本(无解析)</option>
+                        <option value="html_parser">原始HTML(无解析)</option>
+                        <option value="table_parser">表格JSON解析(选中全表格)</option>
+                        <option value="list_parser">列表JSON解析(选中兄弟元素)</option>
+                    </select>
+                </div>
                 <div class="input-field col s12" id="set_expression" style="display: none">
                     <input placeholder="表达式" id="expression" type="text">
                 </div>
@@ -315,7 +323,7 @@
                     <label for="system_message">系统通知</label>
                 </div>
                 <div class="input-field col s12" style="margin-top: -10px;">
-                    <input type="checkbox" class="filled-in" id="dom_check" checked="checked" />
+                    <input type="checkbox" class="filled-in" id="dom_check" />
                     <label for="dom_check">开启dom检查</label>
                 </div>
                 <div class="input-field col s12">

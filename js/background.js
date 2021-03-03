@@ -380,6 +380,12 @@ function dom_check_run(process, tab_id, myrobot, index, timer, data, cb) {
             run_status = 2;
             setTimeout(function () {
                 // exec_run_item(process[now_index], tab_id, args);
+                if (process.length - 1 === now_index) {
+                    data != null && data.push(args);
+                    exec_run_item(process[now_index], tab_id, args, cb);
+                } else {
+                    exec_run_item(process[now_index], tab_id, args);
+                }
                 if (process[now_index].opera === "newpage" || process[now_index].opera === "closepage") {
                     chrome.tabs.query({
                         active: true,
@@ -388,12 +394,6 @@ function dom_check_run(process, tab_id, myrobot, index, timer, data, cb) {
                         tab_id = tabs[0].id;
                     });
                 } 
-                if (process.length - 1 === now_index) {
-                    data != null && data.push(args);
-                    exec_run_item(process[now_index], tab_id, args, cb);
-                } else {
-                    exec_run_item(process[now_index], tab_id, args);
-                }
                 now_index += 1;
                 run_status = 0;
             }, process[now_index].wait * 1000);

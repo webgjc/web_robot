@@ -23,7 +23,7 @@
                 "<all_urls>"
             ],
             "js": [
-                "js/jquery.min.js",
+                "js/external/jquery.min.js",
                 "js/content_script.js"
             ],
             "css": [

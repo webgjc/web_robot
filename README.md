@@ -270,6 +270,9 @@ V2.4.0 (2021.03.03)
 1. 新增优化后的线性爬虫
 2. 增加取值事件的数据解析
 
+V2.5.0 
+1. 全新流程事件定义与编排工具
+
 
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)

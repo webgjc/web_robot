@@ -932,3 +932,8 @@ window.onload = function () {
         }
     });
 };
+
+
+function monitor() {
+    
+}

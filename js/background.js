@@ -631,14 +631,14 @@ chrome.webRequest.onHeadersReceived.addListener(
                 // i--;
             }
         }
-        details.responseHeaders.push({
-            "name": "Cross-Origin-Embedder-Policy",
-            "value": "require-corp"
-        });
-        details.responseHeaders.push({
-            "name": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-        });
+        // details.responseHeaders.push({
+        //     "name": "Cross-Origin-Embedder-Policy",
+        //     "value": "require-corp"
+        // });
+        // details.responseHeaders.push({
+        //     "name": "Cross-Origin-Opener-Policy",
+        //     "value": "same-origin"
+        // });
         return { responseHeaders: details.responseHeaders };
     },
     { urls: ["<all_urls>"] },

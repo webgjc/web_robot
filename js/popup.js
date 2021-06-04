@@ -992,7 +992,7 @@ $(document).ready(function () {
         // 点击删除事务
         .on("click", ".del_case", function () {
             var case_name = $(this).parent().parent().attr("id");
-            if (confirm(`确认删除 ${case_name}`)) {
+            // if (confirm(`确认删除 ${case_name}`)) {
                 get_my_robot((my_robot) => {
                     delete_dashboard(my_robot, case_name);
                     delete my_robot[case_name];
@@ -1002,7 +1002,7 @@ $(document).ready(function () {
                     );
                     set_my_robot(my_robot, refresh_cases);
                 });
-            }
+            // }
         })
         // 导出事务
         .on("mousedown", ".export_case", function () {
@@ -1914,6 +1914,12 @@ $(document).ready(function () {
 
     $("#dashboard_switch").click(function () {
         alert("请至项目跟目录下运行: bash main.sh 查看具体方法");
+    })
+
+    $("#layout_process").click(function() {
+        chrome.tabs.create({
+            url: chrome.extension.getURL("html/layout.html")
+        });
     })
 });
 

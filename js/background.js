@@ -205,11 +205,18 @@ async function exec_run_item(process_item, tab_id, args, cb) {
     } else if (process_item.opera === "newpage") {
         chrome.tabs.create({
             url: process_item.value
+        }, (tab) => {
+            cb && cb(tab.id);
         });
-        cb && cb();
     } else if (process_item.opera === "closepage") {
-        chrome.tabs.remove(tab_id);
-        cb && cb();
+        chrome.tabs.remove(tab_id, () => {
+            chrome.tabs.query({
+                active: true,
+                currentWindow: true
+            }, async function (tabs) {
+                cb && cb(tabs[0].id);
+            });
+        });
     } else if (process_item.opera === "sendmessage") {
         let msg = replace_args(process_item.value, args);
         if(process_item.sysmsg) {
@@ -490,7 +497,10 @@ function crawler_run(case_name, tab_id) {
                 lock = true;
                 console.log(this_key);
                 dom_check_run(my_robot[case_name]["serial_crawler"][this_key], tab_id, my_robot, case_name, false,
-                    this_key == "fetch" ? data : null, function () {
+                    this_key == "fetch" ? data : null, function (new_tab_id) {
+                        if(new_tab_id != null) {
+                            tab_id = new_tab_id;
+                        }
                         if (data.length > 1
                             && data[data.length - 1]["key"] === data[data.length - 2]["key"]) {
                             console.log("重复取值");

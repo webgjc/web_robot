@@ -5,29 +5,81 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="../css/gridstack-extra.css" rel="stylesheet" type="text/css" />
+    <link href="../css/gridstack.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="../css/materialize.min.css">
+    <link rel="stylesheet" href="../css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/fonts.css">
     <title>流程定义与编排</title>
+    <style type="text/css">
+        .grid-stack-item-content {
+            color: #2c3e50;
+            text-align: center;
+            background-color: #18bc9c;
+        }
+    </style>
 </head>
 <body>
     <div>
-        流程事件列表，可拖拽上下移位，阻塞检查事件
-        <div>全部运行</div>
-        <div>单个测试</div>
-        <div>单步调试</div>
+        <nav>
+            <div class="nav-wrapper">
+              <a href="#" class="brand-logo">Web Robot</a>
+              <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="#">全部流程</a></li>
+                <li><a href="#">流程定义</a></li>
+              </ul>
+            </div>
+          </nav>
+        <div class="row" style="margin: 20px;">
+            <div class="col s6">
+                <div>
+                    <a class="waves-effect waves-light btn">全部运行</a>
+                    <a class="waves-effect waves-light btn">运行参数</a>
+                    <a class="waves-effect waves-light btn">全局配置</a>
+                    <a class="waves-effect waves-light btn">查看运行数据</a>
+                </div>
 
-        <div>事件运行参数设置</div>
-        <div>事件运行中间变量与数据传递可视化</div>
-    </div>
-    <br />
-    <div>
-        事件库，可拖拽至事件列表，事件其他属性设置（延时，元素检查）（拖拽进入检查是否设置）
-        事件名自动生成（点击xxx，设值xxx）
-        点击事件查看详情，转换其他事件定义方式，转换dom选取方式
-        <div>开启录制事件</div>
-        <div>页面选取添加事件</div>
-        <div>自定义事件</div> 浏览器事件，源码注入，键盘鼠标事件
+                <div style="height: 55vh; border: solid 1px #ccc; margin-top: 20px;">
+                    <ul class="collection" style="border: none;">
+                        <li href="#!" class="collection-item">点击事件xx
+                            <a href="#"><span class="new badge" data-badge-caption="">查看详情</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">运行至此</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">单个运行</span></a>
+                        </li>
+                        <li href="#!" class="collection-item">点击事件yy
+                            <a href="#"><span class="new badge" data-badge-caption="">查看详情</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">运行至此</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">单个运行</span></a>
+                        </li>
+                        <li href="#!" class="collection-item">设值事件zz
+                            <a href="#"><span class="new badge" data-badge-caption="">查看详情</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">运行至此</span></a>
+                            <a href="#"><span class="new badge" data-badge-caption="">单个运行</span></a>
+                        </li>
+                    </ul>
+                </div>
 
-        <div>源码事件定义</div>
-        <div>键盘鼠标事件定义</div>
+                <div style="margin-top: 10px;">
+                    <textarea style="border: solid 1px #ccc; height: 16vh;">log</textarea>
+                </div>
+            </div>
+            <div class="col s6" >
+                <div>
+                    <a class="waves-effect waves-light btn">录制事件</a>
+                    <a class="waves-effect waves-light btn">页面选取添加事件</a>
+                    <a class="waves-effect waves-light btn">自定义事件</a>
+                </div>
+                <div style="border: solid 1px #ccc; height: 72vh; margin-top: 20px; ">
+                    <div class="grid-stack" >
+
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    <script type="text/javascript" src="../js/external/jquery.min.js "></script>
+    <script type="text/javascript" src="../js/external/gridstack-h5.js "></script>
+    <script type="text/javascript" src="../js/external/materialize.min.js "></script>
+    <script type="text/javascript" src="../js/layout.js "></script>
 </body>
 </html>

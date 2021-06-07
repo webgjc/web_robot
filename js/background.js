@@ -115,7 +115,29 @@ function notify(title, msg) {
         iconUrl: "/images/robot.png",
         title: title || "",
         message: msg || ""
+    }, function(res) {
+        console.log(res)
     });
+}
+
+// 发送通知
+function send_tip(msg) {
+    console.log(msg)
+    // alert(msg)
+    chrome.tabs.query(
+        {
+            active: true,
+            currentWindow: true,
+        },
+        function (tabs) {
+            if(tabs[0] != undefined) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type: "show_msg",
+                    msg: msg
+                })
+            }
+        }
+    )
 }
 
 // 运行
@@ -602,6 +624,89 @@ function timer_run_robot(myrobot) {
         }
     }
 }
+
+
+/**
+ * 监控相关
+ */
+let monitor_info = {}
+let monitor_timer = undefined;
+
+// 开关监控
+function switch_monitor(case_name, type) {
+    get_my_robot(robot => {
+        if(type === "run" && monitor_info[case_name] === undefined) {
+            monitor_info[case_name] = {}
+            chrome.windows.create({
+                url: robot[case_name].monitor.url,
+                state: "minimized"
+            }, function(window) {
+                monitor_info[case_name] = {}
+                monitor_info[case_name].tab = window.tabs[0].id
+                monitor_info[case_name].data = []
+                if(monitor_timer == undefined) {
+                    monitor_timer = monitor_run()
+                }
+            })
+        }
+        if(type === "stop" && monitor_info[case_name] !== undefined) {
+            chrome.tabs.remove(monitor_info[case_name].tab, () => {
+                delete monitor_info[case_name]
+                if(Object.keys(monitor_info).length == 0) {
+                    clearInterval(monitor_timer);
+                    monitor_timer = undefined;
+                }
+            })
+        }
+        console.log(monitor_info)
+    })
+}
+
+// 具体监控
+function monitor_run() {
+    return setInterval(() => {
+        get_my_robot(robot => {
+            let keys = Object.keys(monitor_info)
+            console.log(monitor_info)
+            for(let i in keys) {
+                let mon = monitor_info[keys[i]]
+                chrome.tabs.reload(mon.tab)
+                chrome.tabs.sendMessage(mon.tab, {
+                    type: "get_value_list",
+                    tag: robot[keys[i]].monitor.selector
+                }, function(msg) {
+                    if(msg.data.length != 0) {
+                        if(mon.data.length == 0) {
+                            mon.data = msg.data
+                        } else if(mon.data.length == 1) {
+                            if(mon.data[0] != msg.data[0]) {
+                                mon.data = msg.data
+                                send_tip(mon.data[0])
+                            }
+                        } else {
+                            let news = []
+                            for(let i = 0; i < msg.data.length; i++) {
+                                if(mon.data.indexOf(msg.data[i]) == -1) {
+                                    news.push(msg.data[i])
+                                    mon.data.push(msg.data[i])
+                                }
+                            }
+                            if(news.length > 0) {
+                                send_tip(news.join("<br />"))
+                            }
+                            if(mon.data.length >= 300) {
+                                mon.data.splice(0, mon.data.length - 300)
+                            }
+                        }
+                    } else {
+                        console.log("未获取到数据")
+                    }
+                })
+            }
+        })
+    }, 5000);
+}
+
 
 // 检查网络情况
 async function check_network(callback) {

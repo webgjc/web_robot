@@ -86,6 +86,11 @@ function get_my_robot(callback) {
             api（发送目标api）: "",
             freq（发送频率）: 10,
             bg_run（后台运行）: false
+        },
+        monitor(监控事务定义): {
+            url: "https://xx.com",
+            selector: "#id",
+            run: false
         }
         case_sourcecode(源码事务的js源码): "",
         sourcecode_url(源码主入正则匹配地址): "",
@@ -148,6 +153,8 @@ function notify(title, msg) {
         iconUrl: "/images/robot.png",
         title: title || "",
         message: msg || ""
+    }, function(res) {
+        console.log(res)
     });
 }
 
@@ -162,6 +169,15 @@ function exectab(callback) {
             callback(tabs[0].id, tabs[0]);
         }
     );
+}
+
+// 发送消息
+function send_msg(msg, cb) {
+    exectab(function(tab_id) {
+        chrome.tabs.sendMessage(tab_id, msg, function(msg) {
+            cb && cb(msg)
+        })
+    })
 }
 
 // 连接测试本地客户端
@@ -302,6 +318,9 @@ function refresh_cases() {
                         tr += '<a href="#" class="timer_run">定时运行</a> ';
                         tr += '<a href="#" class="crawler_show_data">查看数据</a> ';
                         tr += `<br /><a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
+                    }
+                    if(my_robot[i]["case_type"] === "monitor") {
+                        tr += `<a href="#" class="start_monitor">${my_robot[i].monitor.run ? "关闭": "开启"}监控</a> `;
                     }
                     tr += "<br />";
                     tr += '<a href="#" class="rename_case">重命名</a> ';
@@ -986,6 +1005,13 @@ $(document).ready(function () {
                         $("#paral_send_config").hide();
                     }
                     Materialize.updateTextFields();
+                } else if (my_robot[case_name]["case_type"] === "monitor") {
+                    $("#monitor_view").show();
+                    let monitor = my_robot[case_name]["monitor"];
+                    $("#monitor_url").val(monitor["url"]);
+                    $("#monitor_selector").val(monitor["selector"]);
+                    $("#monitor_selector_nums").html(monitor["type"] == 0 ? "1" : "多");
+                    Materialize.updateTextFields();
                 }
             });
         })
@@ -1106,7 +1132,25 @@ $(document).ready(function () {
                 }
                 set_my_robot(my_robot, refresh_cases);
             })
-        });
+        })
+        // 开启监控
+        .on("click", ".start_monitor", function() {
+            let case_name = $(this).parent().parent().attr("id");
+            get_my_robot(robot => {
+                let bg = chrome.extension.getBackgroundPage();
+                if(robot[case_name].monitor.run) {
+                    robot[case_name].monitor.run = false
+                    $(this).text("开启监控")
+                    bg.switch_monitor(case_name, "stop")
+                } else {
+                    robot[case_name].monitor.run = true
+                    $(this).text("关闭监控")
+                    bg.switch_monitor(case_name, "run")
+                }
+                set_my_robot(robot);
+                console.log(robot[case_name])
+            })
+        })
 
     $("#input_new_case_name").click(function () {
         get_my_robot((my_robot) => {
@@ -1177,6 +1221,14 @@ $(document).ready(function () {
                     send: false,
                     api: "http://127.0.0.1:12580/crawler/",
                     freq: 10
+                }
+            }
+            if($("#select_case_type").val() === "monitor") {
+                my_robot[new_case_name]["monitor"] = {
+                    url: "",
+                    selector: "",
+                    type: 0,
+                    run: false
                 }
             }
             my_robot[SETTING_DATA]["KEYS"].push(new_case_name);
@@ -1921,6 +1973,49 @@ $(document).ready(function () {
             url: chrome.extension.getURL("html/layout.html")
         });
     })
+
+    $("#monitor_selector").change(function(){
+        send_msg({
+            type: "show_doms",
+            selector: $("#monitor_selector").val()
+        }, function(msg) {
+            $("#monitor_selector_nums").html(msg.nums);
+        })
+    }) 
+
+    $("#monitor_selector_test").click(function() {
+        send_msg({
+            type: "show_doms",
+            selector: $("#monitor_selector").val()
+        }, function(msg) {
+            $("#monitor_selector_nums").html(msg.nums);
+        })
+    })
+
+    $("#monitor_confirm").click(function() {
+        // if($("#monitor_selector_nums").html() !== "0") {
+        get_my_robot(robot => {
+            robot[case_name]["monitor"] = {
+                url: $("#monitor_url").val(),
+                selector: $("#monitor_selector").val(),
+                run: false
+            }
+            set_my_robot(robot, () => {
+                $("#monitor_view").hide();
+                $("#case_view").show();
+            })
+        })
+        // } else {
+        //     alert("节点数量不能为0");
+        // }
+    })
+
+    $("#monitor_back").click(function(){
+        $("#monitor_view").hide();
+        $("#case_view").show();
+    })
+
+
 });
 
 // 监听结束监控

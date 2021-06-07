@@ -18,14 +18,14 @@ function set_my_robot(new_robot, callback) {
 }
 
 // 画背景
-function robot_make_select_canvas(dom) {
-    myrobot_scroll_position(dom);
+function robot_make_select_canvas(dom, posi, t) {
+    posi == undefined && myrobot_scroll_position(dom);
     let canvas = document.createElement("div");
     canvas.id = "robot_select";
     canvas.style.backgroundColor = "red";
     canvas.style.width = dom.offsetWidth + 4 + "px";
     canvas.style.height = dom.offsetHeight + 4 + "px";
-    canvas.style.position = "fixed";
+    canvas.style.position = "absolute";
     canvas.style.opacity = "0.5";
     canvas.style.zIndex = 999;
     canvas.style.left = parseInt(dom.getBoundingClientRect().left) - 2 + "px";
@@ -33,7 +33,7 @@ function robot_make_select_canvas(dom) {
     document.body.appendChild(canvas);
     setTimeout(function () {
         document.getElementById("robot_select").remove();
-    }, 1000);
+    }, t == undefined ? 1000: t);
 }
 
 // 获取绝对坐标
@@ -509,6 +509,8 @@ function deal_parser(dom, parser) {
         return table_parser(dom);
     } else if(parser === "list_parser") {
         return list_parser(dom);
+    } else {
+        return dom.innerText;
     }
 }
 
@@ -746,6 +748,16 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             type: msg.type,
             data: deal_parser(posidom, msg.parser)
         });
+    } else if (msg.type === "get_value_list") {
+        let ds = document.querySelectorAll(msg.tag);
+        let vs = [];
+        for(let i = 0; i < ds.length; i++) {
+            vs.push(ds[i].innerText);
+        }
+        sendResponse({
+            type: msg.type,
+            data: vs
+        })
     } else if (msg.type === "get_custom_value") {
         // 获取自定义属性
         sendResponse({
@@ -906,6 +918,18 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                 });
             });
         })
+    } else if (msg.type === "show_doms") {
+        let doms = document.querySelectorAll(msg.selector);
+        if(doms.length > 0) {
+            robot_make_select_canvas(doms[0], undefined, 5000);
+            for(let i = 1; i < doms.length; i++) {
+                robot_make_select_canvas(doms[i], "1", 5000);
+            }
+        }
+        sendResponse({
+            type: msg.type,
+            nums: doms.length,
+        });
     } else if (msg.type === "close_robot_window") {
         // 关闭注入robot frame
         close_robot_window();

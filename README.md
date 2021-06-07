@@ -35,6 +35,8 @@
 20. 支持爬虫与客户端数据交互
 21. 支持消息通知事件
 22. 支持流程事务在后台运行
+23. 支持页面元素数据监控配置
+24. 支持单节点监控与多节点监控
 
 
 ## 核心部分--事务和运行机制说明
@@ -150,6 +152,16 @@
 - 线性爬虫 + 列表数据解析
 ```json
 {"add_dashboard":true,"case_name":"线性爬虫","case_process":[],"case_sourcecode":"","case_type":"serial_crawler","control_url":"","serial_crawler":{"api":"http://127.0.0.1:12580/crawler/","data":null,"fetch":[{"bgopen":false,"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","parser":"text_parser","sysmsg":true,"tag":"body","value":"key","wait":"0.5"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","parser":"list_parser","sysmsg":true,"tag":".post-title","value":"titles","wait":"0"}],"freq":10,"init":[{"bgopen":false,"check":false,"expr":"","n":"0","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"body","value":"https://coding-pages-bucket-3440936-7810273-13586-512516-1300444322.cos-website.ap-shanghai.myqcloud.com/","wait":"0"}],"next":[{"bgopen":false,"check":true,"expr":"","n":"0","opera":"click","parser":"text_parser","sysmsg":true,"tag":"li.next>a","value":"","wait":"0"}],"send":false,"times":5},"sourcecode_url":".*"}
+```
+
+- 单节点监控，建个单个元素变化
+```json
+{"case_name":"单个监控-时间","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":".op-beijingtime-time","url":"https://www.baidu.com/s?wd=%E6%97%B6%E9%97%B4"},"sourcecode_url":".*"}
+```
+
+- 多节点监控，监控多个节点的增量变化
+```json
+{"case_name":"批量监控-热搜","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":true,"selector":"tr:nth-child(-n+22) td:nth-child(2) a","url":"https://s.weibo.com/top/summary?cate=realtimehot"},"sourcecode_url":".*"}
 ```
 
 
@@ -270,8 +282,8 @@ V2.4.0 (2021.03.03)
 1. 新增优化后的线性爬虫
 2. 增加取值事件的数据解析
 
-V2.5.0 
-1. 全新流程事件定义与编排工具
+V2.5.0（2021.06.07）
+1. 新增监控事务（单节点监控与多节点监控）
 
 
 ## 感谢轮子

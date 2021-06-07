@@ -164,7 +164,7 @@
         }
 
         .dropdown-content {
-            min-height: 250px;
+            min-height: 300px;
         }
     </style>
 </head>
@@ -216,6 +216,7 @@
                     <div class="input-field">
                         <select id="select_case_type">
                             <option value="process" selected>流程事务</option>
+                            <option value="monitor">监控事务</option>
                             <option value="paral_crawler">并发爬虫事务</option>
                             <option value="serial_crawler">线性爬虫事务</option>
                             <option value="sourcecode">源码事务</option>
@@ -493,6 +494,32 @@
             <div class="modal-footer">
                 <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat"
                     id="submit_timer_run">确认</a>
+            </div>
+        </div>
+
+        <div id="monitor_view" style="display: none;">
+            <div class="input-field col s12">
+                <input id="monitor_url" type="text" value="">
+                <label for="monitor_url">监控地址</label>
+            </div>
+            <div class="input-field col s12">
+                <input id="monitor_selector" type="text">
+                <label for="monitor_selector">自由选择器</label>
+            </div>
+            <div id="monitor_tip">总共有 
+                <span id="monitor_selector_nums">0</span> 个元素
+                <br />
+                <span>单节点监控：监控单个的变更</span>
+                <br />
+                <span>多节点监控：监控多个节点的增量变化</span>
+                <br />
+                <span>- 监控消息目前发送在前台的页面左上角，如没有请刷新当前页面/重新配置</span>
+                <br />
+            </div>
+            <div style="text-align: center; margin-top: 10px">
+                <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_selector_test">测试</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_confirm">确认</a>
+                <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_back">返回</a>
             </div>
         </div>
     </section>

@@ -161,7 +161,7 @@
 
 - 多节点监控，监控多个节点的增量变化
 ```json
-{"case_name":"批量监控-热搜","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":true,"selector":"tr:nth-child(-n+22) td:nth-child(2) a","url":"https://s.weibo.com/top/summary?cate=realtimehot"},"sourcecode_url":".*"}
+{"case_name":"批量监控-热搜","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":"tr:nth-child(-n+22) td:nth-child(2) a","url":"https://s.weibo.com/top/summary?cate=realtimehot"},"sourcecode_url":".*"}
 ```
 
 

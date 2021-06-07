@@ -42,8 +42,5 @@
     ],
     "web_accessible_resources": [
         "html/popup.html"
-    ],
-    "chrome_url_overrides": {
-        "newtab": "html/newtab.html"
-    }
+    ]
 }

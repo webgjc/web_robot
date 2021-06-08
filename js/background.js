@@ -722,14 +722,36 @@ async function check_network(callback) {
 }
 
 
-// 开启定时运行检查
-setInterval(function () {
-    check_network(() => {
+// 定时任务
+let runtime_interval = undefined;
+
+function switch_runtime(type) {
+    if(type == "run" && runtime_interval == undefined) {
+        // 开启定时运行检查
+        runtime_interval = setInterval(function () {
+            check_network(() => {
+                get_my_robot((my_robot) => {
+                    timer_run_robot(my_robot);
+                });
+            })
+        }, 10000);
+    }
+    if(type == "stop") {
         get_my_robot((my_robot) => {
-            timer_run_robot(my_robot);
+            let flag = true
+            for (let i in my_robot) {
+                if(my_robot[i].runtime) {
+                    flag = false
+                    break
+                }
+            }
+            if(flag) {
+                clearInterval(runtime_interval)
+                runtime_interval = undefined
+            }
         });
-    })
-}, 10000);
+    }
+}
 
 
 // 干掉请求中的frame限制

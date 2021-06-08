@@ -515,7 +515,7 @@ function deal_parser(dom, parser) {
 }
 
 // make_robot_window();
-// 处理长连接（尽量使用消息）
+// 处理长连接（尽量使用短消息）
 chrome.runtime.onConnect.addListener(function (port) {
     if (port.name === "robot") {
         port.onMessage.addListener(function (msg) {

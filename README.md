@@ -107,14 +107,16 @@
 - 源码事务的开始注入适用于如百度去广告的场景等
 - 受控事务的录制和受控运行适用于对一个复杂操作(无法用流程实现)的定义和复现。
 
-## 演示用例
+## 演示用例，（直接复制，导入事务即可享用）
 
-- 基本操作
+- 特别注意：流程中的消息通知目前不稳定
+
+- 基本操作（打开百度，搜索天气，点击确定）
 ```json
 {"case_name":"基本操作","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"1"},{"n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"2"},{"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
 
-- 取值事件
+- 取值事件（打开个人博客页，获取内容赋值给title，打开百度，搜索刚刚获取到的title，点击搜索）
 ```json
 {"case_name":"取值事件用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"getvalue","tag":"HTML.macos.desktop.landscape > BODY > NAV.navbar.navbar-default.navbar-custom.navbar-fixed-top > DIV.container-fluid > DIV.navbar-header.page-scroll > A.navbar-brand","value":"title","wait":"3"},{"n":"0","opera":"pagejump","tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"2"},{"n":"0","opera":"value","tag":"INPUT#kw","value":"title","wait":"1"},{"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
@@ -129,37 +131,37 @@
 {"case_name":"定时喝水","case_process":[],"case_sourcecode":"alert(\"你该喝水咯\")","case_type":"sourcecode","control_url":"","last_runtime":1599706892179,"runtime":"60m","sourcecode_url":".*"}
 ```
 
-- 值选择器用例
+- 值选择器用例（打开个人博客，使用a{About}选择器点击导航栏切换，使用a{Archives}点击导航栏切换）
 ```json
 {"case_name":"值选择器用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"click","tag":"a{About}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Archives}","value":"","wait":"2"},{"n":"0","opera":"click","tag":"a{Home}","value":"","wait":"2"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
 
-- dom检查自旋用例(可以实现在dom出现时立刻运行)
+- dom检查自旋用例(可以实现在dom出现时立刻运行，兼容某些资源加载延迟情况)
 ```json
 {"case_name":"test","case_process":[{"check":true,"n":"0","opera":"newpage","tag":"body","value":"https://www.baidu.com/","wait":"0.1"},{"check":true,"n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0.1"},{"check":true,"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"01"}],"case_sourcecode":"","case_type":"process","control_url":"","last_runtime":1603672211550,"runtime":"4:00","sourcecode_url":".*"}
 ```
 
-- 并发爬虫事务用例(爬取百度搜索前10页的每页前三条结果)
+- 并发爬虫事务用例(爬取百度搜索前10页的每页前三条结果，可配置在前后台运行)
 ```json
 {"case_name":"爬虫用例","case_process":[],"case_sourcecode":"","case_type":"paral_crawler","control_url":"","paral_crawler":{"api":"http://127.0.0.1:12580/crawler/","apicb":false,"cc":5,"data":[],"fetch":[{"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","tag":"body","value":"时间","wait":"0"},{"check":true,"expr":"","n":"0","opera":"getvalue","tag":"h3","value":"标题1","wait":"0"},{"check":true,"expr":"","n":"1","opera":"getvalue","tag":"h3","value":"标题2","wait":"0"},{"check":true,"expr":"","n":"2","opera":"getvalue","tag":"h3","value":"标题3","wait":"0"}],"freq":1,"send":false,"urlapi":"http://127.0.0.1:12580/crawler/url/","urls":["https://www.baidu.com/s?wd=test&pn={0-10}0"]},"sourcecode_url":".*"}
 ```
 
-- 后台运行流程事务 + 消息通知用例
+- 后台运行流程事务 + 消息通知用例（后台打开百度，设值天气，获取第一条天气的内容，发送系统消息）
 ```json
 {"case_name":"后台运行+消息发送","case_process":[{"bgopen":true,"check":false,"expr":"","n":"0","opera":"newpage","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"0"},{"check":true,"expr":"","n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0"},{"check":true,"expr":"","n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"0"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","tag":"DIV#content_left > DIV.result-op.c-container.xpath-log > DIV.op_weather4_twoicon_container_div > DIV.op_weather4_twoicon > A.op_weather4_twoicon_today.OP_LOG_LINK","value":"key","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"sendmessage","sysmsg":true,"tag":"DIV#wrapper_wrapper","value":"天气：${key}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","fail_rerun":false,"last_runtime":1611820796375,"runtime":"","sourcecode_url":".*"}
 ```
 
-- 线性爬虫 + 列表数据解析
+- 线性爬虫 + 列表数据解析（初始化 - 打开博客页面；取数据 - 获取列表第一条数据，且配置列表解析；下一步 - 点击下一页）
 ```json
 {"add_dashboard":true,"case_name":"线性爬虫","case_process":[],"case_sourcecode":"","case_type":"serial_crawler","control_url":"","serial_crawler":{"api":"http://127.0.0.1:12580/crawler/","data":null,"fetch":[{"bgopen":false,"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","parser":"text_parser","sysmsg":true,"tag":"body","value":"key","wait":"0.5"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","parser":"list_parser","sysmsg":true,"tag":".post-title","value":"titles","wait":"0"}],"freq":10,"init":[{"bgopen":false,"check":false,"expr":"","n":"0","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"body","value":"https://coding-pages-bucket-3440936-7810273-13586-512516-1300444322.cos-website.ap-shanghai.myqcloud.com/","wait":"0"}],"next":[{"bgopen":false,"check":true,"expr":"","n":"0","opera":"click","parser":"text_parser","sysmsg":true,"tag":"li.next>a","value":"","wait":"0"}],"send":false,"times":5},"sourcecode_url":".*"}
 ```
 
-- 单节点监控，建个单个元素变化
+- 单节点监控，建个单个元素变化（打开搜时间的百度页，配置监控展示时间的单个节点，变化时会有页面内消息通知）需打开某页面
 ```json
 {"case_name":"单个监控-时间","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":".op-beijingtime-time","url":"https://www.baidu.com/s?wd=%E6%97%B6%E9%97%B4"},"sourcecode_url":".*"}
 ```
 
-- 多节点监控，监控多个节点的增量变化
+- 多节点监控，监控多个节点的增量变化（打开微博热搜列表页，配置监控前20条增量变化，增加新数据时会有页面内消息通知）需打开某页面
 ```json
 {"case_name":"批量监控-热搜","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":"tr:nth-child(-n+22) td:nth-child(2) a","url":"https://s.weibo.com/top/summary?cate=realtimehot"},"sourcecode_url":".*"}
 ```

@@ -1293,6 +1293,12 @@ $(document).ready(function () {
             my_robot[case_name]["fail_rerun"] = $("#fail_rerun").prop("checked");
             my_robot[case_name]["last_runtime"] =
                 new Date().getTime() - 24 * 60 * 60 * 1000;
+            let bg = chrome.extension.getBackgroundPage()
+            if($("#timer_run_input").val()) {
+                bg.switch_runtime("run")
+            } else {
+                bg.switch_runtime("stop")
+            }
             set_my_robot(my_robot);
         });
     });

@@ -69,10 +69,14 @@
   - click 点击
   - value 设值
   - refresh 刷新
-  - pagejump 当页跳转
   - mouseover 鼠标移入
+  - pagejump 当页跳转
+  - newpage 新页打开
   - getvalue 取值
-  - newpage 新页跳转
+  - getcustomvalue 自定义获取数据
+  - closepage 关闭页面
+  - onlyshow 唯一展示（看板使用）
+  - sendmessage 发送通知（目前不一定可靠）
 
 注：受控相关的都必须使用开启本地客户端。
 

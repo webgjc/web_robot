@@ -957,3 +957,45 @@ window.onload = function () {
     });
 };
 
+
+/**
+ * 按键触发
+ */
+(function keyboardMonitorTrigger(cb) {
+    let down_keys = new Set()
+
+    get_my_robot(my_robot => {
+        // 是否有开启快捷键的事务
+        let flag = false
+        let key_map = {}
+
+        for(let case_name in my_robot) {
+            if(my_robot[case_name]["short_key"] != undefined) {
+                flag = true
+                key_map[my_robot[case_name]["short_key"]] = case_name
+            }
+        }
+
+        if(flag) {
+            document.onkeydown = function(e) {
+                down_keys.add(e.key)
+                let value = Array.from(down_keys.values()).sort().join()
+                if(key_map[value] != undefined) {
+                    chrome.runtime.sendMessage({
+                        type: "KEYBOARD_TRIGGER",
+                        case_name: key_map[value],
+                        select: window.getSelection().toString()
+                    }, (res) => {
+                        if(res == "success") {
+                            down_keys.clear()
+                        }
+                    })
+                }
+            }
+            
+            document.onkeyup = function(e) {
+                down_keys.delete(e.key)
+            }
+        }
+    })
+})()

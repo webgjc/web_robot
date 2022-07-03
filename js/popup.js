@@ -100,7 +100,8 @@ function get_my_robot(callback) {
         last_runtime(上次运行时间): 1591616590387,
         runtime(定时时间): null / 10(分钟);
         fail_rerun(失败重试): true;
-        c(添加到看板): true;
+        add_dashboard(添加到看板): true;
+        short_key(快捷键): "";
     },
     SETTING_DATA: {
         KEYS: [],
@@ -192,7 +193,10 @@ function connect_client(callback) {
 }
 
 // 拼接要执行的js代码
-function jscode(process) {
+function jscode(process, new_value) {
+    if(new_value == undefined) {
+        new_value = process.value
+    }
     let exec_code = "(function(){ \n";
     if (
         process["opera"] === "click" ||
@@ -239,7 +243,7 @@ function jscode(process) {
          * 为react兼容
          */
         exec_code += "let lastValue = robot_node.value;";
-        exec_code += `robot_node.value='${process.value}';`;
+        exec_code += `robot_node.value='${new_value}';`;
         exec_code += "let event = new Event('input', { bubbles: true });";
         exec_code += "event.simulated = true;";
         exec_code += "let tracker = robot_node._valueTracker;";
@@ -248,7 +252,7 @@ function jscode(process) {
     } else if (process["opera"] === "refresh") {
         exec_code += "window.location.reload();";
     } else if (process["opera"] === "pagejump") {
-        exec_code += `window.location.href='${process.value}';`;
+        exec_code += `window.location.href='${new_value}';`;
     } else if (process["opera"] === "mouseover") {
         exec_code += `let mouseoverevent = new MouseEvent('mouseover', {bubbles: true, cancelable: true});`;
         exec_code += `robot_node.dispatchEvent(mouseoverevent);`;
@@ -326,6 +330,9 @@ function refresh_cases() {
                     tr += '<a href="#" class="rename_case">重命名</a> ';
                     tr += '<a href="#" class="moveup_case">上移</a> ';
                     tr += '<a href="#" class="del_case">删除</a> ';
+                    if (my_robot[i]["case_type"] === "process" || my_robot[i]["case_type"] === "sourcecode") {
+                        tr += '<a href="#" class="short_key">快捷键</a> ';
+                    }
                     if (my_robot[i]["case_type"] !== "control") {
                         tr +=
                             '<a href="#" class="export_case">导出</a></td></tr>';
@@ -433,7 +440,9 @@ function sleep(s) {
 function replace_args(s, args) {
     let keys = Object.keys(args);
     for(let i = 0; i < keys.length; i++) {
-        s = s.replace("${" + keys[i] + "}", args[keys[i]] || "");
+        if(args[keys[i]] != undefined) {
+            s = s.replace("{" + keys[i] + "}", args[keys[i]]);
+        }
     }
     return s;
 }
@@ -441,6 +450,7 @@ function replace_args(s, args) {
 // 运行每个事件
 async function exec_run_item(process_item, tab_id, args, cb) {
     // console.log(`start run ${JSON.stringify(process_item)}`);
+    let new_value = replace_args(process_item.value, args)
     let test = process_item.test;
     if (process_item.opera === "getvalue") {
         await chrome.tabs.sendMessage(
@@ -453,7 +463,7 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             },
             function (msg) {
                 if (msg.type === "get_value") {
-                    args[process_item.value] = msg.data;
+                    args[new_value] = msg.data;
                     test && alert(msg.data);
                     cb && cb();
                 }
@@ -468,39 +478,30 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             },
             function (msg) {
                 if (msg.type === "get_custom_value") {
-                    args[process_item.value] = msg.data;
+                    args[new_value] = msg.data;
                     test && alert(msg.data);
                     cb && cb();
                 }
             }
         );
-    } else if (process_item.opera === "value") {
-        if (args[process_item.value] !== undefined) {
-            process_item.value = args[process_item.value];
-        }
-        chrome.tabs.executeScript(tab_id, {
-            code: jscode(process_item),
-        });
-        cb && cb();
     } else if (process_item.opera === "newpage") {
         chrome.tabs.create({
-            url: process_item.value
+            url: new_value
         });
         cb && cb();
     } else if (process_item.opera === "closepage") {
         chrome.tabs.remove(tab_id);
         cb && cb();
     } else if (process_item.opera === "sendmessage") {
-        let msg = replace_args(process_item.value, args);
         if(process_item.sysmsg) {
-            notify("事件通知", msg);
+            notify("事件通知", new_value);
         } else {
-            alert(msg);
+            alert(new_value);
         }
         cb && cb();
     } else {
         chrome.tabs.executeScript(tab_id, {
-            code: jscode(process_item)
+            code: jscode(process_item, new_value)
         });
         cb && cb();
     }
@@ -819,6 +820,18 @@ function getCurrentDateTime() {
 
 // 主要
 $(document).ready(function () {
+    // chrome.tabs.captureVisibleTab(function(res) {
+    //     document.body.innerHTML=`<img src=${res} />`
+    // })
+    // exectab(tabId => {
+    //     chrome.pageCapture.saveAsMHTML({tabId}, res => {
+    //         const fileName = `test1.mhtml`;
+    //         const link = document.createElement('a');
+    //         link.href = window.URL.createObjectURL(res);
+    //         link.download = fileName;
+    //         link.click();
+    //     })
+    // })
     // chrome.tabs.create({
     //     url: chrome.extension.getURL("html/newtab.html")
     // });
@@ -1324,6 +1337,9 @@ $(document).ready(function () {
                     for (let i = 0; i < msg.num.length; i++) {
                         let value = selected_tag + "&" + msg.num[i];
                         options += `<a href='#' class='collection-item tag_spec'>${value}</a>`;
+                    }
+                    if(msg.num == 0) {
+                        options = "<div>无可选项，请修改标签或刷新浏览器重试</div>"
                     }
                     $("#tag_list").html(options);
                     $(".tag_spec").mouseover(function () {
@@ -1885,6 +1901,45 @@ $(document).ready(function () {
                         `).join("\n")}
                     </tbody>`;
                     $(".crawler_data_table").html(table_html);
+                })
+            })
+            // 快捷键
+            .on("click", ".short_key", function() {
+                case_name = $(this).parent().parent().attr("id");
+                get_my_robot(my_robot => {
+                    if(my_robot[case_name]["short_key"] == undefined) {
+                        $("#short_key_input").val("请输入快捷键且不松开点击确定")
+                    } else {
+                        $("#short_key_input").val("当前快捷键为: " + my_robot[case_name]["short_key"] + ", 修改请输入后确定")
+                    }
+
+                    let short_key = new Set();
+                    Materialize.updateTextFields();
+                    $("#short_key_model").modal("open");
+    
+                    getDealShortKey = function() {
+                        return Array.from(short_key.values()).sort().join()
+                    }
+                    
+                    document.onkeydown = function(e) {
+                        short_key.add(e.key)
+                        $("#short_key_input").val(getDealShortKey())
+                    }
+    
+                    document.onkeyup = function(e) {
+                        short_key.delete(e.key)
+                        $("#short_key_input").val(getDealShortKey())
+                    }
+    
+                    $("#short_key_submit").click(function() {
+                        my_robot[case_name]["short_key"] = getDealShortKey()
+                        set_my_robot(my_robot)
+                    })
+
+                    $("#short_key_delete").click(function() {
+                        my_robot[case_name]["short_key"] = undefined
+                        set_my_robot(my_robot)
+                    })
                 })
             })
     });

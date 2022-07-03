@@ -6,8 +6,8 @@
 ## 详细说明
 
 请见博客   
-[Web Robot使用教程(终极版)](http://blog.ganjiacheng.cn/article/2021/article_3_WEB_ROBOT%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3(%E7%BB%88%E6%9E%81%E7%89%88)/)  
-[看板教程](http://blog.ganjiacheng.cn/article/article_31_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT%E4%B9%8B%E6%88%91%E7%9A%84%E7%9C%8B%E6%9D%BF/)  
+[Web Robot使用教程(终极版)](http://ganjiacheng.cn/article/2021/article_3_WEB_ROBOT%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3(%E7%BB%88%E6%9E%81%E7%89%88)/)  
+[看板教程](http://ganjiacheng.cn/article/article_31_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT%E4%B9%8B%E6%88%91%E7%9A%84%E7%9C%8B%E6%9D%BF/)  
 [使用教程V1.0版本](http://ganjiacheng.cn/article/article_18_chrome%E6%8F%92%E4%BB%B6-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96/)  
 [持续更新教程](http://ganjiacheng.cn/article/article_21_chrome%E6%8F%92%E4%BB%B6-WEB-ROBOT/)
 
@@ -37,6 +37,7 @@
 22. 支持流程事务在后台运行
 23. 支持页面元素数据监控配置
 24. 支持单节点监控与多节点监控
+25. 支持快捷键
 
 
 ## 核心部分--事务和运行机制说明
@@ -122,7 +123,7 @@
 
 - 取值事件（打开个人博客页，获取内容赋值给title，打开百度，搜索刚刚获取到的title，点击搜索）
 ```json
-{"case_name":"取值事件用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"n":"0","opera":"getvalue","tag":"HTML.macos.desktop.landscape > BODY > NAV.navbar.navbar-default.navbar-custom.navbar-fixed-top > DIV.container-fluid > DIV.navbar-header.page-scroll > A.navbar-brand","value":"title","wait":"3"},{"n":"0","opera":"pagejump","tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"2"},{"n":"0","opera":"value","tag":"INPUT#kw","value":"title","wait":"1"},{"n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
+{"case_name":"取值事件用例","case_process":[{"n":"0","opera":"newpage","tag":"body","value":"http://blog.ganjiacheng.cn/","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","parser":"text_parser","sysmsg":false,"tag":"HTML.macos.desktop.landscape > BODY > NAV.navbar.navbar-default.navbar-custom.navbar-fixed-top > DIV.container-fluid > DIV.navbar-header.page-scroll > A.navbar-brand","value":"title","wait":"1"},{"bgopen":false,"check":false,"expr":"","n":"0","opera":"pagejump","parser":"text_parser","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"2"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"value","parser":"text_parser","sysmsg":false,"tag":"INPUT#kw","value":"{title}","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"click","parser":"text_parser","sysmsg":false,"tag":"INPUT#su","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
 
 - 百度去广告(源码事务)
@@ -152,7 +153,7 @@
 
 - 后台运行流程事务 + 消息通知用例（后台打开百度，设值天气，获取第一条天气的内容，发送系统消息）
 ```json
-{"case_name":"后台运行+消息发送","case_process":[{"bgopen":true,"check":false,"expr":"","n":"0","opera":"newpage","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"0"},{"check":true,"expr":"","n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0"},{"check":true,"expr":"","n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"0"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","tag":"DIV#content_left > DIV.result-op.c-container.xpath-log > DIV.op_weather4_twoicon_container_div > DIV.op_weather4_twoicon > A.op_weather4_twoicon_today.OP_LOG_LINK","value":"key","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"sendmessage","sysmsg":true,"tag":"DIV#wrapper_wrapper","value":"天气：${key}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","fail_rerun":false,"last_runtime":1611820796375,"runtime":"","sourcecode_url":".*"}
+{"case_name":"后台运行+消息发送","case_process":[{"bgopen":true,"check":false,"expr":"","n":"0","opera":"newpage","sysmsg":false,"tag":"body","value":"https://www.baidu.com/s?ie=UTF-8&wd=test","wait":"0"},{"check":true,"expr":"","n":"0","opera":"value","tag":"INPUT#kw","value":"天气","wait":"0"},{"check":true,"expr":"","n":"0","opera":"click","tag":"INPUT#su","value":"","wait":"0"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","tag":"DIV#content_left > DIV.result-op.c-container.xpath-log > DIV.op_weather4_twoicon_container_div > DIV.op_weather4_twoicon > A.op_weather4_twoicon_today.OP_LOG_LINK","value":"key","wait":"1"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"sendmessage","parser":"text_parser","sysmsg":true,"tag":"DIV#wrapper_wrapper","value":"天气：{key}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","fail_rerun":false,"last_runtime":1611820796375,"runtime":"","sourcecode_url":".*"}
 ```
 
 - 线性爬虫 + 列表数据解析（初始化 - 打开博客页面；取数据 - 获取列表第一条数据，且配置列表解析；下一步 - 点击下一页）
@@ -162,12 +163,22 @@
 
 - 单节点监控，建个单个元素变化（打开搜时间的百度页，配置监控展示时间的单个节点，变化时会有页面内消息通知）需打开某页面
 ```json
-{"case_name":"单个监控-时间","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":".op-beijingtime-time","url":"https://www.baidu.com/s?wd=%E6%97%B6%E9%97%B4"},"sourcecode_url":".*"}
+{"case_name":"单个监控-时间","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":".result-op.c-container:nth-child(1)","url":"https://www.baidu.com/s?wd=%E6%97%B6%E9%97%B4"},"sourcecode_url":".*"}
 ```
 
 - 多节点监控，监控多个节点的增量变化（打开微博热搜列表页，配置监控前20条增量变化，增加新数据时会有页面内消息通知）需打开某页面
 ```json
 {"case_name":"批量监控-热搜","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":"tr:nth-child(-n+22) td:nth-child(2) a","url":"https://s.weibo.com/top/summary?cate=realtimehot"},"sourcecode_url":".*"}
+```
+
+- 快捷键+选中传参跳转+流程事务（快捷键为lp，选中项默认为{SELECT}）
+```json
+{"case_name":"快捷键+选中传参跳转+流程事务","case_process":[{"bgopen":false,"check":false,"expr":"","n":"1","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"a","value":"https://www.baidu.com/s?ie=UTF-8&wd={SELECT}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","last_runtime":1655450299124,"short_key":"l,p","sourcecode_url":".*"}
+```
+
+- 快捷键+选中传参跳转+源码事务（快捷键为qw，选中项默认为{SELECT}）
+```json
+{"case_name":"快捷键+选中传参跳转+源码事务","case_process":[],"case_sourcecode":"window.open(\"https://www.baidu.com/s?ie=UTF-8&wd={SELECT}\")","case_type":"sourcecode","control_url":"","last_runtime":1655450298440,"short_key":"q,w","sourcecode_url":".*"}
 ```
 
 
@@ -290,6 +301,11 @@ V2.4.0 (2021.03.03)
 
 V2.5.0（2021.06.07）
 1. 新增监控事务（单节点监控与多节点监控）
+
+V2.6.0 (2022.06.30)
+1. 新增快捷键触发事务，支持默认的选中传值：{SELECT}
+2. 修改中间运行参数为{}格式（注：运行前参数格式为${}，本次影响原取值事件的设值，消息发送中间参数）
+3. 源码事务也支持自定义设值
 
 
 ## 感谢轮子

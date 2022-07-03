@@ -15,7 +15,7 @@
         }
 
         body {
-            min-width: 300px;
+            min-width: 350px;
             min-height: 200px;
         }
 
@@ -55,7 +55,7 @@
         #process_view {
             height: 380px;
             overflow-y: auto;
-            max-width: 300px;
+            max-width: 350px;
         }
 
         #process_view .add_btn {
@@ -467,7 +467,9 @@
 
         <!-- 填写参数modal -->
         <div id="model3" class="modal">
-            <div id="argv_input" class="row">
+            <div class="modal-content">
+                <div id="argv_input" class="row">
+                </div>
             </div>
             <a href="#" class="modal-action modal-close waves-effect waves-teal btn-flat" id="argv_submit"
                 style="width: 100%; text-align: center;">确认</a>
@@ -520,6 +522,21 @@
                 <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_selector_test">测试</a>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_confirm">确认</a>
                 <a class="waves-effect waves-teal btn-flat" href="#" id="monitor_back">返回</a>
+            </div>
+        </div>
+
+        <div id="short_key_model" class="modal">
+            <div class="modal-content">
+                <div class="input-field">
+                    <input type="text" id="short_key_input" disabled>
+                    <label>快捷键</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" style="margin-right: 20px;"
+                    id="short_key_submit">确认</a>
+                <a href="#!" class="modal-action modal-close waves-effect waves-teal btn-flat" style="margin-right: 20px;"
+                    id="short_key_delete">清除</a>
             </div>
         </div>
     </section>

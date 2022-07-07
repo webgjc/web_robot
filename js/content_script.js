@@ -963,6 +963,7 @@ window.onload = function () {
  */
 (function keyboardMonitorTrigger(cb) {
     let down_keys = new Set()
+    let down_keys_copy = null;
 
     get_my_robot(my_robot => {
         // 是否有开启快捷键的事务
@@ -996,6 +997,24 @@ window.onload = function () {
             document.onkeyup = function(e) {
                 down_keys.delete(e.key)
             }
+
+            // 清空残留按键，防止重复触发
+            setInterval(() => {
+                if(down_keys.length == 0) {
+                    down_keys_copy = null
+                    return;
+                }
+                if(down_keys_copy == null) {
+                    down_keys_copy = down_keys
+                    return;
+                } 
+                let v1 = Array.from(down_keys.values()).sort().join()
+                let v2 = Array.from(down_keys_copy.values()).sort().join()
+                if(v1 == v2) {
+                    down_keys.clear()
+                } 
+                down_keys_copy = null
+            }, 1500);
         }
     })
 })()

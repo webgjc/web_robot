@@ -1625,7 +1625,7 @@ $(document).ready(function () {
 
     // 开始录制事件
     $("#add_process_free").click(function () {
-        if (confirm("页面录制仅支持点击/英文设值事件，点击确认开始录制")) {
+        if (confirm("页面录制仅支持单个页面中的点击/英文设值事件，点击确认开始录制")) {
             exectab(function (tab_id) {
                 chrome.tabs.sendMessage(tab_id, {
                     type: "start_recording",
@@ -1642,12 +1642,15 @@ $(document).ready(function () {
     // 结束录制事件
     $("#end_process_free").click(function () {
         exectab(function (tab_id) {
-            chrome.tabs.sendMessage(tab_id, {
-                type: "end_recording",
-            });
+            $("#add_process_free").show();
+            $("#end_process_free").hide();
             get_my_robot((data) => {
                 data[SETTING_DATA][RECORD_CASE] = undefined;
-                set_my_robot(data);
+                set_my_robot(data, () => {
+                    chrome.tabs.sendMessage(tab_id, {
+                        type: "end_recording",
+                    });
+                });
             });
         });
     });

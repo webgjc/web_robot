@@ -792,9 +792,31 @@ chrome.webRequest.onHeadersReceived.addListener(
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     if (msg.type === "KEYBOARD_TRIGGER") {
         get_my_robot(my_robot => {
-            let args = {"SELECT": msg.select}
+            /**
+             * 快捷键触发默认传参
+             * SELECT 选中
+             * COPY 拷贝
+             */
+            let args = {
+                "SELECT": msg.select,
+                "COPY": get_clipboard_value()
+            }
             async_run(my_robot, msg.case_name, args)
             sendResponse("success")
         })
     }
 });
+
+
+// 获取拷贝内容
+function get_clipboard_value() {
+    let tinput = document.createElement("input");
+    let result = "";
+    document.body.appendChild(tinput);
+    tinput.focus();
+    if(document.execCommand("paste")) {
+        result = tinput.value;
+    }   
+    document.body.removeChild(tinput);
+    return result;
+}

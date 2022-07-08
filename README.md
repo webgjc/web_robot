@@ -161,7 +161,7 @@
 {"add_dashboard":true,"case_name":"线性爬虫","case_process":[],"case_sourcecode":"","case_type":"serial_crawler","control_url":"","serial_crawler":{"api":"http://127.0.0.1:12580/crawler/","data":null,"fetch":[{"bgopen":false,"check":true,"expr":"new Date()","n":"0","opera":"getcustomvalue","parser":"text_parser","sysmsg":true,"tag":"body","value":"key","wait":"0.5"},{"bgopen":false,"check":true,"expr":"","n":"0","opera":"getvalue","parser":"list_parser","sysmsg":true,"tag":".post-title","value":"titles","wait":"0"}],"freq":10,"init":[{"bgopen":false,"check":false,"expr":"","n":"0","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"body","value":"https://coding-pages-bucket-3440936-7810273-13586-512516-1300444322.cos-website.ap-shanghai.myqcloud.com/","wait":"0"}],"next":[{"bgopen":false,"check":true,"expr":"","n":"0","opera":"click","parser":"text_parser","sysmsg":true,"tag":"li.next>a","value":"","wait":"0"}],"send":false,"times":5},"sourcecode_url":".*"}
 ```
 
-- 单节点监控，建个单个元素变化（打开搜时间的百度页，配置监控展示时间的单个节点，变化时会有页面内消息通知）需打开某页面
+- 单节点监控，监控单个元素变化（打开搜时间的百度页，配置监控展示时间的单个节点，变化时会有页面内消息通知）需打开某页面
 ```json
 {"case_name":"单个监控-时间","case_process":[],"case_sourcecode":"","case_type":"monitor","control_url":"","monitor":{"run":false,"selector":".result-op.c-container:nth-child(1)","url":"https://www.baidu.com/s?wd=%E6%97%B6%E9%97%B4"},"sourcecode_url":".*"}
 ```
@@ -176,9 +176,9 @@
 {"case_name":"快捷键+选中传参跳转+流程事务","case_process":[{"bgopen":false,"check":false,"expr":"","n":"1","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"a","value":"https://www.baidu.com/s?ie=UTF-8&wd={SELECT}","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","last_runtime":1655450299124,"short_key":"l,p","sourcecode_url":".*"}
 ```
 
-- 快捷键+选中传参跳转+源码事务（快捷键为qw，选中项默认为{SELECT}）
+- 快捷键+复制传参跳转+源码事务（快捷键为qw，复制默认为{COPY}）
 ```json
-{"case_name":"快捷键+选中传参跳转+源码事务","case_process":[],"case_sourcecode":"window.open(\"https://www.baidu.com/s?ie=UTF-8&wd={SELECT}\")","case_type":"sourcecode","control_url":"","last_runtime":1655450298440,"short_key":"q,w","sourcecode_url":".*"}
+{"case_name":"快捷键+复制传参跳转+源码事务","case_process":[],"case_sourcecode":"window.open(\"https://www.baidu.com/s?ie=UTF-8&wd={COPY}\")","case_type":"sourcecode","control_url":"","last_runtime":1657184059039,"short_key":"q,w","sourcecode_url":".*"}
 ```
 
 
@@ -303,10 +303,12 @@ V2.5.0（2021.06.07）
 1. 新增监控事务（单节点监控与多节点监控）
 
 V2.6.0 (2022.06.30)
-1. 新增快捷键触发事务，支持默认的选中传值：{SELECT}
+1. 新增快捷键触发事务，支持默认的选中传值：{SELECT}，复制传值：{COPY}
 2. 修改中间运行参数为{}格式（注：运行前参数格式为${}，本次影响原取值事件的设值，消息发送中间参数）
 3. 源码事务也支持自定义设值
 
+## 特别说明
+本插件使用manifest V2版本，插件导入浏览器中会有错误报警，暂时可忽略。
 
 ## 感谢轮子
 1. [materializecss](http://www.materializecss.cn/about.html)

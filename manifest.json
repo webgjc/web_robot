@@ -38,7 +38,8 @@
         "webRequestBlocking",
         "storage",
         "<all_urls>",
-        "tabs"
+        "tabs",
+        "clipboardRead"
     ],
     "web_accessible_resources": [
         "html/popup.html"

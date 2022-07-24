@@ -24,6 +24,7 @@ const tag_types = [
     "h5",
 ];
 var timer_rerun_count = {};
+let SELECTION_VALUE = "";
 
 // 拼接执行的js
 function jscode(process, new_value) {
@@ -36,22 +37,25 @@ function jscode(process, new_value) {
         process["opera"] === "value" ||
         process["opera"] === "mouseover"
     ) {
+        exec_code += `let doc = document;`;
+        if(process.iframe != undefined && process.iframe != "" && process.iframe != "TopFrame") {
+            exec_code += `doc = document.getElementsByTagName("iframe")[${process.iframe.split("&")[1]}].contentWindow.document;`
+        }
         if (tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node;\n`;
             exec_code += `
                 let ptag = '${process.tag}';
                 if (ptag.indexOf("{") !== -1 && ptag.indexOf("}") !== -1) {
-                    let doms = document.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
+                    let doms = doc.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
                     let value = ptag.substring(ptag.indexOf("{") + 1, ptag.indexOf("}"));
                     robot_node = Array.prototype.slice.call(doms)
                     .filter(d => d.textContent.trim() === value && d.children.length === 0)[${process.n}];
                 }else{
-                    robot_node = document.querySelectorAll(ptag)[${process.n}];
+                    robot_node = doc.querySelectorAll(ptag)[${process.n}];
                 }\n`;
         } else {
-            exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];\n`;
+            exec_code += `robot_node = doc.getElementsByTagName('${process.tag}')[${process.n}];`;
         }
-        exec_code += `console.log(robot_node);\n`;
         exec_code += `function myrobot_getAbsPoin(dom) {
             let x = dom.offsetLeft;
             let y = dom.offsetTop;
@@ -387,7 +391,10 @@ function dom_check_run(process, tab_id, myrobot, index, timer, data, args, cb) {
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
     let count = 0;
-    args = args == undefined ? {}: args;
+    args = args == undefined ? {
+        "COPY": get_clipboard_value(),
+        "SELECT": SELECTION_VALUE
+    }: args;
     let dom_itvl = setInterval(function () {
         console.log(`status: ${run_status}`);
         if (run_status == 0 && !process[now_index].check) {
@@ -401,6 +408,7 @@ function dom_check_run(process, tab_id, myrobot, index, timer, data, args, cb) {
                     type: "get_dom",
                     tag: process[now_index].tag,
                     n: process[now_index].n,
+                    iframe: process[now_index].iframe
                 },
                 function (msg) {
                     if (msg.type == "get_dom" && msg.dom) {
@@ -804,6 +812,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
             async_run(my_robot, msg.case_name, args)
             sendResponse("success")
         })
+    } else if (msg.type === "SELECTION_CHANGE") {
+        SELECTION_VALUE = msg.select
     }
 });
 

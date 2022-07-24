@@ -69,10 +69,12 @@
             position: relative;
         }
 
+        .chose_iframe {
+            width: 100%;
+            z-index: 2;
+        }
+
         .chose_tag {
-            position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
             z-index: 1;
             background: white;
@@ -96,12 +98,13 @@
         }
 
         #process_back {
-            height: 42px;
+            height: 43px;
+            margin-top: 0px;
             border-radius: 0;
         }
 
         .chose_class_id {
-            height: 42px;
+            height: 43px;
         }
 
         /* process_view ends */
@@ -165,6 +168,10 @@
 
         .dropdown-content {
             min-height: 300px;
+        }
+
+        #tag_list {
+            border: none;
         }
     </style>
 </head>
@@ -275,6 +282,13 @@
 
         <!-- 新增流程页 -->
         <div id="new_process" style="display: none">
+            <div class="chose_iframe" style="display: block;">
+                <div class="input-field" style="margin-top: 0px;">
+                    <select class="sel_iframe" id="use_iframe">
+                        <option value="" disabled selected class="frame_option">选择iFrame</option>
+                    </select>
+                </div>
+            </div>
             <div class="chose_tag">
                 <div class="input-field" style="margin-top: 0px;">
                     <select class="sel_tag">
@@ -286,7 +300,7 @@
             <div class="tag_select">
                 <div class="chose_class_id" style="display: none;">
                     <div class="input-field col s12" style="margin-top: 0px;">
-                        <input class="query_selecter" type="text" placeholder="query selecter" />
+                        <input class="query_selecter" type="text" placeholder="query selector" style="margin: 0px;" />
                     </div>
                 </div>
                 <div class="collection" id="tag_list">
@@ -434,7 +448,7 @@
         <!-- 爬虫数据页 -->
         <div id="crawler_data_view" style="display: none; max-width: 400px; max-height: 500px; overflow: scroll;">
             <div style="text-align: center;">
-                <span><b>样例数据展示</b> </span>
+                <span><b>样例数据展示, 仅展示十条</b> </span>
                 <a href="#" id="crawler_back">返回主页</a>
             </div>
             <table class="crawler_data_table striped">

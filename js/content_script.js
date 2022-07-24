@@ -25,7 +25,7 @@ function robot_make_select_canvas(dom, posi, t) {
     canvas.style.backgroundColor = "red";
     canvas.style.width = dom.offsetWidth + 4 + "px";
     canvas.style.height = dom.offsetHeight + 4 + "px";
-    canvas.style.position = "absolute";
+    canvas.style.position = "fixed";
     canvas.style.opacity = "0.5";
     canvas.style.zIndex = 999;
     canvas.style.left = parseInt(dom.getBoundingClientRect().left) - 2 + "px";
@@ -34,6 +34,25 @@ function robot_make_select_canvas(dom, posi, t) {
     setTimeout(function () {
         document.getElementById("robot_select").remove();
     }, t == undefined ? 1000: t);
+}
+
+// 画背景
+function robot_make_select_canvas_new(dom, mydoc) {
+    myrobot_scroll_position(dom);
+    let canvas = mydoc.createElement("div");
+    canvas.id = "robot_select";
+    canvas.style.backgroundColor = "red";
+    canvas.style.width = dom.offsetWidth + 4 + "px";
+    canvas.style.height = dom.offsetHeight + 4 + "px";
+    canvas.style.position = "fixed";
+    canvas.style.opacity = "0.5";
+    canvas.style.zIndex = 999;
+    canvas.style.left = parseInt(dom.getBoundingClientRect().left) - 2 + "px";
+    canvas.style.top = parseInt(dom.getBoundingClientRect().top) - 2 + "px";
+    mydoc.body.appendChild(canvas);
+    setTimeout(function () {
+        mydoc.getElementById("robot_select").remove();
+    }, 1000);
 }
 
 // 获取绝对坐标
@@ -521,15 +540,8 @@ chrome.runtime.onConnect.addListener(function (port) {
         port.onMessage.addListener(function (msg) {
             if (msg.type === "search_tag") {
                 let nums = Array();
-                for (
-                    let i = 0;
-                    i < document.getElementsByTagName(msg.tag).length;
-                    i++
-                ) {
-                    if (
-                        document.getElementsByTagName(msg.tag)[i].offsetHeight >
-                        0
-                    ) {
+                for (let i = 0; i < document.getElementsByTagName(msg.tag).length; i++) {
+                    if (document.getElementsByTagName(msg.tag)[i].offsetHeight > 0) {
                         nums.push(i);
                     }
                 }
@@ -541,15 +553,8 @@ chrome.runtime.onConnect.addListener(function (port) {
                 let nums = Array();
                 if (msg.content.startsWith(".")) {
                     let content = msg.content.substring(1);
-                    for (
-                        let i = 0;
-                        i < document.getElementsByClassName(content).length;
-                        i++
-                    ) {
-                        if (
-                            document.getElementsByClassName(content)[i]
-                                .offsetHeight > 0
-                        ) {
+                    for (let i = 0; i < document.getElementsByClassName(content).length; i++) {
+                        if (document.getElementsByClassName(content)[i].offsetHeight > 0) {
                             nums.push(i);
                         }
                     }
@@ -680,6 +685,7 @@ let RDATA = {
 
 // 处理消息
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+    console.log(msg)
     const tag_types = [
         "自由选择器",
         "a",
@@ -703,11 +709,25 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         "h5",
     ];
     let posidom;
+    let myiframe;
+    let mydoc = document;
+
+    // 处理iframe
+    if(msg.iframe != undefined && msg.iframe != "" && msg.iframe.startsWith("iframe")) {
+        // 子iframe修改doc
+        myiframe = mydoc.getElementsByTagName("iframe")[msg.iframe.split("&")[1]];
+        mydoc = mydoc.getElementsByTagName("iframe")[msg.iframe.split("&")[1]].contentWindow.document;
+    } else {
+        // 主window过滤子iframe接消息
+        if(window.frames.length != parent.frames.length) {
+            return
+        }
+    }
 
     // 获取到真实dom元素    
     if (tag_types.indexOf(msg.tag) === -1 && msg.tag) {
         if (msg.tag.indexOf("{") !== -1 && msg.tag.indexOf("}") !== -1) {
-            let doms = document.querySelectorAll(
+            let doms = mydoc.querySelectorAll(
                 msg.tag.substring(0, msg.tag.indexOf("{"))
             );
             let value = msg.tag.substring(
@@ -716,17 +736,16 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             );
             posidom = Array.prototype.slice
                 .call(doms)
-                .filter(
-                    (d) =>
-                        d.textContent.trim() === value &&
-                        d.children.length === 0
-                )[msg.n];
+                .filter((d) => d.textContent.trim() === value 
+                    && d.children.length === 0)[msg.n];
         } else {
-            posidom = document.querySelectorAll(msg.tag)[msg.n];
+            posidom = mydoc.querySelectorAll(msg.tag)[msg.n];
         }
     } else {
-        posidom = document.getElementsByTagName(msg.tag)[msg.n];
+        posidom = mydoc.getElementsByTagName(msg.tag)[msg.n];
     }
+
+
     if (msg.type === "get_position") {
         // 获取位置信息
         myrobot_scroll_position(posidom);
@@ -933,6 +952,66 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     } else if (msg.type === "close_robot_window") {
         // 关闭注入robot frame
         close_robot_window();
+    } else if (msg.type === "search_tag") {
+        let tmpdoms = mydoc.getElementsByTagName(msg.tag);
+        let nums = Array();
+        for (let i = 0; i < tmpdoms.length; i++) {
+            if (tmpdoms[i].offsetHeight > 0) {
+                nums.push(i);
+            }
+        }
+        console.log("123")
+        console.log(nums)
+        sendResponse({
+            type: msg.type,
+            num: nums,
+        });
+    } else if (msg.type === "select_tag") {
+        let dom = mydoc.getElementsByTagName(msg.tag)[msg.n];
+        robot_make_select_canvas_new(dom, mydoc);
+    } else if (msg.type === "search_query_selecter") {
+        let doms;
+        if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
+            doms = mydoc.querySelectorAll(msg.content.substring(0, msg.content.indexOf("{")));
+            let value = msg.content.substring(
+                msg.content.indexOf("{") + 1,
+                msg.content.indexOf("}"));
+            doms = Array.prototype.slice.call(doms)
+                .filter((d) =>
+                    d.textContent.trim() === value &&
+                    d.children.length === 0);
+        } else {
+            doms = mydoc.querySelectorAll(msg.content);
+        }
+        let nums = Array();
+        for (let i = 0; i < doms.length; i++) {
+            if (doms[i].offsetHeight > 0) {
+                nums.push(i);
+            }
+        }
+        sendResponse({
+            type: msg.type,
+            num: nums,
+        });
+    } else if (msg.type === "select_query_selecter") {
+        let dom;
+        if (msg.content.indexOf("{") !== -1 && msg.content.indexOf("}") !== -1) {
+            let doms = mydoc.querySelectorAll(
+                msg.content.substring(0, msg.content.indexOf("{"))
+            );
+            let value = msg.content.substring(
+                msg.content.indexOf("{") + 1,
+                msg.content.indexOf("}")
+            );
+            dom = Array.prototype.slice
+                .call(doms)
+                .filter((d) =>
+                    d.textContent.trim() === value &&
+                    d.children.length === 0)[msg.n];
+        } else {
+            dom = mydoc.querySelectorAll(msg.content)[msg.n];
+        }
+        robot_make_select_canvas_new(dom, mydoc);
     }
 });
 
@@ -981,17 +1060,19 @@ window.onload = function () {
             document.onkeydown = function(e) {
                 down_keys.add(e.key)
                 let value = Array.from(down_keys.values()).sort().join()
-                if(key_map[value] != undefined) {
-                    chrome.runtime.sendMessage({
-                        type: "KEYBOARD_TRIGGER",
-                        case_name: key_map[value],
-                        select: window.getSelection().toString()
-                    }, (res) => {
-                        if(res == "success") {
-                            down_keys.clear()
-                        }
-                    })
-                }
+                setTimeout(() => {
+                    if(key_map[value] != undefined) {
+                        chrome.runtime.sendMessage({
+                            type: "KEYBOARD_TRIGGER",
+                            case_name: key_map[value],
+                            select: window.getSelection().toString()
+                        }, (res) => {
+                            if(res == "success") {
+                                down_keys.clear()
+                            }
+                        })
+                    }
+                }, 500);
             }
             
             document.onkeyup = function(e) {
@@ -1018,3 +1099,10 @@ window.onload = function () {
         }
     })
 })()
+
+document.onselectionchange = function() {
+    chrome.runtime.sendMessage({
+        type: "SELECTION_CHANGE",
+        select: window.getSelection().toString()
+    })
+};

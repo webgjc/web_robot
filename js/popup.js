@@ -6,6 +6,7 @@
 // 定义tag选择器
 const tag_types = [
     "自由选择器",
+    "空标签",
     "a",
     "body",
     "button",
@@ -63,6 +64,7 @@ function get_my_robot(callback) {
                 check(dom检查): true,
                 sysmsg(系统消息): false,
                 parser(解析方式): html_parser,
+                iframe(子框): "iframe&0"
             }
         ],
         crawler(爬虫事务定义): {
@@ -194,6 +196,7 @@ function connect_client(callback) {
 
 // 拼接要执行的js代码
 function jscode(process, new_value) {
+    console.log(process)
     if(new_value == undefined) {
         new_value = process.value
     }
@@ -203,20 +206,24 @@ function jscode(process, new_value) {
         process["opera"] === "value" ||
         process["opera"] === "mouseover"
     ) {
+        exec_code += `let doc = document;`;
+        if(process.iframe != undefined && process.iframe != "" && process.iframe != "TopFrame") {
+            exec_code += `doc = document.getElementsByTagName("iframe")[${process.iframe.split("&")[1]}].contentWindow.document;`
+        }
         if (tag_types.indexOf(process.tag) === -1) {
             exec_code += `var robot_node;`;
             exec_code += `
                 let ptag = '${process.tag}';
                 if (ptag.indexOf("{") !== -1 && ptag.indexOf("}") !== -1) {
-                    let doms = document.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
+                    let doms = doc.querySelectorAll(ptag.substring(0, ptag.indexOf("{")));
                     let value = ptag.substring(ptag.indexOf("{") + 1, ptag.indexOf("}"));
                     robot_node = Array.prototype.slice.call(doms)
                     .filter(d => d.textContent.trim() === value && d.children.length === 0)[${process.n}];
                 }else{
-                    robot_node = document.querySelectorAll(ptag)[${process.n}];
+                    robot_node = doc.querySelectorAll(ptag)[${process.n}];
                 }\n`;
         } else {
-            exec_code += `robot_node = document.getElementsByTagName('${process.tag}')[${process.n}];`;
+            exec_code += `robot_node = doc.getElementsByTagName('${process.tag}')[${process.n}];`;
         }
         exec_code += `function myrobot_getAbsPoin(dom) {
             let x = dom.offsetLeft;
@@ -320,7 +327,9 @@ function refresh_cases() {
                     || my_robot[i]["case_type"] === "serial_crawler") {
                         tr += '<a href="#" class="crawler_run">运行</a> ';
                         tr += '<a href="#" class="timer_run">定时运行</a> ';
-                        tr += '<a href="#" class="crawler_show_data">查看数据</a> ';
+                        tr += '<br /><a href="#" class="crawler_show_data">数据预览</a> ';
+                        tr += '<a href="#" class="crawler_download_data">下载</a> ';
+                        tr += '<a href="#" class="crawler_clear_data">清空</a> ';
                         tr += `<br /><a href="#" class="add_dashboard">${my_robot[i].add_dashboard ? "取消看板" : "添加看板"}</a> `;
                     }
                     if(my_robot[i]["case_type"] === "monitor") {
@@ -419,6 +428,7 @@ function init_process_opera(tag_types, operas, operas_alias) {
             "</option>";
     }
     $(".sel_tag").html(tag_type_content);
+    $(".sel_tag").material_select();
 
     let sel_opera_content =
         "<option value='选择操作' selected disabled>选择操作</option>";
@@ -426,7 +436,7 @@ function init_process_opera(tag_types, operas, operas_alias) {
         sel_opera_content += `<option value="${operas[i]}">${operas[i]}(${operas_alias[i]})</option>`;
     }
     $("#sel_opera").html(sel_opera_content);
-    $("select").material_select();
+    $("#sel_opera").material_select();
 }
 
 // 等待
@@ -540,6 +550,7 @@ function dom_check_run(process, tab_id, data, callback) {
                     type: "get_dom",
                     tag: process[now_index].tag,
                     n: process[now_index].n,
+                    iframe: process[now_index].iframe
                 },
                 function (msg) {
                     if (msg.type == "get_dom" && msg.dom) {
@@ -868,6 +879,7 @@ $(document).ready(function () {
     let init_select = 1;
     let crawler_key = undefined;
     let direct_add_dashboard = false;
+    let the_frames = [];
 
     // 获取当前流程
     function get_now_process(my_case, callback) {
@@ -920,13 +932,13 @@ $(document).ready(function () {
             $("#add_process_free").show();
             $("#end_process_free").hide();
         }
+        // if (true) {
         if (data[SETTING_DATA][WEB_ADD_CASE]) {
             $("#case_view").hide();
             $("#process_view").hide();
             $("#new_process").show();
             $(".chose_tag").show();
             $(".chose_opera").hide();
-            $(".tag_select").css("margin-top", "40px");
             $("#tag_list").css("margin-top", "-20px");
             init_process_opera(tag_types, operas, operas_alias);
             case_name = data[SETTING_DATA][WEB_ADD_CASE];
@@ -946,7 +958,6 @@ $(document).ready(function () {
             $("#new_process").show();
             $(".chose_tag").show();
             $(".chose_opera").hide();
-            $(".tag_select").css("margin-top", "40px");
             $("#tag_list").css("margin-top", "-20px");
             init_process_opera(tag_types, operas, operas_alias);
             render_select_tag(data.SETTING_DATA.WEB_ADD_EVENT);
@@ -954,6 +965,30 @@ $(document).ready(function () {
             set_my_robot(data);
             direct_add_dashboard = true;
         }
+
+        // 初始化iframe列表
+        let selected_iframe_tag = "iframe";
+        send_msg({
+            type: "search_tag",
+            topframe: true,
+            tag: selected_iframe_tag
+        }, function(res) {
+            if(res.num.length > 0) {
+                the_frames.push("TopFrame");
+                let iframe_type_content = "<option value='' disabled selected class='frame_option'>选择iFrame</option>";
+                iframe_type_content += `<option value="TopFrame" class='frame_option'>TopFrame</option>`;
+                for (let i = 0; i < res.num.length; i++) {
+                    let value = selected_iframe_tag + "&" + res.num[i];
+                    the_frames.push(value);
+                    iframe_type_content += `<option value="${value}">${value}</option>`;
+                }
+                $(".sel_iframe").html(iframe_type_content);
+                $(".chose_iframe").css("margin-bottom", "-20px");
+                $(".sel_iframe").material_select();
+            } else {
+                $(".chose_iframe").hide();
+            }
+        })
     });
 
     $(".modal").modal();
@@ -1291,7 +1326,6 @@ $(document).ready(function () {
         $("#new_process").show();
         $(".chose_tag").show();
         $(".chose_opera").hide();
-        $(".tag_select").css("margin-top", "40px");
         $("#tag_list").css("margin-top", "-20px");
         if (init_select === 1) {
             init_process_opera(tag_types, operas, operas_alias);
@@ -1319,39 +1353,52 @@ $(document).ready(function () {
     // 筛选html标签
     $(".sel_tag").change(function () {
         var selected_tag = $(this).val();
-        if (selected_tag === tag_types[0]) {
+
+        if(selected_tag === "空标签") {
+            $("body").css("width", "250px");
+            $("#tag_list")
+                .css("margin-top", "0px")
+                .html(`<div id='seldn' class='collection-item' data="${selected_tag}">
+                        <a href='#' id='hasseled'>已选: ${selected_tag}</a>
+                    </div>`
+                );
+            $(".chose_tag").hide();
+            $(".chose_opera").show();
+            $(".chose_class_id").hide();
+            return;
+        }
+
+        if (selected_tag === "自由选择器") {
             $(".chose_class_id").show();
             $("#tag_list").html("");
             return;
         } else {
             $(".chose_class_id").hide();
         }
-        connect((port) => {
-            port.postMessage({
-                type: "search_tag",
-                tag: selected_tag,
-            });
-            port.onMessage.addListener(function (msg) {
-                if (msg.type === "search_tag") {
-                    let options = "";
-                    for (let i = 0; i < msg.num.length; i++) {
-                        let value = selected_tag + "&" + msg.num[i];
-                        options += `<a href='#' class='collection-item tag_spec'>${value}</a>`;
-                    }
-                    if(msg.num == 0) {
-                        options = "<div>无可选项，请修改标签或刷新浏览器重试</div>"
-                    }
-                    $("#tag_list").html(options);
-                    $(".tag_spec").mouseover(function () {
-                        port.postMessage({
-                            type: "select_tag",
-                            tag: selected_tag,
-                            n: parseInt($(this).text().split("&")[1]),
-                        });
-                    });
-                }
-            });
-        });
+        send_msg({
+            type: "search_tag",
+            tag: selected_tag,
+            iframe: $("#use_iframe").val()
+        }, function(msg) {
+            console.log(msg)
+            let options = "";
+            for (let i = 0; i < msg.num.length; i++) {
+                let value = selected_tag + "&" + msg.num[i];
+                options += `<a href='#' class='collection-item tag_spec'>${value}</a>`;
+            }
+            if(msg.num == 0) {
+                options = "<div>无可选项，请修改标签或刷新浏览器重试</div>"
+            }
+            $("#tag_list").html(options);
+            $(".tag_spec").mouseover(function () {
+                send_msg({
+                    type: "select_tag",
+                    tag: selected_tag,
+                    n: parseInt($(this).text().split("&")[1]),
+                    iframe: $("#use_iframe").val()
+                })
+            });  
+        })
     });
 
     // 筛选class和id
@@ -1389,34 +1436,30 @@ $(document).ready(function () {
     // 自由筛选器
     $(".query_selecter").change(function () {
         let selecter = $(this).val();
-        connect((port) => {
-            port.postMessage({
-                type: "search_query_selecter",
-                content: selecter,
+        send_msg({
+            type: "search_query_selecter",
+            content: selecter,
+            iframe: $("#use_iframe").val()
+        }, function(msg) {
+            let options = "";
+            for (let i = 0; i < msg.num.length; i++) {
+                let value = selecter + "&" + msg.num[i];
+                options =
+                    options +
+                    "<a href='#' class='collection-item tag_spec'>" +
+                    value +
+                    "</a>";
+            }
+            $("#tag_list").html(options);
+            $(".tag_spec").mouseover(function () {
+                send_msg({
+                    type: "select_query_selecter",
+                    content: $(this).text().split("&")[0],
+                    n: parseInt($(this).text().split("&")[1]),
+                    iframe: $("#use_iframe").val()
+                })
             });
-            port.onMessage.addListener(function (msg) {
-                if (msg.type === "search_query_selecter") {
-                    console.log(msg)
-                    let options = "";
-                    for (let i = 0; i < msg.num.length; i++) {
-                        let value = selecter + "&" + msg.num[i];
-                        options =
-                            options +
-                            "<a href='#' class='collection-item tag_spec'>" +
-                            value +
-                            "</a>";
-                    }
-                    $("#tag_list").html(options);
-                    $(".tag_spec").mouseover(function () {
-                        port.postMessage({
-                            type: "select_query_selecter",
-                            content: $(this).text().split("&")[0],
-                            n: parseInt($(this).text().split("&")[1]),
-                        });
-                    });
-                }
-            });
-        });
+        })
     });
 
     // 选择一个筛选后的元素
@@ -1471,7 +1514,6 @@ $(document).ready(function () {
                 }
             } else {
                 $("body").css("width", "250px");
-                $(".tag_select").css("margin-top", "0px");
                 $("#tag_list")
                     .css("margin-top", "0px")
                     .html(`<div id='seldn' class='collection-item' data="${$(this).text()}">
@@ -1488,7 +1530,6 @@ $(document).ready(function () {
             $(".chose_tag").show();
             $(".chose_opera").hide();
             $("body").css("width", "150px");
-            $(".tag_select").css("margin-top", "40px");
             $("#tag_list")
                 .css("margin-top", "-20px")
                 .html(
@@ -1561,8 +1602,10 @@ $(document).ready(function () {
             check: $("#dom_check").prop("checked"),
             bgopen: $("#background_open").prop("checked"),
             sysmsg: $("#system_message").prop("checked"),
-            parser: $("#select_value_parser").val()
+            parser: $("#select_value_parser").val(),
+            iframe: $("#use_iframe").val()
         };
+        console.log(process_data)
         get_my_robot((my_robot) => {
             if ($(this).text() === "保存") {
                 get_now_process(my_robot[case_name], process => {
@@ -1765,7 +1808,25 @@ $(document).ready(function () {
                             "selected",
                             true
                         );
-                        $("select").material_select();
+                        if(the_process.iframe) {
+                            $(".chose_iframe").show()
+                            let flag = false;
+                            for(let i = 0; i < the_frames.length; i++) {
+                                if(the_frames[i] == the_process.iframe) {
+                                    flag = true;
+                                }
+                            }
+                            if(!flag) {
+                                $("#use_iframe").html(`<option value="${the_process.iframe}" selected class="frame_option">${the_process.iframe}</option>`)
+                                $("#use_iframe").material_select();
+                            }
+                            $("#use_iframe").val(the_process.iframe);
+                            $("#use_iframe option").attr("selected", false);
+                            $(`#use_iframe option[value='${the_process.iframe}']`).attr(
+                                "selected",
+                                true
+                            );
+                        }
                         $("#num_wait").val(the_process.wait);
                         $("#dom_check").prop("checked", the_process.check == null ? false : the_process.check);
                         $("#background_open").prop("checked", the_process.bgopen == null ? false : the_process.bgopen);
@@ -1897,7 +1958,7 @@ $(document).ready(function () {
                     </thead>`;
                     table_html += `
                     <tbody>
-                        ${crawler.data.map(d => `
+                        ${crawler.data.slice(0,10).map(d => `
                             <tr>
                                 ${titles.map(t => `<td class="data_td"><xmp>${d[t]}</xmp></td>`).join("\n")}
                             </tr>
@@ -1943,6 +2004,33 @@ $(document).ready(function () {
                         my_robot[case_name]["short_key"] = undefined
                         set_my_robot(my_robot)
                     })
+                })
+            })
+            // 下载文件
+            .on("click", ".crawler_download_data", function() {
+                case_name = $(this).parent().parent().attr("id");
+                get_my_robot(my_robot => {
+                    let crawler = my_robot[case_name].serial_crawler ? 
+                    my_robot[case_name].serial_crawler : my_robot[case_name].paral_crawler;
+                    let downloadElement = document.createElement('a');
+                    downloadElement.download = `${case_name}.json`;
+                    downloadElement.style.display = 'none';
+                    let blob = new Blob([JSON.stringify(crawler.data, null, 4)]);
+                    downloadElement.href = URL.createObjectURL(blob);
+                    document.body.appendChild(downloadElement);
+                    downloadElement.click();
+                    document.body.removeChild(downloadElement);
+                })
+            })
+            .on("click", ".crawler_clear_data", function() {
+                case_name = $(this).parent().parent().attr("id");
+                get_my_robot(my_robot => {
+                    let crawler = my_robot[case_name].serial_crawler ? 
+                    my_robot[case_name].serial_crawler : my_robot[case_name].paral_crawler;
+                    crawler.data = [];
+                    set_my_robot(my_robot, () => {
+                        Materialize.toast("清空成功", 2000)
+                    });
                 })
             })
     });

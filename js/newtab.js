@@ -444,6 +444,15 @@ $(document).ready(function () {
             let mygrid = my_robot.SETTING_DATA.DASHBOARD_GRID || [];
             let mygridmap = {};
             let the_case = get_query_variable("case");
+            let show_data = get_query_variable("show_data");
+
+            // 查看数据
+            if(show_data == "1") {
+                let crawler = my_robot[the_case].serial_crawler ? 
+                my_robot[the_case].serial_crawler : my_robot[the_case].paral_crawler;
+                document.body.innerHTML = `<pre>${JSON.stringify(crawler.data, null, 4)}</pre>`;
+                return;
+            }
 
             // 流程事务
             if(the_case && my_robot[the_case].case_type === "process") {

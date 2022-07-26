@@ -1056,25 +1056,32 @@ window.onload = function () {
             }
         }
 
+        // 开启快捷键
         if(flag) {
+            // 按键按下
             document.onkeydown = function(e) {
                 down_keys.add(e.key)
-                let value = Array.from(down_keys.values()).sort().join()
-                setTimeout(() => {
-                    if(key_map[value] != undefined) {
-                        chrome.runtime.sendMessage({
-                            type: "KEYBOARD_TRIGGER",
-                            case_name: key_map[value],
-                            select: window.getSelection().toString()
-                        }, (res) => {
-                            if(res == "success") {
-                                down_keys.clear()
-                            }
-                        })
-                    }
-                }, 500);
+                let v1 = Array.from(down_keys.values()).sort().join()
+                if(key_map[v1] != undefined) {
+                    // 双重判断防止过灵敏误触
+                    setTimeout(() => {
+                        let v2 = Array.from(down_keys.values()).sort().join()
+                        if(key_map[v2] != undefined) {
+                            chrome.runtime.sendMessage({
+                                type: "KEYBOARD_TRIGGER",
+                                case_name: key_map[v2],
+                                select: window.getSelection().toString()
+                            }, (res) => {
+                                if(res == "success") {
+                                    down_keys.clear()
+                                }
+                            })
+                        }
+                    }, 150);
+                }
             }
             
+            // 按键松开
             document.onkeyup = function(e) {
                 down_keys.delete(e.key)
             }
@@ -1100,6 +1107,7 @@ window.onload = function () {
     })
 })()
 
+// 选中之后发消息给bg
 document.onselectionchange = function() {
     chrome.runtime.sendMessage({
         type: "SELECTION_CHANGE",

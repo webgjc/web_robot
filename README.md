@@ -77,7 +77,7 @@
   - getcustomvalue 自定义获取数据
   - closepage 关闭页面
   - onlyshow 唯一展示（看板使用）
-  - sendmessage 发送通知（目前不一定可靠）
+  - sendmessage 发送通知（使用有问题请看下方常见问题）
 
 注：受控相关的都必须使用开启本地客户端。
 

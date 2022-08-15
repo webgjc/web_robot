@@ -44,11 +44,12 @@ function robot_make_select_canvas_new(dom, mydoc) {
     canvas.style.backgroundColor = "red";
     canvas.style.width = dom.offsetWidth + 4 + "px";
     canvas.style.height = dom.offsetHeight + 4 + "px";
-    canvas.style.position = "fixed";
+    canvas.style.position = "absolute";
     canvas.style.opacity = "0.5";
     canvas.style.zIndex = 999;
-    canvas.style.left = parseInt(dom.getBoundingClientRect().left) - 2 + "px";
-    canvas.style.top = parseInt(dom.getBoundingClientRect().top) - 2 + "px";
+    let xy = myrobot_getAbsPoint(dom)
+    canvas.style.left = parseInt(xy.x) - 2 + "px";
+    canvas.style.top = parseInt(xy.y) - 2 + "px";
     mydoc.body.appendChild(canvas);
     setTimeout(function () {
         mydoc.getElementById("robot_select").remove();
@@ -521,7 +522,7 @@ function list_parser(dom) {
 // 处理取值解析
 function deal_parser(dom, parser) {
     if(parser === "text_parser") {
-        return dom.innerText;
+        return dom.innerText.replaceAll("\n", "").replaceAll("\r", "");
     } else if(parser === "html_parser") {
         return dom.innerHTML;
     } else if(parser === "table_parser") {  
@@ -712,16 +713,24 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     let myiframe;
     let mydoc = document;
 
-    // 处理iframe
+    // 过滤子iframe接消息
+    if(window.frames.length != parent.frames.length){
+        // 兼容并发爬虫
+        if(!(msg.name && window.name == msg.name)) {
+            return
+        }
+    }
+
     if(msg.iframe != undefined && msg.iframe != "" && msg.iframe.startsWith("iframe")) {
         // 子iframe修改doc
         myiframe = mydoc.getElementsByTagName("iframe")[msg.iframe.split("&")[1]];
-        mydoc = mydoc.getElementsByTagName("iframe")[msg.iframe.split("&")[1]].contentWindow.document;
-    } else {
-        // 主window过滤子iframe接消息
-        if(window.frames.length != parent.frames.length) {
-            return
+
+        if(myiframe == null) {
+            return;
         }
+
+        mydoc = mydoc.getElementsByTagName("iframe")[msg.iframe.split("&")[1]].contentWindow.document;
+        
     }
 
     // 获取到真实dom元素    
@@ -956,11 +965,14 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         let tmpdoms = mydoc.getElementsByTagName(msg.tag);
         let nums = Array();
         for (let i = 0; i < tmpdoms.length; i++) {
+            // 排除自己建的iframe
+            if(tmpdoms[i].id === "robot_iframe") {
+                continue
+            }
             if (tmpdoms[i].offsetHeight > 0) {
                 nums.push(i);
             }
         }
-        console.log("123")
         console.log(nums)
         sendResponse({
             type: msg.type,
@@ -1012,6 +1024,20 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             dom = mydoc.querySelectorAll(msg.content)[msg.n];
         }
         robot_make_select_canvas_new(dom, mydoc);
+    } else if (msg.type === "exec_judge_expr") {
+        // 执行判断逻辑表达式
+        let res
+        try {
+            res = new Function("return " + msg.expr)();
+            console.log(res)
+        } catch(e) {
+            console.log(e)
+            res = false
+        }
+        sendResponse({
+            type: msg.type,
+            data: res == true,
+        });
     }
 });
 

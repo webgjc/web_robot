@@ -120,8 +120,8 @@ function notify(title, msg) {
     chrome.notifications.create(null, {
         type: "basic",
         iconUrl: "/images/robot.png",
-        title: title || "",
-        message: msg || ""
+        title: title ? title + "" : "",
+        message: msg ? msg + "" : ""
     }, function(res) {
         console.log(res)
     });
@@ -130,8 +130,6 @@ function notify(title, msg) {
 // 发送通知
 function send_tip(msg) {
     console.log(msg)
-    // alert(msg)
-    // notify("监控消息", msg)
     chrome.tabs.query(
         {
             active: true,
@@ -180,6 +178,7 @@ function sleep(s) {
 
 // 参数替换
 function replace_args(s, args) {
+    if(s == null || s == "") return "";
     let keys = Object.keys(args);
     for(let i = 0; i < keys.length; i++) {
         if(args[keys[i]] != undefined) {
@@ -193,6 +192,7 @@ function replace_args(s, args) {
 async function exec_run_item(process_item, tab_id, args, cb) {
     // console.log(`start run ${JSON.stringify(process_item)}`);
     let new_value = replace_args(process_item.value, args)
+    let new_expr = replace_args(process_item.expr, args)
     console.log(new_value)
     let test = process_item.test;
     if (process_item.opera === "getvalue") {
@@ -202,12 +202,13 @@ async function exec_run_item(process_item, tab_id, args, cb) {
                 type: "get_value",
                 tag: process_item.tag,
                 n: process_item.n,
-                parser: process_item.parser
+                parser: process_item.parser,
+                iframe: process_item.iframe
             },
             function (msg) {
                 if (msg.type === "get_value") {
                     args[new_value] = msg.data;
-                    test && alert(msg.data);
+                    test && notify("测试", msg.data);
                     cb && cb();
                 }
             }
@@ -217,12 +218,13 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             tab_id,
             {
                 type: "get_custom_value",
-                value: process_item.expr
+                value: new_expr,
+                iframe: process_item.iframe
             },
             function (msg) {
                 if (msg.type === "get_custom_value") {
                     args[new_value] = msg.data;
-                    test && alert(msg.data);
+                    test && notify("测试", msg.data);
                     cb && cb();
                 }
             }
@@ -255,6 +257,26 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             alert(msg);
         }
         cb && cb();
+    } else if (process_item.opera === "processjump") {
+        chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "exec_judge_expr",
+                expr: new_expr,
+                iframe: process_item.iframe
+            },
+            function (msg) {
+                (msg && test) && notify("测试", msg.data);
+                if(msg && msg.data) {
+                    cb && cb({
+                        opera: process_item.opera, 
+                        jumpto: process_item.jumpto
+                    });
+                } else {
+                    cb && cb()
+                }
+            }
+        );
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item, new_value)
@@ -386,17 +408,25 @@ function compare_time(time) {
     );
 }
 
-// dom检查自旋运行
+// 加dom检查自旋的运行
 function dom_check_run(process, tab_id, myrobot, index, timer, data, args, cb) {
     let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
     let now_index = 0; // 当前运行process
     let count = 0;
+    let timeout_count = 0;
     args = args == undefined ? {
         "COPY": get_clipboard_value(),
         "SELECT": SELECTION_VALUE
     }: args;
+    if(process.length == 0) return;
     let dom_itvl = setInterval(function () {
         console.log(`status: ${run_status}`);
+        timeout_count += 1;
+        if(now_index == -1) clearInterval(dom_itvl);
+        if(timeout_count >= 500) {
+            clearInterval(dom_itvl);
+            notify("超时运行失败", "");
+        }
         if (run_status == 0 && !process[now_index].check) {
             run_status = 1;
         }
@@ -418,25 +448,47 @@ function dom_check_run(process, tab_id, myrobot, index, timer, data, args, cb) {
                 }
             );
         } else if (run_status == 1) {
+            console.log("id:" + process[now_index].id)
             run_status = 2;
             setTimeout(function () {
-                // exec_run_item(process[now_index], tab_id, args);
                 if (process.length - 1 === now_index) {
+                    // 保存数据，删除特定字段
                     data != null && data.push(args);
                     exec_run_item(process[now_index], tab_id, args, cb);
+                    delete args["COPY"]
+                    delete args["SELECT"]
                 } else {
-                    exec_run_item(process[now_index], tab_id, args);
-                }
-                if (process[now_index].opera === "newpage" || process[now_index].opera === "closepage") {
-                    chrome.tabs.query({
-                        active: true,
-                        currentWindow: true
-                    }, async function (tabs) {
-                        tab_id = tabs[0].id;
+                    exec_run_item(process[now_index], tab_id, args, function(req) {
+                        console.log(req)
+                        if(req && req.opera === "processjump") {
+                            let match_id_flag = true;
+                            for(let i = now_index; i < process.length; i++) {
+                                if(process[i].id == req.jumpto) {
+                                    now_index = i;
+                                    match_id_flag = true;
+                                    break;
+                                }
+                            }
+                            if(match_id_flag == false) {
+                                // 未匹配到跳转id，结束运行
+                                now_index = -1;
+                                run_status = 0;
+                                return;
+                            }
+                        } else {
+                            if (process[now_index].opera === "newpage" || process[now_index].opera === "closepage") {
+                                chrome.tabs.query({
+                                    active: true,
+                                    currentWindow: true
+                                }, async function (tabs) {
+                                    tab_id = tabs[0].id;
+                                });
+                            } 
+                            now_index += 1;
+                        }
+                        run_status = 0;
                     });
-                } 
-                now_index += 1;
-                run_status = 0;
+                }
             }, process[now_index].wait * 1000);
             if (process.length - 1 == now_index) {
                 clearInterval(dom_itvl);
@@ -495,7 +547,7 @@ function crawler_send_data(case_name, crawler, opera, data, callback) {
 }
 
 
-// 爬虫运行
+// 线性爬虫运行
 function crawler_run(case_name, tab_id) {
     console.log("crawler start");
     get_my_robot(my_robot => {
@@ -799,6 +851,7 @@ chrome.webRequest.onHeadersReceived.addListener(
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     if (msg.type === "KEYBOARD_TRIGGER") {
+        // 按键触发
         get_my_robot(my_robot => {
             /**
              * 快捷键触发默认传参
@@ -813,6 +866,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
             sendResponse("success")
         })
     } else if (msg.type === "SELECTION_CHANGE") {
+        // 选中内容
         SELECTION_VALUE = msg.select
     }
 });
@@ -830,3 +884,14 @@ function get_clipboard_value() {
     document.body.removeChild(tinput);
     return result;
 }
+
+chrome.notifications.getAll(function(res) {
+    console.log(res)
+    for(i in res) {
+        chrome.notifications.clear(i)
+    }
+})
+
+chrome.notifications.getPermissionLevel((level) => {
+    console.log(level)
+})

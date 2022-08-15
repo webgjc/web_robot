@@ -54,6 +54,7 @@ function get_my_robot(callback) {
         case_name(事务名): "case",
         case_process(事务流程): [
             {
+                id(编号): 1,
                 n(选择器第n个): 0,
                 opera(操作): "click",
                 tag(标签/class/id): "html",
@@ -64,7 +65,8 @@ function get_my_robot(callback) {
                 check(dom检查): true,
                 sysmsg(系统消息): false,
                 parser(解析方式): html_parser,
-                iframe(子框): "iframe&0"
+                iframe(子框): "iframe&0",
+                jumpto(跳转): 1,
             }
         ],
         crawler(爬虫事务定义): {
@@ -154,8 +156,8 @@ function notify(title, msg) {
     chrome.notifications.create(null, {
         type: "basic",
         iconUrl: "/images/robot.png",
-        title: title || "",
-        message: msg || ""
+        title: title ? title + "" : "",
+        message: msg ? msg + "" : ""
     }, function(res) {
         console.log(res)
     });
@@ -358,16 +360,36 @@ function refresh_cases() {
 // 刷新流程
 function refresh_process(case_name, crawler_key) {
     get_my_robot(my_robot => {
+        let process
         if (crawler_key == undefined) {
-            refresh_process_com(my_robot[case_name]["case_process"]);
+            process = my_robot[case_name]["case_process"]
         } else {
             if (my_robot[case_name]["serial_crawler"]) {
-                refresh_process_com(my_robot[case_name]["serial_crawler"][crawler_key]);
+                process = my_robot[case_name]["serial_crawler"][crawler_key]
             } else {
-                refresh_process_com(my_robot[case_name]["paral_crawler"][crawler_key]);
+                process = my_robot[case_name]["paral_crawler"][crawler_key]
             }
         }
+        refresh_process_com(process)
+        if(init_process_event_id(process)) {
+            set_my_robot(my_robot);
+            notify("更新流程事件id成功, 重新打开流程生效")
+        }
     })
+}
+
+// 初始化事件id
+function init_process_event_id(process) {
+    let ids = process.filter(i => i.id != undefined).map(i => i.id)
+    let sid = ids.length == 0 ? 1 : Math.max(...ids)
+    let update = false;
+    for (let i = 0; i < process.length; i++) {
+        if(process[i].id == undefined) {
+            process[i].id = sid + i
+            update = true;
+        }
+    }
+    return update;
 }
 
 // 更新单个事务的流程
@@ -377,8 +399,8 @@ function refresh_process_com(data) {
         process_li = process_li + `
         <li class="collection-item" id="process-${i}"> \
             <div class="row "> \
-                <div class="col s6 ">标签：${data[i]["tag"]}</div> \
-                <div class="col s6 ">#：${data[i]["n"]}</div> \
+                <div class="col s6 ">编号：${data[i].id}</div> \
+                <div class="col s6 ">标签：${data[i]["tag"]} & ${data[i]["n"]}</div> \
             </div> \
             <div class="row "> \
                 <div class="col s6 ">操作：${data[i]["opera"]}</div> \
@@ -392,9 +414,15 @@ function refresh_process_com(data) {
             ${data[i]["expr"] != null && data[i]["expr"] != "" ? `<div class="row "> \
                 <div class="col s12 ">表达式：${data[i]["expr"]}</div> \
             </div>` : ``}
+            ${data[i].jumpto != null && data[i].jumpto != "" ? `<div class="row "> \
+                <div class="col s12 ">跳转：${data[i].jumpto}</div> \
+            </div>` : ``}
             <div class="row "> \
                 <a href="# "> \
                     <div class="col pc" id="process_test_run" >测试</div> \
+                </a> \
+                <a href="# "> \
+                    <div class="col pc" id="process_test_run_above" >测至此</div> \
                 </a> \
                 <a href="#"> \
                     <div class="col pc" id="process_edit">编辑</div> \
@@ -461,6 +489,7 @@ function replace_args(s, args) {
 async function exec_run_item(process_item, tab_id, args, cb) {
     // console.log(`start run ${JSON.stringify(process_item)}`);
     let new_value = replace_args(process_item.value, args)
+    let new_expr = replace_args(process_item.expr, args)
     let test = process_item.test;
     if (process_item.opera === "getvalue") {
         await chrome.tabs.sendMessage(
@@ -474,7 +503,7 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             function (msg) {
                 if (msg.type === "get_value") {
                     args[new_value] = msg.data;
-                    test && alert(msg.data);
+                    test && notify("测试", msg.data);
                     cb && cb();
                 }
             }
@@ -484,12 +513,12 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             tab_id,
             {
                 type: "get_custom_value",
-                value: process_item.expr
+                value: new_expr
             },
             function (msg) {
                 if (msg.type === "get_custom_value") {
                     args[new_value] = msg.data;
-                    test && alert(msg.data);
+                    test && notify("测试", msg.data);
                     cb && cb();
                 }
             }
@@ -509,6 +538,25 @@ async function exec_run_item(process_item, tab_id, args, cb) {
             alert(new_value);
         }
         cb && cb();
+    } else if (process_item.opera === "processjump") {
+        chrome.tabs.sendMessage(
+            tab_id,
+            {
+                type: "exec_judge_expr",
+                expr: new_expr
+            },
+            function (msg) {
+                (msg && test) && notify("测试", msg.data);
+                if(msg && msg.data) {
+                    cb && cb({
+                        opera: process_item.opera, 
+                        jumpto: process_item.jumpto
+                    });
+                } else {
+                    cb && cb()
+                }
+            }
+        );
     } else {
         chrome.tabs.executeScript(tab_id, {
             code: jscode(process_item, new_value)
@@ -524,166 +572,6 @@ async function exec_run(process, tab_id) {
         await sleep(process[i]["wait"]);
         await exec_run_item(process[i], tab_id, args);
     }
-}
-
-// dom检查自旋运行
-function dom_check_run(process, tab_id, data, callback) {
-    // console.log("dom check run")
-    let run_status = 0; // 运行状态 0 - 正在检查，1 - 等待运行，2 - 正在运行
-    let now_index = 0; // 当前运行process
-    let args = {}; // 可取参数列表（包括取值导入）
-    let count = 0;
-    if (process.length === 0) {
-        callback();
-        return;
-    }
-    let dom_itvl = setInterval(function () {
-        // console.log("status: " + run_status);
-        if (run_status == 0 && !process[now_index].check) {
-            run_status = 1;
-        }
-        if (run_status == 0) {
-            count += 1;
-            chrome.tabs.sendMessage(
-                tab_id,
-                {
-                    type: "get_dom",
-                    tag: process[now_index].tag,
-                    n: process[now_index].n,
-                    iframe: process[now_index].iframe
-                },
-                function (msg) {
-                    if (msg.type == "get_dom" && msg.dom) {
-                        run_status = 1;
-                        count = 0;
-                    }
-                }
-            );
-        } else if (run_status == 1) {
-            run_status = 2;
-            setTimeout(function () {
-                // exec_run_item(process[now_index], tab_id, args);
-                if (process[now_index].opera === "newpage" || process[now_index].opera === "closepage") {
-                    chrome.tabs.query({
-                        active: true,
-                        currentWindow: true
-                    }, async function (tabs) {
-                        tab_id = tabs[0].id
-                    });
-                }
-                if (process.length - 1 === now_index) {
-                    data != null && data.push(args);
-                    exec_run_item(process[now_index], tab_id, args, callback);
-                } else {
-                    exec_run_item(process[now_index], tab_id, args);
-                }
-                now_index += 1;
-                run_status = 0;
-            }, process[now_index].wait * 1000);
-            if (process.length - 1 === now_index) {
-                clearInterval(dom_itvl);
-            }
-        }
-        if (count == 50) {
-            clearInterval(dom_itvl);
-            notify("dom检查失败", `元素不存在，${process[now_index].tag}, ${process[now_index].n}`);
-            console.log(
-                `dom not found: ${process[now_index].tag} , ${process[now_index].n}`
-            );
-        }
-    }, 200);
-}
-
-function crawler_send_data(case_name, crawler, opera, data, callback) {
-    if (crawler.send) {
-        data = {
-            case_name: case_name,
-            opera: opera,
-            data: data != null ? data.slice(0, crawler.freq) : null
-        }
-        fetch(crawler.api, {
-            method: "POST",
-            body: JSON.stringify(data),
-        }).then(() => {
-            callback && callback();
-        });
-    }
-}
-
-// 爬虫运行
-function crawler_run(case_name, tab_id) {
-    console.log("crawler start");
-    get_my_robot(my_robot => {
-        // 并发爬虫在newtab.js中实现
-        if (my_robot[case_name].case_type === "paral_crawler") {
-            if (!my_robot[case_name].paral_crawler.bg_run) {
-                chrome.tabs.create({
-                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name
-                });
-            } else {
-                chrome.windows.create({
-                    url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name,
-                    state: "minimized"
-                })
-            }
-            return;
-        }
-        crawler_send_data(case_name, my_robot[case_name].serial_crawler, "clear");
-        let lock = false; // 进入一个爬虫过程锁住
-        let this_key = "init";  // 当前流程
-        let data = [];
-        let run_times = 0;
-        let titles = my_robot[case_name].serial_crawler.fetch
-            .filter(i => i.opera === "getvalue" || i.opera === "getcustomvalue")
-            .map(i => i.value);
-        if(titles.indexOf("key") === -1) {
-            alert("请确认存在定义值为key的取值事件");
-            return;
-        }
-        let timer = setInterval(function () {
-            if (!lock) {
-                // console.log(this_key)
-                lock = true;
-                console.log(this_key);
-                dom_check_run(my_robot[case_name]["serial_crawler"][this_key], tab_id,
-                    this_key == "fetch" ? data : null, function () {
-                        if (data.length > 1
-                            && data[data.length - 1]["key"] === data[data.length - 2]["key"]) {
-                            console.log("重复取值");
-                            data.pop();
-                            this_key = "fetch";
-                        } else {
-                            if (this_key == "init") {
-                                this_key = "fetch";
-                            } else if (this_key == "fetch") {
-                                // console.log(data);
-                                run_times += 1;
-                                if (run_times >= my_robot[case_name].serial_crawler.times) {
-                                    console.log("================")
-                                    console.log(JSON.stringify(data));
-                                    clearInterval(timer);
-                                    setTimeout(() => {
-                                        my_robot[case_name].serial_crawler.data = data;
-                                        set_my_robot(my_robot);
-                                        crawler_send_data(case_name, my_robot[case_name].serial_crawler, "summary");
-                                        notify("爬虫运行完毕", `单线程爬虫事务 ${case_name} 运行完毕`);
-                                    }, 200);
-                                }
-                                if (data.length >= my_robot[case_name].serial_crawler.freq && my_robot[case_name].serial_crawler.send) {
-                                    crawler_send_data(case_name, my_robot[case_name].serial_crawler, "save", data);
-                                    data.splice(0, my_robot[case_name].serial_crawler.freq);
-                                }
-                                this_key = "next";
-                            } else if (this_key == "next") {
-                                this_key = "fetch";
-                            }
-                        }
-                        lock = false;
-                    }
-                );
-            }
-        }, 200);
-    })
 }
 
 // 轮播
@@ -733,6 +621,7 @@ function process_set_argv(process, kv) {
 
 // 运行
 function process_run(process, tab_id, that, save_run, my_robot, case_name) {
+    if(process.length == 0) return;
     if(process.length > 0 && process[0].bgopen) {
         chrome.windows.create({
             url: chrome.extension.getURL("html/newtab.html") + "?case=" + case_name,
@@ -828,6 +717,34 @@ function getCurrentDateTime() {
     return year + "-" + formatZero(month) + "-" + formatZero(day) + formatZero(hours) + ":" + formatZero(minutes) + ":" + formatZero(seconds);
 }
 
+// 初始化iframe
+function init_iframe(the_frames) {
+    let selected_iframe_tag = "iframe"
+    let top_frame = "TopFrame"
+    send_msg({
+        type: "search_tag",
+        topframe: true,
+        tag: selected_iframe_tag,
+        iframe: top_frame
+    }, function(res) {
+        if(res.num.length > 0) {
+            the_frames.push(top_frame);
+            let iframe_type_content = "<option value='' disabled selected class='frame_option'>选择iFrame</option>";
+            iframe_type_content += `<option value=${top_frame} class='frame_option'>TopFrame</option>`;
+            for (let i = 0; i < res.num.length; i++) {
+                let value = selected_iframe_tag + "&" + res.num[i];
+                the_frames.push(value);
+                iframe_type_content += `<option value="${value}">${value}</option>`;
+            }
+            $(".sel_iframe").html(iframe_type_content);
+            $(".chose_iframe").css("margin-bottom", "-20px");
+            $(".sel_iframe").material_select();
+        } else {
+            $(".chose_iframe").hide();
+        }
+    })
+}
+
 
 // 主要
 $(document).ready(function () {
@@ -858,8 +775,9 @@ $(document).ready(function () {
         "getvalue",
         "getcustomvalue",
         "closepage",
-        "onlyshow",
-        "sendmessage"
+        "sendmessage",
+        "processjump",
+        "onlyshow"
     ];
     const operas_alias = [
         "点击",
@@ -871,8 +789,9 @@ $(document).ready(function () {
         "取值(文本)",
         "自定义取值",
         "关闭页面",
-        "唯一展示",
-        "发送通知"
+        "发送通知",
+        "流程跳转",
+        "唯一展示"
     ];
     let case_name = "";
     let edit_process_n = -1;
@@ -966,29 +885,7 @@ $(document).ready(function () {
             direct_add_dashboard = true;
         }
 
-        // 初始化iframe列表
-        let selected_iframe_tag = "iframe";
-        send_msg({
-            type: "search_tag",
-            topframe: true,
-            tag: selected_iframe_tag
-        }, function(res) {
-            if(res.num.length > 0) {
-                the_frames.push("TopFrame");
-                let iframe_type_content = "<option value='' disabled selected class='frame_option'>选择iFrame</option>";
-                iframe_type_content += `<option value="TopFrame" class='frame_option'>TopFrame</option>`;
-                for (let i = 0; i < res.num.length; i++) {
-                    let value = selected_iframe_tag + "&" + res.num[i];
-                    the_frames.push(value);
-                    iframe_type_content += `<option value="${value}">${value}</option>`;
-                }
-                $(".sel_iframe").html(iframe_type_content);
-                $(".chose_iframe").css("margin-bottom", "-20px");
-                $(".sel_iframe").material_select();
-            } else {
-                $(".chose_iframe").hide();
-            }
-        })
+        init_iframe(the_frames);
     });
 
     $(".modal").modal();
@@ -1386,7 +1283,7 @@ $(document).ready(function () {
                 let value = selected_tag + "&" + msg.num[i];
                 options += `<a href='#' class='collection-item tag_spec'>${value}</a>`;
             }
-            if(msg.num == 0) {
+            if(msg.num.length == 0) {
                 options = "<div>无可选项，请修改标签或刷新浏览器重试</div>"
             }
             $("#tag_list").html(options);
@@ -1556,13 +1453,14 @@ $(document).ready(function () {
             $(this).val() === "getvalue" ||
             $(this).val() === "newpage" ||
             $(this).val() === "getcustomvalue" || 
-            $(this).val() === "sendmessage"
+            $(this).val() === "sendmessage" ||
+            $(this).val() !== "processjump"
         ) {
             $("#set_value").show();
         } else {
             $("#set_value").hide();
         }
-        if ($(this).val() === "getcustomvalue") {
+        if ($(this).val() === "getcustomvalue" || $(this).val() === "processjump") {
             $("#set_expression").show();
         } else {
             $("#set_expression").hide();
@@ -1580,12 +1478,18 @@ $(document).ready(function () {
         if($(this).val() === "getvalue" || $(this).val() === "getcustomvalue") {
             $("#ssv").attr("placeholder", "设置key");
         } else {
-            $("#ssv").attr("placeholder", "设值/${自定义参数}");
+            $("#ssv").attr("placeholder", "设值/${自定义参数}/{执行参数}");
         }
         if($(this).val() === "getvalue") {
             $("#set_value_parser").show();
+            $("#select_value_parser").material_select();
         } else {
             $("#set_value_parser").hide();
+        }
+        if($(this).val() === "processjump") {
+            $("#set_jumpto").show();
+        } else {
+            $("#set_jumpto").hide();
         }
     });
 
@@ -1603,18 +1507,22 @@ $(document).ready(function () {
             bgopen: $("#background_open").prop("checked"),
             sysmsg: $("#system_message").prop("checked"),
             parser: $("#select_value_parser").val(),
-            iframe: $("#use_iframe").val()
+            iframe: $("#use_iframe").val(),
+            jumpto: $("#jumpto").val(),
         };
         console.log(process_data)
         get_my_robot((my_robot) => {
             if ($(this).text() === "保存") {
                 get_now_process(my_robot[case_name], process => {
+                    // 设置id
+                    process_data.id = process[edit_process_n].id
                     process[edit_process_n] = process_data
                 });
                 $(this).text("添加");
                 edit_process_n = -1;
             } else {
                 get_now_process(my_robot[case_name], process => {
+                    process_data.id = process.length == 0 ? 1 :  Math.max(...process.map(i=>i.id)) + 1
                     process.push(process_data);
                 });
             }
@@ -1755,6 +1663,21 @@ $(document).ready(function () {
                     });
                 });
             })
+            .on("click", "#process_test_run_above", function () {
+                let processs_n = parseInt(
+                    $(this).parent().parent().parent().attr("id").split("-")[1]
+                );
+                get_my_robot(my_robot => {
+                    get_now_process(my_robot[case_name], process => {
+                        let run_process = process.slice(0, processs_n+1)
+                        for(let i = 0; i < run_process.length; i++) {
+                            run_process[i].test = true
+                        }
+                        let bg = chrome.extension.getBackgroundPage();
+                        bg.dom_check_run(process.slice(0, processs_n+1), tab_id, my_robot, case_name, false)
+                    });
+                });
+            })
             // 编辑单个流程事件
             .on("click", "#process_edit", function () {
                 let processs_n = parseInt(
@@ -1775,12 +1698,12 @@ $(document).ready(function () {
                     get_now_process(my_robot[case_name], process => {
                         let the_process = process[processs_n];
                         let select_tag = `${the_process.tag}&${the_process.n}`;
-                        if (the_process.value) {
+                        if (the_process.value && the_process.opera !== "processjump") {
                             $("#set_value").show();
                         } else {
                             $("#set_value").hide();
                         }
-                        if (the_process.expr) {
+                        if (the_process.expr || the_process.opera === "processjump") {
                             $("#set_expression").show();
                         } else {
                             $("#set_expression").hide();
@@ -1797,8 +1720,15 @@ $(document).ready(function () {
                         }
                         if(the_process.opera === "getvalue") {
                             $("#set_value_parser").show();
+                            $("#select_value_parser").val(the_process.parser);
+                            $("#select_value_parser").material_select();
                         } else {
                             $("#set_value_parser").hide();
+                        }
+                        if(the_process.opera === "processjump") {
+                            $("#set_jumpto").show();
+                        } else {
+                            $("#set_jumpto").hide();
                         }
                         $("#expression").val(the_process.expr);
                         $("#ssv").val(the_process.value);
@@ -1808,6 +1738,7 @@ $(document).ready(function () {
                             "selected",
                             true
                         );
+                        $("#sel_opera").material_select();
                         if(the_process.iframe) {
                             $(".chose_iframe").show()
                             let flag = false;
@@ -1818,7 +1749,6 @@ $(document).ready(function () {
                             }
                             if(!flag) {
                                 $("#use_iframe").html(`<option value="${the_process.iframe}" selected class="frame_option">${the_process.iframe}</option>`)
-                                $("#use_iframe").material_select();
                             }
                             $("#use_iframe").val(the_process.iframe);
                             $("#use_iframe option").attr("selected", false);
@@ -1826,7 +1756,9 @@ $(document).ready(function () {
                                 "selected",
                                 true
                             );
+                            $("#use_iframe").material_select();
                         }
+                        $("#jumpto").val(the_process.jumpto);
                         $("#num_wait").val(the_process.wait);
                         $("#dom_check").prop("checked", the_process.check == null ? false : the_process.check);
                         $("#background_open").prop("checked", the_process.bgopen == null ? false : the_process.bgopen);
@@ -2162,9 +2094,19 @@ $(document).ready(function () {
         // }
     })
 
-    $("#monitor_back").click(function(){
+    $("#monitor_back").click(function() {
         $("#monitor_view").hide();
         $("#case_view").show();
+    })
+
+    $("#use_iframe").change(function() {
+        if($(this).val() != "TopFrame") {
+            send_msg({
+                type: "select_tag",
+                tag: $(this).val().split("&")[0],
+                n: parseInt($(this).val().split("&")[1])
+            })
+        }
     })
 
 

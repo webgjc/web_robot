@@ -38,7 +38,7 @@
 23. 支持页面元素数据监控配置
 24. 支持单节点监控与多节点监控
 25. 支持快捷键
-
+26. 支持流程事务的跳转
 
 ## 核心部分--事务和运行机制说明
 
@@ -112,9 +112,14 @@
 - 源码事务的开始注入适用于如百度去广告的场景等
 - 受控事务的录制和受控运行适用于对一个复杂操作(无法用流程实现)的定义和复现。
 
-## 演示用例，（直接复制，导入事务即可享用）
+## 常见问题
 
-- 特别注意：流程中的消息通知目前不稳定
+### 发消息事件无响应
+1、在Chrome浏览器中访问地址：chrome://flags   
+2、搜索栏中搜索：notifications，找到 Enable system notifications 选项，将其选项值改为 Disabled    
+3、重启浏览器，问题解决。
+
+## 演示用例，（直接复制，导入事务即可享用）
 
 - 基本操作（打开百度，搜索天气，点击确定）
 ```json
@@ -179,6 +184,16 @@
 - 快捷键+复制传参跳转+源码事务（快捷键为qw，复制默认为{COPY}）
 ```json
 {"case_name":"快捷键+复制传参跳转+源码事务","case_process":[],"case_sourcecode":"window.open(\"https://www.baidu.com/s?ie=UTF-8&wd={COPY}\")","case_type":"sourcecode","control_url":"","last_runtime":1657184059039,"short_key":"q,w","sourcecode_url":".*"}
+```
+
+- 页面有iframe的流程事件
+```json
+{"case_name":"页面有iframe的流程事件","case_process":[{"bgopen":false,"check":false,"expr":"","id":1,"iframe":"TopFrame","jumpto":"","opera":"newpage","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"https://www.runoob.com/try/try.php?filename=tryhtml_intro","wait":"0"},{"bgopen":false,"check":true,"expr":"","id":2,"iframe":"iframe&0","jumpto":"","n":"0","opera":"getvalue","parser":"text_parser","sysmsg":true,"tag":"h1","value":"iframe内文本","wait":"0"},{"bgopen":false,"check":false,"expr":"","id":3,"iframe":"TopFrame","jumpto":"","n":"undefined","opera":"sendmessage","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"内容：{iframe内文本}","wait":"0"},{"bgopen":false,"check":false,"expr":"","id":4,"iframe":"TopFrame","jumpto":"","n":"undefined","opera":"closepage","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"","wait":"1"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
+```
+
+- 流程事务跳转事件
+```json
+{"case_name":"跳转事件演示","case_process":[{"bgopen":false,"check":false,"expr":"new Date().getHours()","id":1,"iframe":null,"jumpto":"","opera":"getcustomvalue","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"hour","wait":"0"},{"bgopen":false,"check":false,"expr":"{hour} >= 12","id":2,"iframe":null,"jumpto":"4","n":"undefined","opera":"processjump","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"","wait":"0"},{"bgopen":false,"check":false,"expr":"","id":3,"iframe":null,"jumpto":"","opera":"sendmessage","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"上午好","wait":"0"},{"bgopen":false,"check":false,"expr":"1==1","id":5,"iframe":null,"jumpto":"-1","opera":"processjump","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"","wait":"0"},{"bgopen":false,"check":false,"expr":"","id":4,"iframe":null,"jumpto":"","opera":"sendmessage","parser":"text_parser","sysmsg":true,"tag":"空标签","value":"下午好","wait":"0"}],"case_sourcecode":"","case_type":"process","control_url":"","sourcecode_url":".*"}
 ```
 
 
@@ -306,6 +321,16 @@ V2.6.0 (2022.06.30)
 1. 新增快捷键触发事务，支持默认的选中传值：{SELECT}，复制传值：{COPY}
 2. 修改中间运行参数为{}格式（注：运行前参数格式为${}，本次影响原取值事件的设值，消息发送中间参数）
 3. 源码事务也支持自定义设值
+
+V2.7.0 (2022.07.24)
+1. 流程事件支持指定iframe
+
+V2.8.0 (2022.08.15)
+1. 流程事务支持跳转事件（只能往后跳转，跳转不存在的节点会结束流程）
+2. 增加流程事件测至此操作
+3. 增加爬虫事务数据下载
+4. 其他各种优化
+
 
 ## 特别说明
 本插件使用manifest V2版本，插件导入浏览器中会有错误报警，暂时可忽略。

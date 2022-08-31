@@ -1093,15 +1093,19 @@ window.onload = function () {
                     setTimeout(() => {
                         let v2 = Array.from(down_keys.values()).sort().join()
                         if(key_map[v2] != undefined) {
-                            chrome.runtime.sendMessage({
-                                type: "KEYBOARD_TRIGGER",
-                                case_name: key_map[v2],
-                                select: window.getSelection().toString()
-                            }, (res) => {
-                                if(res == "success") {
-                                    down_keys.clear()
-                                }
-                            })
+                            try {
+                                chrome.runtime.sendMessage({
+                                    type: "KEYBOARD_TRIGGER",
+                                    case_name: key_map[v2],
+                                    select: window.getSelection().toString()
+                                }, (res) => {
+                                    if(res == "success") {
+                                        down_keys.clear()
+                                    }
+                                })
+                            } catch(e) {
+                                tip("WEB-ROBOT通讯失败, 请刷新页面")
+                            }
                         }
                     }, 150);
                 }

@@ -358,7 +358,7 @@ function refresh_cases() {
 
 
 // 刷新流程
-function refresh_process(case_name, crawler_key) {
+function refresh_process(case_name, crawler_key, refresh) {
     get_my_robot(my_robot => {
         let process
         if (crawler_key == undefined) {
@@ -373,7 +373,10 @@ function refresh_process(case_name, crawler_key) {
         refresh_process_com(process)
         if(init_process_event_id(process)) {
             set_my_robot(my_robot);
-            notify("更新流程事件id成功, 重新打开流程生效")
+            if(refresh == undefined) {
+                refresh_process(case_name, crawler_key, true);
+            }
+            // notify("更新流程事件id成功, 重新打开流程生效")
         }
     })
 }

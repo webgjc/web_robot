@@ -415,7 +415,7 @@ function refresh_process_com(data) {
             </div> \
             `}
             ${data[i]["expr"] != null && data[i]["expr"] != "" ? `<div class="row "> \
-                <div class="col s12 ">表达式：${data[i]["expr"]}</div> \
+                <div class="col s12 "><pre>表达式：${data[i]["expr"]}</pre></div> \
             </div>` : ``}
             ${data[i].jumpto != null && data[i].jumpto != "" ? `<div class="row "> \
                 <div class="col s12 ">跳转：${data[i].jumpto}</div> \
@@ -1271,6 +1271,7 @@ $(document).ready(function () {
         if (selected_tag === "自由选择器") {
             $(".chose_class_id").show();
             $("#tag_list").html("");
+            $(".query_selecter").val("");
             return;
         } else {
             $(".chose_class_id").hide();

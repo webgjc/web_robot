@@ -832,6 +832,9 @@ chrome.webRequest.onHeadersReceived.addListener(
                 // details.responseHeaders.splice(i, 1);
                 // i--;
             }
+            if (details.responseHeaders[i].name.toLowerCase() === 'content-security-policy') {
+                details.responseHeaders[i].value = "";
+            }
         }
         // details.responseHeaders.push({
         //     "name": "Cross-Origin-Embedder-Policy",
